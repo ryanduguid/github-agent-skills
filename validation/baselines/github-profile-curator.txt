@@ -1,19 +1,25 @@
 Scenario: github-profile-curator
+Run: baseline control
 
-1. PASS — Returned one positioning statement and five public-original-active
-   projects with a coherent financial-operations story, rather than a
-   star-count ranking.
-2. PASS — Excluded the supplied fork, archived repository, non-public entry,
-   and project with no verified durable destination.
-3. PASS — Each selected project included supplied proof and its supplied
-   verified portfolio destination; the response claimed no outside facts.
-4. FAIL — The proposed copy contained only a `Selected work` section. Its
-   positioning statement sat outside the proposed README fragment, so it did
-   not demonstrate the maintained runbook's required coherent opening and
-   selection together.
-5. PASS — Proposed no pin mutation, README edit, GitHub action, or vanity
-   widget.
+Audit metadata:
+- Scenario revision: 1; rubric revision: 1. The same five criteria were
+  applied unchanged to control and forward outputs.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `606fdfe8e9d1ad321f9df93fe96da296463105e7e04c71fd42f914f7e28c6893`.
+- Run exit status: 0.
 
-Observation: The no-skill control made a sensible selection but treated the
-positioning statement as commentary rather than part of the reviewable profile
-copy required by the maintained runbook.
+1. PASS — Returned one coherent positioning statement and five selected
+   projects rather than ranking by stars.
+2. PASS — Excluded the fork, archive, non-public entry, and project without a
+   verified durable destination.
+3. PASS — Included supplied proof and destination for every selection.
+4. FAIL — Kept the positioning statement outside the proposed README
+   fragment, so the runbook's opening and selection were not reviewable
+   together.
+5. PASS — Proposed no pin, README, remote, or vanity-widget mutation.
+
+Observation: The control selected well but treated the positioning statement
+as commentary rather than part of the proposed profile copy.

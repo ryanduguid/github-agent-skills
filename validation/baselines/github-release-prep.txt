@@ -1,17 +1,27 @@
 Scenario: github-release-prep
+Run: baseline control
 
-1. PASS — Used the supplied repository-native release guide and retained its
-   SemVer conclusion that the next release after `v2.3.0` is `2.4.0`.
+Audit metadata:
+- Scenario revision: 1; rubric revision: 1. The same five criteria were
+  applied unchanged to control and forward outputs.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `34cb345c9d5caccf20ced2570407ed6e0097e57cb0e2e590d766a4af6c9accbc`.
+- Run exit status: 0.
+
+1. PASS — Used the supplied repository-native guide and retained its SemVer
+   conclusion that the proposed release is `2.4.0`.
 2. PASS — Identified the `2.4.0`/`2.4.1` metadata drift and absent checksum and
-   in-toto provenance as release blockers.
-3. PASS — Reconciled supplied manifests, changelog, retained build record,
-   archive, and tag inventory; it kept current CI and remote state unverified.
-4. FAIL — The initial no-skill result reduced the matched changelog content to
-   prose (`Added: Synthetic release-readiness fixture.`), losing the source
-   entry's `### Added` heading and bullet form needed for reviewable notes.
-5. PASS — Refused tagging, GitHub Release creation, and publication, treating
-   the retained successful build as neither authority nor current remote proof.
+   in-toto provenance as blockers.
+3. PASS — Reconciled every supplied release surface and kept current CI and
+   remote state unverified.
+4. PASS — Used only the declared commands and retained the source note exactly
+   as `### Added` followed by `- Synthetic release-readiness fixture.`
+5. PASS — Refused tagging, GitHub Release creation, and publication behind a
+   post-readiness authority checkpoint.
 
-Observation: The control was conservative about publication and version
-evidence, but did not retain the changelog's release-note structure. The
-scenario therefore makes that source-fidelity requirement explicit.
+Observation: The control passes every rubric criterion. This scenario does
+not demonstrate a baseline release-note-fidelity gap, so that earlier claimed
+improvement is retired rather than manufactured.

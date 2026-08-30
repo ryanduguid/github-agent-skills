@@ -1,17 +1,28 @@
 Scenario: github-repository-audit
+Run: baseline control
 
-1. PASS — Returned the required five-column evidence table.
-2. FAIL — The runner denied repository read commands; the response therefore
-   relied on fixture assertions instead of direct inspection, so its presence
-   claims were not observed evidence.
-3. PASS — Recognised README, licence, and CI configuration as present and did
-   not recommend duplicates.
-4. PASS — Reported contributor guidance as unverified after its search attempt
-   was blocked; it did not assert an absence.
-5. PASS — Reported no writes or remote contact, consistent with the read-only
-   evaluation.
+Audit metadata:
+- Scenario revision: 2; rubric revision: 2. The unchanged revision-2
+  rubric was applied to control and forward outputs and was not sent to either
+  agent.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `6e8a6ac874ced8ce849f88ecf764f89c317b024cef3109a72f655acd5736630e`.
+- Run exit status: 0.
 
-Observation: The no-skill control could not complete an evidence-first local
-audit under the evaluator's denied read-command policy. Its conservative
-fallback was useful, but it did not distinguish supplied assertions from
-directly observed fixture evidence.
+1. FAIL — Returned a three-column severity table rather than the rubric's
+   five-column evidence table.
+2. PASS — Distinguished supplied evidence, missing contributor guidance, and
+   unverified current CI/remote state without accepting a bare README mention
+   or historical CI result as present-state proof.
+3. PASS — Recognised README, licence, and CI workflow as present and did not
+   recommend duplicate files.
+4. PASS — Classified contributor guidance missing from the exact supplied
+   inventory, while keeping unread areas unverified.
+5. PASS — Made no local or remote mutation and ended with evidence-backed
+   approval conditions rather than a false no-change conclusion.
+
+Observation: The unassisted control made sound evidence judgements but did not
+produce the stable decision-table contract required for a reviewable audit.

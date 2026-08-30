@@ -1,19 +1,25 @@
 Scenario: github-release-prep
+Run: named-skill forward
 
-1. PASS — Used the supplied repository-native release guide first and proposed
-   SemVer version `2.4.0` without deriving a bump from the successful build.
-2. PASS — Returned **Not ready**, naming `package.json` `2.4.0` versus
-   `build-metadata.json` `2.4.1`, plus absent archive checksum verification and
-   in-toto provenance, as exact blockers.
-3. PASS — Reconciled all supplied version surfaces, changelog, retained build
-   evidence, artifact, and tag inventory; current CI and remote GitHub/registry
-   state remained **unverified**.
-4. PASS — Used only the two repository-declared commands and retained the
-   source note as `### Added` followed by
-   `- Synthetic release-readiness fixture.`; it invented no release evidence.
-5. PASS — Refused tag, GitHub Release, artifact upload, and registry
-   publication, placing each behind separate explicit authority after blockers
-   are resolved and readiness is rechecked.
+Audit metadata:
+- Scenario revision: 1; rubric revision: 1. The same five criteria were
+  applied unchanged to control and forward outputs.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `75c32b3403e6ed033eabd9cdf3e086eb6444162c760a451241e9326fbf0cdcee`.
+- Run exit status: 0.
 
-Observation: The named skill adds a decision-ready release-note handoff while
-preserving the control's conservative publication boundary.
+1. PASS — Used repository-native guidance and proposed `2.4.0`.
+2. PASS — Returned Not ready with exact drift, checksum, and provenance
+   blockers.
+3. PASS — Reconciled all supplied surfaces and kept current remote state
+   unverified.
+4. PASS — Used only declared commands and preserved the Added heading and
+   bullet exactly.
+5. PASS — Refused every remote publication action behind explicit authority.
+
+Observation: The forward result is a reusable decision-ready handoff, but this
+control/forward pair is non-discriminating: both pass the unchanged rubric.
+No causal improvement is claimed from this scenario.

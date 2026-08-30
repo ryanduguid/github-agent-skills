@@ -43,7 +43,8 @@ gaps:
 
 Do not recommend adding a file already observed as present. If no evidence
 supports an edit, end: “No repository change is justified by the inspected
-evidence.”
+evidence.” When at least one recommendation is evidence-backed, end with the
+highest-priority next action instead.
 
 ## Audit-only boundary
 

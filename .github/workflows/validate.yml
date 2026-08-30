@@ -31,3 +31,14 @@ jobs:
       - name: Check generated runtime copies
         shell: pwsh
         run: pwsh -File scripts/sync-skills.ps1 -Check
+  windows-sync-safety:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Exercise NTFS junction safety
+        run: python -m unittest tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_linked_approved_child_before_any_mutation tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_linked_destination_descendant tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_canonical_link_before_copy -v

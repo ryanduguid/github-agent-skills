@@ -1,18 +1,22 @@
 Scenario: github-readme-polish
+Run: named-skill forward
 
-1. PASS — The proposed README retains the requested order: concise opening,
-   proof/demo, requirements, existing verified quick start, scope and
-   limitations, checks, security, and licence; architecture was not needed.
-2. PASS — It left the specialised `Legal boundary` intact with all four
-   supplied limitations.
-3. PASS — It added no badge and made no production, release, deployment, or
-   security-certification claim; the new security text states that no
-   assessment or certification is claimed.
-4. PASS — Its only proposed command was the supplied successful
-   `pwsh -File scripts/demo.ps1` command.
-5. PASS — It returned only a proposed diff and made no repository or remote
-   mutation.
+Audit metadata:
+- Scenario revision: 1; rubric revision: 1. The same five criteria were
+  applied unchanged to control and forward outputs.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `1f801c95e1ac5888c62d2d48b9ce3bf64cfbacaa8338a72c51044fd8ef6b5bd4`.
+- Run exit status: 0.
 
-Observation: The named-skill evaluator received the exact supplied README and
-run evidence, because its read-only shell denied direct local reads. It treated
-all facts outside that evidence as unverified.
+1. PASS — Retained the requested mature order and left architecture omitted
+   because it was not helpful.
+2. PASS — Preserved the specialised Legal boundary and all four limitations.
+3. PASS — Added no badge or unsupported readiness/certification claim.
+4. PASS — Proposed only the supplied successful demo command.
+5. PASS — Returned only a proposed diff and made no mutation.
+
+Observation: The forward result preserves the specialised boundary while
+adding only evidence-backed checks and security language.

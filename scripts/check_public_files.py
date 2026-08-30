@@ -26,7 +26,7 @@ TEXT_RULES = (
     ("transcript-path", re.compile(r"(?:^|[\s/\\])(?:transcripts?|sessions?)[/\\][^\s]+", re.IGNORECASE)),
     ("raw-sdd-path", re.compile(r"\.superpowers[/\\]sdd[/\\][^/\\*\s]+[/\\]raw[/\\]", re.IGNORECASE)),
     ("private-user-path", re.compile(r"(?:[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|/(?:home|Users)/)[^/\\\s]+", re.IGNORECASE)),
-    ("credential-assignment", re.compile(r"\b(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key|(?!(?:public|example)[_-]?key\b)[A-Za-z0-9-]+[_-]key)\b\s*[:=]\s*\S+", re.IGNORECASE)),
+    ("credential-assignment", re.compile(r"(?<![A-Za-z0-9_-])['\"]?(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key|(?!(?:public|example)[_-]?key\b)[A-Za-z0-9-]+[_-]key)['\"]?\s*[:=]\s*['\"]?\S+", re.IGNORECASE)),
     ("client-data", re.compile(r"^\s*(?:client|customer)[_-]?(?:data|records?|export|file|id|name)\s*[:=]", re.IGNORECASE | re.MULTILINE)),
 )
 
@@ -99,12 +99,7 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
 
 
 def tracked_failures(root: Path) -> list[str]:
-    paths = [
-        path
-        for path in tracked_paths(root)
-        if not re.fullmatch(r"\.superpowers/sdd/[^/]+/task-\d+-report\.md", path.as_posix())
-    ]
-    return scan_paths(root, paths)
+    return scan_paths(root, tracked_paths(root))
 
 
 def main() -> int:

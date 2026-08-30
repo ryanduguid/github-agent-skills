@@ -1,22 +1,25 @@
 Scenario: github-profile-curator
+Run: named-skill forward
 
-1. PASS — Returned exactly one positioning statement and a coherent five-project
-   selection spanning reconciliation controls, source-linked data, spreadsheet
-   tools, accounting integration, and assurance workflows; it did not use
-   star counts.
-2. PASS — Selected only the five supplied public, original, active projects
-   with verified durable destinations. It excluded the fork, archived project,
-   non-public entry, and project with no verified destination without exposing
-   non-public details.
-3. PASS — Every selected project includes concrete supplied evidence and its
-   supplied verified destination. It states that no facts outside the fixture
-   were verified.
-4. PASS — Its concise review-only profile fragment contains both the opening
-   positioning statement and the five Selected work links, following the
-   maintained runbook without editing the README or source list.
-5. PASS — Treated pins as unchanged state and proposed no GitHub mutation,
-   streak graph, star metric, badge, or vanity widget.
+Audit metadata:
+- Scenario revision: 1; rubric revision: 1. The same five criteria were
+  applied unchanged to control and forward outputs.
+- Codex CLI: `codex-cli 0.151.0-alpha.7.2`.
+- Isolation: `--ephemeral --ignore-user-config --ignore-rules
+  --skip-git-repo-check -s read-only`.
+- Retained ignored raw-output SHA-256:
+  `ad5058e8f06eb8540a641b31d81c370ccf88d4a7b105f3a8d546573eab75ada8`.
+- Run exit status: 0.
 
-Observation: The named-skill result closes the baseline gap by making the
-positioning statement part of the proposed profile copy, so the runbook's
-single narrative is reviewable rather than merely described.
+1. PASS — Returned one coherent positioning statement and five complementary
+   projects without star ranking.
+2. PASS — Selected only eligible public, original, active projects with
+   durable destinations.
+3. PASS — Included supplied evidence and verified destination for every
+   selected project.
+4. PASS — Put both the opening positioning statement and Selected work links
+   in the review-only profile fragment.
+5. PASS — Proposed no pin, source, remote, or vanity-widget mutation.
+
+Observation: The named-skill result closes the measured profile-copy gap by
+making the narrative itself part of the reviewable artifact.

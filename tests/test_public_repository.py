@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -38,6 +39,20 @@ class PublicRepositoryTests(unittest.TestCase):
     def test_tracked_text_has_no_public_safety_failures(self):
         self.assertEqual(public_files.tracked_failures(ROOT), [])
 
+    def test_tracked_task_reports_are_scanned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            report = root / ".superpowers" / "sdd" / "run" / "task-4-report.md"
+            report.parent.mkdir(parents=True)
+            report.write_bytes(b"auth" + b"_token" + b" = " + b"do-not-echo\n")
+            subprocess.run(["git", "add", str(report.relative_to(root))], cwd=root, check=True)
+
+            failures = public_files.tracked_failures(root)
+
+            self.assertEqual(failures, [f"{report.relative_to(root).as_posix()}: credential-assignment"])
+            self.assertNotIn("do-not-echo", "\n".join(failures))
+
 
 class PublicFileScannerTests(unittest.TestCase):
     def setUp(self):
@@ -70,6 +85,10 @@ class PublicFileScannerTests(unittest.TestCase):
             ("m", "notes.txt", ("client" + "_data" + ": " + "do-not-echo").encode(), "client-data"),
             ("n", "notes.txt", ("stripe" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
             ("o", "notes.txt", ("customer" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("p", "notes.json", ("{\"api" + "_key\"" + ":\"do-not-echo\"}").encode(), "credential-assignment"),
+            ("q", "notes.json", ("{\"to" + "ken\"" + ":\"do-not-echo\"}").encode(), "credential-assignment"),
+            ("r", "notes.toml", ("\"access" + "_key\"" + " = \"do-not-echo\"").encode(), "credential-assignment"),
+            ("s", "notes.yaml", ("'client" + "_secret'" + ": 'do-not-echo'").encode(), "credential-assignment"),
         )
 
         for name, relative, content, rule in checks:
@@ -105,6 +124,14 @@ class PublicFileScannerTests(unittest.TestCase):
 
         self.assertEqual(public_files.scan_paths(self.root, [path]), [])
 
+    def test_allows_credential_key_policy_prose_without_an_assignment(self):
+        path = self.write(
+            "policy.md",
+            ("Reject quoted credential keys such as \"api" + "_key\" or \"to" + "ken\" when they are assigned values.\n").encode(),
+        )
+
+        self.assertEqual(public_files.scan_paths(self.root, [path]), [])
+
     def test_rejects_undecodable_text(self):
         path = self.write("notes.txt", b"note=\xffvalue\n")
 
@@ -134,6 +161,17 @@ class WorkflowTests(unittest.TestCase):
             "pwsh -File scripts/sync-skills.ps1 -Check",
         ):
             self.assertIn(command, workflow)
+
+    def test_workflow_runs_junction_safety_tests_on_windows(self):
+        workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+
+        self.assertIn("runs-on: windows-latest", workflow)
+        self.assertIn(
+            "python -m unittest tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_linked_approved_child_before_any_mutation "
+            "tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_linked_destination_descendant "
+            "tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_canonical_link_before_copy -v",
+            workflow,
+        )
 
 
 if __name__ == "__main__":
