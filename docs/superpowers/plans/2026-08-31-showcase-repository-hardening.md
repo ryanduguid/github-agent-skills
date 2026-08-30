@@ -27,12 +27,12 @@
 - Create: `github-agent-skills/audits/repository-inventory.json`
 
 **Interfaces:**
-- Consumes: the 42-repository GitHub inventory plus local evidence from the seven cloned repositories.
-- Produces: one row per repository with visibility, original/fork/archive state, purpose, language, maintenance recency, depth of inspection, presentation value, risk, and action.
+- Consumes: the complete currently observable public GitHub inventory, an authenticated private-repository aggregate only when available, plus local evidence from the seven cloned repositories. Do not assume a fixed account total.
+- Produces: one row per currently observable public repository with visibility, original/fork/archive state, purpose, language, maintenance recency, depth of inspection, presentation value, risk, and action. Private repositories are never published as rows; when authenticated aggregate evidence is available, record only its count and aggregate `private/no public action` decision.
 
 - [ ] **Step 1: Record the complete inventory without secrets or private contents**
 
-Private repositories may be named with public metadata already visible to the owner, but their contents, URLs that expose private paths, and configuration details must not enter the public audit.
+Private repositories must never be published as rows or named from owner-only metadata. Their names, contents, URLs, paths, metadata and configuration details must not enter the public audit. The existing Task 1 artifacts retain their historical plan reconciliation of 42 expected records to 39 publicly observed repositories; this interface correction does not rewrite that evidence.
 
 - [ ] **Step 2: Classify each repository**
 
