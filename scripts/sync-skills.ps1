@@ -10,14 +10,20 @@ $destinations = @('.agents/skills', '.claude/skills') | ForEach-Object { [IO.Pat
 
 foreach ($destination in $destinations) {
     if (-not $destination.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "Destination escapes repository: $destination" }
-    $drift = $false
-    foreach ($name in $approved) {
-        $target = Join-Path $destination $name
-        $wanted = $names -contains $name
-        if ($wanted -and -not (Test-Path -LiteralPath $target)) { $drift = $true }
-        if (-not $wanted -and (Test-Path -LiteralPath $target)) { $drift = $true }
-    }
     if ($Check) {
+        $expectedDirectories = @($names)
+        $expectedFiles = @()
+        foreach ($name in $names) {
+            $skillSource = Join-Path $source $name
+            $expectedDirectories += Get-ChildItem -LiteralPath $skillSource -Directory -Recurse | ForEach-Object { [IO.Path]::GetRelativePath($source, $_.FullName) }
+            $expectedFiles += Get-ChildItem -LiteralPath $skillSource -File -Recurse | ForEach-Object { [IO.Path]::GetRelativePath($source, $_.FullName) }
+        }
+        $actualDirectories = if (Test-Path -LiteralPath $destination) { @(Get-ChildItem -LiteralPath $destination -Directory -Recurse | ForEach-Object { [IO.Path]::GetRelativePath($destination, $_.FullName) }) } else { @() }
+        $actualFiles = if (Test-Path -LiteralPath $destination) { @(Get-ChildItem -LiteralPath $destination -File -Recurse | ForEach-Object { [IO.Path]::GetRelativePath($destination, $_.FullName) }) } else { @() }
+        $drift = (Compare-Object (@($expectedDirectories) + '') (@($actualDirectories) + '')) -or (Compare-Object (@($expectedFiles) + '') (@($actualFiles) + ''))
+        foreach ($file in $expectedFiles) {
+            if ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source $file)).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $destination $file)).Hash) { $drift = $true }
+        }
         if ($drift) { Write-Error "Skill copies are out of sync in $destination" }
         continue
     }

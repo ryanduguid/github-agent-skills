@@ -1,5 +1,7 @@
 # Local gates
 
+Prerequisites: Python 3.11+ and PowerShell 7+ (`pwsh`).
+
 Run the incremental checks while authoring a skill:
 
 ```powershell
