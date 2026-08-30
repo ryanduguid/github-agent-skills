@@ -1,0 +1,34 @@
+name: Bug report
+description: Report reproducible behavior in a skill or script.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, tokens, personal data, or private repository contents.
+  - type: input
+    id: component
+    attributes:
+      label: Affected skill or script
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Safe reproduction steps
+      description: Use a minimal sanitised example and include commands and observed output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, personal data, and private repository contents.
+          required: true

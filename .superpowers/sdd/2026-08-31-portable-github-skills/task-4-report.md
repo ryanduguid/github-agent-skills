@@ -51,7 +51,7 @@ python -m unittest discover -s tests -v
 codex exec --ephemeral --ignore-user-config --ignore-rules --skip-git-repo-check -s read-only -C . ... "$github-profile-curator" + scenario
 # forward: exit 0; all five criteria passed
 
-python C:/Users/-/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/github-profile-curator
+python <Codex skill validator> skills/github-profile-curator
 # not runnable: optional PyYAML module is unavailable; no dependency added
 ```
 

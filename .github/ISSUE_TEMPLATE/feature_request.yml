@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose a focused, evidence-based improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and evidence
+      description: Describe the workflow gap with a minimal sanitised example; do not include private repository contents.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Boundary
+      options:
+        - label: This proposal does not require an unapproved remote mutation.
+          required: true
