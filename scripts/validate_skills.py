@@ -82,15 +82,34 @@ def validate(root: Path, strict: bool = False) -> list[str]:
             if name not in present:
                 failures.append(f"skills: missing required skill '{name}'")
 
-    for name, source in valid:
+    if not strict:
+        for name, source in valid:
+            for runtime in RUNTIME_ROOTS:
+                copy = root / runtime / name / "SKILL.md"
+                copy_name = copy.relative_to(root).as_posix()
+                if copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
+                    failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
+    else:
+        expected_directories = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_dir()}
+        expected_files = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_file()}
         for runtime in RUNTIME_ROOTS:
-            copy = root / runtime / name / "SKILL.md"
-            copy_name = copy.relative_to(root).as_posix()
-            if not copy.is_file():
-                if strict:
+            destination = root / runtime
+            actual_directories = {path.relative_to(destination).as_posix() for path in destination.rglob("*") if path.is_dir()} if destination.is_dir() else set()
+            actual_files = {path.relative_to(destination).as_posix() for path in destination.rglob("*") if path.is_file()} if destination.is_dir() else set()
+            for relative in sorted(expected_directories - actual_directories):
+                failures.append(f"{runtime}/{relative}: missing generated directory")
+            for relative in sorted(expected_files):
+                source = canonical / relative
+                copy = destination / relative
+                copy_name = f"{runtime}/{relative}"
+                if not copy.is_file():
                     failures.append(f"{copy_name}: missing generated copy")
-            elif not filecmp.cmp(source, copy, shallow=False):
-                failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
+                elif not filecmp.cmp(source, copy, shallow=False):
+                    failures.append(f"{copy_name}: differs from skills/{relative}")
+            for relative in sorted(actual_files - expected_files):
+                failures.append(f"{runtime}/{relative}: unexpected generated file")
+            for relative in sorted(actual_directories - expected_directories):
+                failures.append(f"{runtime}/{relative}: unexpected generated directory")
     return failures
 
 

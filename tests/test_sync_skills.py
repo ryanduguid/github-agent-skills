@@ -7,6 +7,13 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "sync-skills.ps1"
 NAME = "github-repository-audit"
+NAMES = (
+    "github-issue-to-pr",
+    "github-profile-curator",
+    "github-readme-polish",
+    "github-release-prep",
+    "github-repository-audit",
+)
 
 
 class SyncSkillsTests(unittest.TestCase):
@@ -64,6 +71,28 @@ class SyncSkillsTests(unittest.TestCase):
         result = self.run_sync("-Check")
 
         self.assertNotEqual(result.returncode, 0, result.stderr)
+
+    def test_sync_creates_exact_five_byte_identical_skill_trees(self):
+        shutil.rmtree(self.root / "skills")
+        for name in NAMES:
+            skill = self.root / "skills" / name
+            (skill / "SKILL.md").parent.mkdir(parents=True)
+            (skill / "SKILL.md").write_bytes(f"{name}\n".encode())
+            (skill / "references" / "check.bin").parent.mkdir()
+            (skill / "references" / "check.bin").write_bytes(b"\x00\xff\x10")
+
+        result = self.run_sync()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for runtime in (".agents/skills", ".claude/skills"):
+            destination = self.root / runtime
+            self.assertEqual({path.name for path in destination.iterdir()}, set(NAMES))
+            for source in (self.root / "skills").rglob("*"):
+                if source.is_file():
+                    self.assertEqual(
+                        (destination / source.relative_to(self.root / "skills")).read_bytes(),
+                        source.read_bytes(),
+                    )
 
 
 if __name__ == "__main__":

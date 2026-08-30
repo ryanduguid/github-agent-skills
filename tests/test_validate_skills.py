@@ -36,6 +36,18 @@ class ValidateSkillsTests(unittest.TestCase):
         self.write(Path("skills") / name / "SKILL.md", text)
         self.copies(name, text)
 
+    def valid_skill_set(self):
+        for name in (
+            "github-issue-to-pr",
+            "github-profile-curator",
+            "github-readme-polish",
+            "github-release-prep",
+            "github-repository-audit",
+        ):
+            text = SKILL.format(name=name, description="assessing a repository")
+            self.write(Path("skills") / name / "SKILL.md", text)
+            self.copies(name, text)
+
     def test_reports_missing_frontmatter_delimiters(self):
         self.write("skills/github-repository-audit/SKILL.md", "name: github-repository-audit\n")
 
@@ -128,6 +140,33 @@ class ValidateSkillsTests(unittest.TestCase):
                 "skills: missing required skill 'github-profile-curator'",
                 "skills: missing required skill 'github-readme-polish'",
                 "skills: missing required skill 'github-release-prep'",
+            ],
+        )
+
+    def test_strict_mode_requires_every_canonical_file_in_each_runtime(self):
+        self.valid_skill_set()
+        self.write("skills/github-repository-audit/references/checklist.md", "canonical\n")
+        self.write(".agents/skills/github-repository-audit/references/checklist.md", "canonical\n")
+
+        self.assertEqual(
+            validate(self.root, strict=True),
+            [
+                ".claude/skills/github-repository-audit/references: missing generated directory",
+                ".claude/skills/github-repository-audit/references/checklist.md: missing generated copy",
+            ],
+        )
+
+    def test_strict_mode_rejects_unexpected_runtime_files_and_directories(self):
+        self.valid_skill_set()
+        self.write(".agents/skills/github-repository-audit/extra.md", "extra\n")
+        self.write(".claude/skills/not-approved/SKILL.md", "extra\n")
+
+        self.assertEqual(
+            validate(self.root, strict=True),
+            [
+                ".agents/skills/github-repository-audit/extra.md: unexpected generated file",
+                ".claude/skills/not-approved/SKILL.md: unexpected generated file",
+                ".claude/skills/not-approved: unexpected generated directory",
             ],
         )
 
