@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import tempfile
@@ -19,6 +20,7 @@ NAMES = (
 class SyncSkillsTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
+        self.outside = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         script = self.root / "scripts" / "sync-skills.ps1"
         script.parent.mkdir()
@@ -29,6 +31,7 @@ class SyncSkillsTests(unittest.TestCase):
         self.run_sync()
 
     def tearDown(self):
+        self.outside.cleanup()
         self.tmp.cleanup()
 
     def run_sync(self, *args):
@@ -93,6 +96,30 @@ class SyncSkillsTests(unittest.TestCase):
                         (destination / source.relative_to(self.root / "skills")).read_bytes(),
                         source.read_bytes(),
                     )
+
+    def test_sync_rejects_symlinked_destination_before_mutating_external_files(self):
+        shutil.rmtree(self.root / ".agents")
+        outside_skill = Path(self.outside.name) / NAME / "SKILL.md"
+        outside_skill.parent.mkdir()
+        outside_skill.write_text("outside\n", encoding="utf-8")
+        agents = self.root / ".agents"
+        agents.mkdir()
+        try:
+            os.symlink(self.outside.name, agents / "skills", target_is_directory=True)
+        except OSError as error:
+            junction = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(agents / "skills"), self.outside.name],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if junction.returncode:
+                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+
+        result = self.run_sync()
+
+        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(outside_skill.read_text(encoding="utf-8"), "outside\n")
 
 
 if __name__ == "__main__":

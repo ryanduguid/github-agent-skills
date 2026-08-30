@@ -8,8 +8,18 @@ $approved = @('github-issue-to-pr', 'github-profile-curator', 'github-readme-pol
 $names = if (Test-Path -LiteralPath $source) { Get-ChildItem -LiteralPath $source -Directory | Where-Object Name -in $approved | ForEach-Object Name } else { @() }
 $destinations = @('.agents/skills', '.claude/skills') | ForEach-Object { [IO.Path]::GetFullPath((Join-Path $repo $_)) }
 
-foreach ($destination in $destinations) {
+function Assert-SafeDestination($destination) {
     if (-not $destination.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "Destination escapes repository: $destination" }
+    $relative = [IO.Path]::GetRelativePath($repo, $destination)
+    $current = $repo
+    foreach ($part in $relative -split '[\\/]') {
+        $current = Join-Path $current $part
+        if ((Test-Path -LiteralPath $current) -and ((Get-Item -Force -LiteralPath $current).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "Destination contains reparse point: $current" }
+    }
+}
+
+foreach ($destination in $destinations) {
+    Assert-SafeDestination $destination
     if ($Check) {
         $expectedDirectories = @($names)
         $expectedFiles = @()
