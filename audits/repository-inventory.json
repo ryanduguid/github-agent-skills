@@ -1,0 +1,941 @@
+{
+  "schema_version": "1.0",
+  "retrieval": {
+    "retrieved_at_utc": "2026-08-30T22:01:19.9184209Z",
+    "source_kind": "GitHub REST public user-repositories endpoint",
+    "source_url": "https://api.github.com/users/ryanduguid/repos?per_page=100&type=all&sort=full_name&direction=asc",
+    "read_only": true
+  },
+  "inventory_reconciliation": {
+    "plan_expected_repository_count": 42,
+    "public_repository_count": 39,
+    "authenticated_private_repository_count": null,
+    "total_reconciled_repository_count": null,
+    "unresolved_difference_from_plan_expected_count": 3,
+    "reconciliation_status": "The public endpoint returned 39 public repositories. It cannot enumerate private repositories; the three-record difference is not classified as private without authenticated evidence."
+  },
+  "privacy": {
+    "public_artifacts_name_public_repositories_only": true,
+    "private_repository_names_urls_paths_metadata_and_configuration_disclosed": false,
+    "private_portfolio_action": "private/no public action",
+    "private_count_status": "unavailable from the unauthenticated public endpoint"
+  },
+  "allowed_actions": [
+    "showcase",
+    "maintain",
+    "archive candidate",
+    "upstream fork",
+    "private/no public action",
+    "needs deeper review"
+  ],
+  "public_action_counts": {
+    "showcase": 5,
+    "maintain": 12,
+    "archive candidate": 1,
+    "upstream fork": 12,
+    "private/no public action": 0,
+    "needs deeper review": 9
+  },
+  "repositories": [
+    {
+      "name": "account-financial-reporting",
+      "repository_url": "https://github.com/ryanduguid/account-financial-reporting",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Financial reports for Odoo",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-28T19:20:32Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "account-reconcile",
+      "repository_url": "https://github.com/ryanduguid/account-reconcile",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Odoo account reconciliation modules (statements, data completion...)",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T16:55:00Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "accounting-excel-toolkit",
+      "repository_url": "https://github.com/ryanduguid/accounting-excel-toolkit",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Power Query and VBA utilities for Australian ledger work.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T08:58:57Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "ato-benchmark-compare",
+      "repository_url": "https://github.com/ryanduguid/ato-benchmark-compare",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Offline variance analysis against ATO small-business benchmarks.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:50:51Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "au-tax-legislation-corpus",
+      "repository_url": "https://github.com/ryanduguid/au-tax-legislation-corpus",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Provenance-rich corpus of in-force Commonwealth tax legislation.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:33:37Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          "CONTRIBUTING.md",
+          "workflow inventory including ci.yml and publish-live-evidence.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Deep-change priority only; this audit does not certify code, security or legal/financial correctness.",
+      "action": "showcase"
+    },
+    {
+      "name": "aus-accounting-mcp",
+      "repository_url": "https://github.com/ryanduguid/aus-accounting-mcp",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Local MCP server for Australian accounting review: ATO small-business benchmarks, Payday Super 2026, refused Division 7A and synthetic SBR fixtures. Not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T21:00:08Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          ".github/workflows/ci.yml",
+          ".github/workflows/codeql.yml",
+          "release/publish workflow inventory"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Deep-change priority only; this audit does not certify code, security or legal/financial correctness.",
+      "action": "showcase"
+    },
+    {
+      "name": "australian-accounting-power-bi",
+      "repository_url": "https://github.com/ryanduguid/australian-accounting-power-bi",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Source-controlled Power BI project for Australian accounting analytics, consolidation, ATO benchmarks and Payday Super review.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T13:12:48Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "australian-accounting-skills",
+      "repository_url": "https://github.com/ryanduguid/australian-accounting-skills",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Claude Code and Codex skills for Australian public-practice workflows. Not lodgment.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:30:54Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          "CONTRIBUTING.md",
+          "AGENTS.md",
+          "CLAUDE.md",
+          ".github/workflows/verify.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Deep-change priority only; this audit does not certify code, security or legal/financial correctness.",
+      "action": "showcase"
+    },
+    {
+      "name": "awesome-australian-accounting-tech",
+      "repository_url": "https://github.com/ryanduguid/awesome-australian-accounting-tech",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Curated open-source tools and engines for Australian computational accounting.",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T07:52:20Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "bank-statement-import",
+      "repository_url": "https://github.com/ryanduguid/bank-statement-import",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Bank Import Addons",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T23:15:38Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "beancount",
+      "repository_url": "https://github.com/ryanduguid/beancount",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Beancount: Double-Entry Accounting from Text Files.",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T00:16:15Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "DiogenesLamp",
+      "repository_url": "https://github.com/ryanduguid/DiogenesLamp",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Offline Yupoo catalogue archiver with a local virtualised viewer.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:24:53Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "div7a-loan-review",
+      "repository_url": "https://github.com/ryanduguid/div7a-loan-review",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "No public API description supplied.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T19:56:08Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "DrDebits",
+      "repository_url": "https://github.com/ryanduguid/DrDebits",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "APES 110-aligned and TPB Code guardrails for LLM-assisted Australian tax work. Not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T14:31:42Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "fava",
+      "repository_url": "https://github.com/ryanduguid/fava",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Fava - web interface for Beancount",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-28T23:52:25Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "FireFalcon",
+      "repository_url": "https://github.com/ryanduguid/FireFalcon",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Australian FP&A pack on openfpa (Jeff Brines / Guiderail): 30 June years, Xero AU, GST/BAS.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:28:13Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "hardhat-ledger",
+      "repository_url": "https://github.com/ryanduguid/hardhat-ledger",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Claude Code skills for Australian construction and mining subcontract ledgers.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T08:02:16Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "LedgerSMB",
+      "repository_url": "https://github.com/ryanduguid/LedgerSMB",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Double-entry accounting & ERP for the web",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-28T14:44:52Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "monthly-close-controls",
+      "repository_url": "https://github.com/ryanduguid/monthly-close-controls",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Deterministic monthly-close controls for Xero-shaped trial-balance exports, exception packs and human review.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:41:47Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          "CONTRIBUTING.md",
+          "workflow inventory including ci.yml and codeql.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Deep-change priority only; this audit does not certify code, security or legal/financial correctness.",
+      "action": "showcase"
+    },
+    {
+      "name": "openaccountants",
+      "repository_url": "https://github.com/ryanduguid/openaccountants",
+      "visibility": "public",
+      "fork": true,
+      "archived": true,
+      "repository_state": "fork; archived",
+      "purpose": "Archived historical fork of openaccountants/openaccountants. Not an authoritative tax source.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T05:50:30Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "Ozzit",
+      "repository_url": "https://github.com/ryanduguid/Ozzit",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "134 native Excel LAMBDA functions for AU modelling and GST arithmetic.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T16:48:06Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "SECURITY.md",
+          ".github/workflows/codeql.yml",
+          ".github/workflows/verify.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Deep-change priority only; this audit does not certify code, security or legal/financial correctness.",
+      "action": "showcase"
+    },
+    {
+      "name": "PaciolisCube",
+      "repository_url": "https://github.com/ryanduguid/PaciolisCube",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "An IBM Planning Analytics budgeting model published as source, with an offline engine that computes and tests it.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T11:08:49Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "payday-super-checker",
+      "repository_url": "https://github.com/ryanduguid/payday-super-checker",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Experimental tool for checking Payday Super timing and preparing exceptions for review.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T11:52:53Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "pyxero",
+      "repository_url": "https://github.com/ryanduguid/pyxero",
+      "visibility": "public",
+      "fork": true,
+      "archived": true,
+      "repository_state": "fork; archived",
+      "purpose": "Python API for accessing the REST API of the Xero accounting tool.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-27T03:09:03Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "release-policy",
+      "repository_url": "https://github.com/ryanduguid/release-policy",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Reusable release workflows, provenance attestation and Python packaging gates.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:37:30Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "requests-cache",
+      "repository_url": "https://github.com/ryanduguid/requests-cache",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Persistent HTTP cache for python requests",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T18:50:27Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "rest-application",
+      "repository_url": "https://github.com/ryanduguid/rest-application",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "Pledger.io is a \"self hosted\" application that helps in keeping track of your personal finances.",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-28T19:25:57Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "ryanduguid",
+      "repository_url": "https://github.com/ryanduguid/ryanduguid",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Open-source accounting tools for tax, payroll and financial reporting in Australia.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T07:52:18Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          "workflow inventory including banner-check.yml and link-check.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "ryanduguid.github.io",
+      "repository_url": "https://github.com/ryanduguid/ryanduguid.github.io",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Australian computational accounting - open-source engines, MCP servers, and AI agent workflows for Australian tax.",
+      "primary_language": "HTML",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:33:41Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Local documentary/configuration inspection; not a full code or security review.",
+      "local_evidence": {
+        "status": "inspected",
+        "scope": [
+          "README.md",
+          "LICENSE",
+          "SECURITY.md",
+          ".github/workflows/checks.yml"
+        ]
+      },
+      "presentation_value": "high",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "SolomonsSword",
+      "repository_url": "https://github.com/ryanduguid/SolomonsSword",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Division 6 trust allocation with s 100A risk zones and s 99B checks for Australian trusts. Not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:40:34Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "tax-radar-au",
+      "repository_url": "https://github.com/ryanduguid/tax-radar-au",
+      "visibility": "public",
+      "fork": false,
+      "archived": true,
+      "repository_state": "original; archived",
+      "purpose": "Synthetic change-review queue for Australian tax source metadata, with provenance on every entry.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T05:33:01Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Archived status is public; current presentation suitability was not assessed.",
+      "action": "archive candidate"
+    },
+    {
+      "name": "TaxJarvis",
+      "repository_url": "https://github.com/ryanduguid/TaxJarvis",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Open, evidence-first Australian tax developments for practising accountants and tax agents.",
+      "primary_language": "JavaScript",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T10:44:46Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "TheExchequerTally",
+      "repository_url": "https://github.com/ryanduguid/TheExchequerTally",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Corporate tax rate, franking account and Division 203 benchmark checks for Australian companies. Not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:37:53Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "TheWIPTally",
+      "repository_url": "https://github.com/ryanduguid/TheWIPTally",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Deterministic AASB 15 construction WIP schedule: cost-to-cost progress, constrained variations, over/under-billing, profit fade. Review aid, not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T13:26:01Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "candidate; evidence needed",
+      "risk": "Metadata-only assessment; inspect documentation, tests and scope before featuring.",
+      "action": "needs deeper review"
+    },
+    {
+      "name": "workpaper-review-gate",
+      "repository_url": "https://github.com/ryanduguid/workpaper-review-gate",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Stop incomplete workpapers reaching manager review. Deterministic readiness gate for Australian public-practice packs. Not advice.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:44:29Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "xero-command-line",
+      "repository_url": "https://github.com/ryanduguid/xero-command-line",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "A command-line interface tool for the Xero API",
+      "primary_language": null,
+      "maintenance_recency": {
+        "last_push_at": "2026-08-29T01:43:44Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "xero-ledger-review-gate",
+      "repository_url": "https://github.com/ryanduguid/xero-ledger-review-gate",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Local, zero-network Xero ledger review gate for deterministic trial-balance variance review and human reviewer evidence.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:50:56Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    },
+    {
+      "name": "xero-mcp-server",
+      "repository_url": "https://github.com/ryanduguid/xero-mcp-server",
+      "visibility": "public",
+      "fork": true,
+      "archived": false,
+      "repository_state": "fork; active",
+      "purpose": "An MCP server that integrates with the MCP protocol. https://modelcontextprotocol.io/introduction",
+      "primary_language": "TypeScript",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T06:34:08Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "low",
+      "risk": "Upstream is the authority; do not treat this fork as a first-party showcase.",
+      "action": "upstream fork"
+    },
+    {
+      "name": "xero-trial-balance-export",
+      "repository_url": "https://github.com/ryanduguid/xero-trial-balance-export",
+      "visibility": "public",
+      "fork": false,
+      "archived": false,
+      "repository_state": "original; active",
+      "purpose": "Export reconciled Xero trial balances to validated CSV for Power BI, Excel and pandas.",
+      "primary_language": "Python",
+      "maintenance_recency": {
+        "last_push_at": "2026-08-30T20:36:52Z",
+        "assessment": "Current at retrieval: pushed within four days of the API retrieval timestamp."
+      },
+      "inspection_depth": "Public GitHub REST metadata only; no local deep inspection.",
+      "local_evidence": {
+        "status": "not locally inspected",
+        "scope": []
+      },
+      "presentation_value": "medium",
+      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "action": "maintain"
+    }
+  ]
+}
