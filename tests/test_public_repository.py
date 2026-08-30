@@ -68,7 +68,13 @@ class PublicFileScannerTests(unittest.TestCase):
         path.write_bytes(content)
         return Path(relative)
 
-    def test_rejects_unsafe_content_without_echoing_it(self):
+    def test_allows_public_github_url_and_rejects_unsafe_content_without_echoing_it(self):
+        public_url = self.write(
+            "public-source.md",
+            b"https://api.github.com/users/ryanduguid/repos?per_page=100&type=all&sort=full_name&direction=asc\n",
+        )
+        self.assertEqual(public_files.scan_paths(self.root, [public_url]), [])
+
         checks = (
             ("a", "notes/transcript.txt", b"transcripts" + b"/session-42.txt\n", "transcript-path"),
             ("b", "notes.txt", b".superpowers/sdd/run" + b"/raw/output.txt\n", "raw-sdd-path"),
@@ -89,6 +95,19 @@ class PublicFileScannerTests(unittest.TestCase):
             ("q", "notes.json", ("{\"to" + "ken\"" + ":\"do-not-echo\"}").encode(), "credential-assignment"),
             ("r", "notes.toml", ("\"access" + "_key\"" + " = \"do-not-echo\"").encode(), "credential-assignment"),
             ("s", "notes.yaml", ("'client" + "_secret'" + ": 'do-not-echo'").encode(), "credential-assignment"),
+            ("t", "notes.txt", ("C:" + "/" + "Users/Pat/notes").encode(), "private-user-path"),
+            ("u", "notes.txt", ("file:" + "///" + "Users/pat/notes").encode(), "private-user-path"),
+            ("v", "notes.txt", ("https://example.test/download?path=" + "/" + "home/pat/notes").encode(), "private-user-path"),
+            (
+                "w",
+                "notes.txt",
+                (
+                    "https://api.github.com/users/ryanduguid/repos\nLocal copy: "
+                    + "C:"
+                    + "\\Users\\Pat\\notes"
+                ).encode(),
+                "private-user-path",
+            ),
         )
 
         for name, relative, content, rule in checks:

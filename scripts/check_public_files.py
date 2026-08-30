@@ -25,7 +25,7 @@ CLIENT_DATA_PATH = re.compile(r"(?:^|/)(?:clients?|customers?)(?:/|$)|(?:^|/)(?:
 TEXT_RULES = (
     ("transcript-path", re.compile(r"(?:^|[\s/\\])(?:transcripts?|sessions?)[/\\][^\s]+", re.IGNORECASE)),
     ("raw-sdd-path", re.compile(r"\.superpowers[/\\]sdd[/\\][^/\\*\s]+[/\\]raw[/\\]", re.IGNORECASE)),
-    ("private-user-path", re.compile(r"(?:[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|/(?:home|Users)/)[^/\\\s]+", re.IGNORECASE)),
+    ("private-user-path", re.compile(r"(?:[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|(?<![A-Za-z0-9])/(?:home|Users)/)[^/\\\s]+", re.IGNORECASE)),
     ("credential-assignment", re.compile(r"(?<![A-Za-z0-9_-])['\"]?(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key|(?!(?:public|example)[_-]?key\b)[A-Za-z0-9-]+[_-]key)['\"]?\s*[:=]\s*['\"]?\S+", re.IGNORECASE)),
     ("client-data", re.compile(r"^\s*(?:client|customer)[_-]?(?:data|records?|export|file|id|name)\s*[:=]", re.IGNORECASE | re.MULTILINE)),
 )
