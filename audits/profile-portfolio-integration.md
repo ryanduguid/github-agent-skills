@@ -22,10 +22,11 @@ toolkit content, not as an independently resolving public link today.
 | Toolkit `github-agent-skills` content | `codex/github-agent-skills` | `fbb28060c0ededb00a6206e1fc8c507e17c27cdb` | The locally verified content parent included in the pending wave. |
 
 The toolkit checkpoint above deliberately names the content parent, not this
-audit's resulting commit. A Git commit object cannot contain its own final
-object ID because the file contents determine that ID. The final audit commit
-is recorded in the SDD task report and must be confirmed at the publication
-boundary alongside `fbb28060c0ededb00a6206e1fc8c507e17c27cdb`.
+amendment's resulting commit. A Git commit object cannot contain its own final
+object ID because the file contents determine that ID. The prior audit commit
+is `713907317e3edacbae009ddf7c93e60ed875d20b`; this amendment's final commit
+is recorded in the SDD task report. The external candidate is that ordered
+audit pair on top of `fbb28060c0ededb00a6206e1fc8c507e17c27cdb`.
 
 ## Cross-surface review
 
@@ -72,6 +73,7 @@ means success.
 | `npm ci` | Passed: 331 packages added and 332 audited; lockfile unchanged. npm repeated seven existing audit findings: one moderate and six high. It also reported four deprecated transitive packages. |
 | `npm run test:capture` | Passed: 2 tests. |
 | `npm run test:browser` | Passed: 70 tests, 4 skipped. The Windows local server logged two client-aborted connections, but Playwright completed successfully. |
+| `npm run test:lighthouse` | Passed with final exit code 0. Pretest passed 5 of 5 tests; Lighthouse completed 3 runs for each of 4 URLs, processed 12 results and wrote 12 local reports. |
 | `git diff --check` and `git diff --exit-code` | Passed: clean worktree. |
 
 ### Toolkit publication set
@@ -95,15 +97,23 @@ metadata change, pin change, or browser-side public edit, confirm the exact
 local state again:
 
 1. `ryanduguid`, branch `codex/profile-agent-skills`, checkpoint
-   `b45ca45aa753e4297b73f6d9528f3c2f1f5f600e`: no profile content or pin
-   mutation is proposed.
-2. `ryanduguid.github.io`, branch `codex/site-agent-skills`, checkpoint
-   `fcc38c6aca97a774d6702f135cb1c643043653e0`: publish only together with
-   the toolkit repository so its new URL becomes valid.
-3. `github-agent-skills`, branch `codex/github-agent-skills`, content parent
-   `fbb28060c0ededb00a6206e1fc8c507e17c27cdb` plus this audit's final commit:
-   confirm the final commit ID, target repository ownership, remote state and
-   publication order at that boundary.
+   `b45ca45aa753e4297b73f6d9528f3c2f1f5f600e`: no profile push, content
+   mutation or pin mutation is proposed.
+2. Confirm authority to create, or confirm existing ownership of, the public
+   `ryanduguid/github-agent-skills` repository. This local toolkit has no
+   configured remote today. Only after that confirmation, configure `origin`
+   as `https://github.com/ryanduguid/github-agent-skills.git`.
+3. Confirm the complete toolkit candidate: content parent
+   `fbb28060c0ededb00a6206e1fc8c507e17c27cdb`, prior audit
+   `713907317e3edacbae009ddf7c93e60ed875d20b`, and this amendment's final
+   commit recorded in the SDD task report. Publish that final local candidate
+   from `codex/github-agent-skills` to public `main`.
+4. Verify the public repository URL and its public README resolve after the
+   toolkit publication. Do not treat the current HTTP 404 as a valid public
+   destination.
+5. Only after step 4 succeeds, publish or deploy
+   `ryanduguid.github.io`, branch `codex/site-agent-skills`, checkpoint
+   `fcc38c6aca97a774d6702f135cb1c643043653e0`.
 
 No push, repository creation, deployment, metadata edit, pin edit, OAuth
 consent or browser-side public action occurred during this audit.
