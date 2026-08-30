@@ -68,6 +68,8 @@ class PublicFileScannerTests(unittest.TestCase):
             ("k", "notes.txt", ("client" + "_secret" + " = " + "do-not-echo").encode(), "credential-assignment"),
             ("l", "notes.txt", ("private" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
             ("m", "notes.txt", ("client" + "_data" + ": " + "do-not-echo").encode(), "client-data"),
+            ("n", "notes.txt", ("stripe" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("o", "notes.txt", ("customer" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
         )
 
         for name, relative, content, rule in checks:
@@ -97,6 +99,11 @@ class PublicFileScannerTests(unittest.TestCase):
             [f"{path.as_posix()}: client-data" for path in paths],
         )
         self.assertEqual(public_files.scan_paths(self.root, [policy]), [])
+
+    def test_allows_public_key_policy_example(self):
+        path = self.write("policy.md", ("public" + "_key" + " = " + "example-value").encode())
+
+        self.assertEqual(public_files.scan_paths(self.root, [path]), [])
 
     def test_rejects_undecodable_text(self):
         path = self.write("notes.txt", b"note=\xffvalue\n")
