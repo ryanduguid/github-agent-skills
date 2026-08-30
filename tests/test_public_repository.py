@@ -18,32 +18,22 @@ class PublicRepositoryTests(unittest.TestCase):
 
         self.assertEqual(check(ROOT, readme), [])
 
-    def test_quick_start_rejects_invalid_command_targets(self):
+    def test_quick_start_rejects_any_command_list_change(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        check = getattr(public_files, "quick_start_failures", lambda *_: [])
-        mutations = (
-            (
-                "git clone https://github.com/ryanduguid/github-agent-skills.git",
-                "git clone https://github.com/ryanduguid/missing-skills.git",
-            ),
-            ("cd github-agent-skills", "cd missing-skills"),
-            ("pwsh -File scripts/sync-skills.ps1", "pwsh -File scripts/missing.ps1"),
-            ("-s tests -v", "-s missing-tests -v"),
-            ("python scripts/validate_skills.py --strict", "python scripts/missing.py --strict"),
-        )
+        commands = public_files.quick_start_commands(readme)
+        mutations = {
+            "wrong clone": ["git clone https://github.com/ryanduguid/missing-skills.git", *commands[1:]],
+            "wrong directory": [commands[0], "cd missing-skills", *commands[2:]],
+            "extra operand": [*commands[:4], commands[4] + " --input missing.json", *commands[5:]],
+            "omitted line": commands[:4] + commands[5:],
+            "reordered line": [commands[1], commands[0], *commands[2:]],
+            "unknown command": [*commands, "python scripts/missing.py"],
+        }
 
-        for source, replacement in mutations:
-            with self.subTest(replacement=replacement):
-                self.assertTrue(check(ROOT, readme.replace(source, replacement)))
-
-    def test_quick_start_accepts_an_existing_python_script_target(self):
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        check = public_files.quick_start_failures
-
-        self.assertEqual(
-            check(ROOT, readme.replace("python scripts/validate_skills.py --strict", "python scripts/check_public_files.py")),
-            [],
-        )
+        for name, changed in mutations.items():
+            with self.subTest(name=name):
+                changed_readme = readme.replace("\n".join(commands), "\n".join(changed))
+                self.assertTrue(public_files.quick_start_failures(ROOT, changed_readme))
 
     def test_tracked_text_has_no_public_safety_failures(self):
         self.assertEqual(public_files.tracked_failures(ROOT), [])
@@ -64,17 +54,23 @@ class PublicFileScannerTests(unittest.TestCase):
         return Path(relative)
 
     def test_rejects_unsafe_content_without_echoing_it(self):
-        checks = {
-            "transcript": ("notes/transcript.txt", b"transcripts" + b"/session-42.txt\n", "transcript-path"),
-            "raw-sdd": ("notes.txt", b".superpowers/sdd/run" + b"/raw/output.txt\n", "raw-sdd-path"),
-            "windows": ("notes.txt", ("C:" + "\\Users\\Pat\\notes").encode(), "private-user-path"),
-            "posix": ("notes.txt", ("/" + "home/pat/notes").encode(), "private-user-path"),
-            "macos": ("notes.txt", ("/" + "Users/pat/notes").encode(), "private-user-path"),
-            "credential": ("notes.txt", ("api" + "_key = " + "do-not-echo").encode(), "credential-assignment"),
-            "client": ("notes.txt", ("client" + "_data: " + "do-not-echo").encode(), "client-data"),
-        }
+        checks = (
+            ("a", "notes/transcript.txt", b"transcripts" + b"/session-42.txt\n", "transcript-path"),
+            ("b", "notes.txt", b".superpowers/sdd/run" + b"/raw/output.txt\n", "raw-sdd-path"),
+            ("c", "notes.txt", ("C:" + "\\Users\\Pat\\notes").encode(), "private-user-path"),
+            ("d", "notes.txt", ("/" + "home/pat/notes").encode(), "private-user-path"),
+            ("e", "notes.txt", ("/" + "Users/pat/notes").encode(), "private-user-path"),
+            ("f", "notes.txt", ("db" + "_password" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("g", "notes.txt", ("deploy" + "_secret" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("h", "notes.txt", ("auth" + "_token" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("i", "notes.txt", ("api" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("j", "notes.txt", ("access" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("k", "notes.txt", ("client" + "_secret" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("l", "notes.txt", ("private" + "_key" + " = " + "do-not-echo").encode(), "credential-assignment"),
+            ("m", "notes.txt", ("client" + "_data" + ": " + "do-not-echo").encode(), "client-data"),
+        )
 
-        for name, (relative, content, rule) in checks.items():
+        for name, relative, content, rule in checks:
             with self.subTest(name=name):
                 path = self.write(relative, content)
                 failures = public_files.scan_paths(self.root, [path])
@@ -82,14 +78,37 @@ class PublicFileScannerTests(unittest.TestCase):
                 self.assertNotIn("do-not-echo", "\n".join(failures))
 
     def test_rejects_private_configuration_paths(self):
-        path = self.write(".env", b"safe placeholder\n")
+        paths = [
+            self.write(relative, b"safe placeholder\n")
+            for relative in (".env", ".netrc", ".npmrc", "credentials.json", ".ssh/config", ".aws/credentials", "home/pat/.config/settings")
+        ]
 
-        self.assertEqual(public_files.scan_paths(self.root, [path]), [".env: private-config"])
+        self.assertEqual(
+            public_files.scan_paths(self.root, paths),
+            [f"{path.as_posix()}: private-config" for path in paths],
+        )
+
+    def test_rejects_client_customer_data_paths_but_not_policy_prose(self):
+        paths = [self.write("client-data.csv", b"safe\n"), self.write("exports/customer_records.csv", b"safe\n")]
+        policy = self.write("policy.md", b"Do not submit customer data or client records.\n")
+
+        self.assertEqual(
+            public_files.scan_paths(self.root, paths),
+            [f"{path.as_posix()}: client-data" for path in paths],
+        )
+        self.assertEqual(public_files.scan_paths(self.root, [policy]), [])
 
     def test_rejects_undecodable_text(self):
         path = self.write("notes.txt", b"note=\xffvalue\n")
 
         self.assertEqual(public_files.scan_paths(self.root, [path]), ["notes.txt: undecodable-text"])
+
+    def test_scans_bom_marked_utf16_and_flags_unclassifiable_nul_text(self):
+        utf16 = self.write("utf16.txt", ("api" + "_key" + " = " + "do-not-echo").encode("utf-16"))
+        nul_text = self.write("embedded-null.txt", b"note=\0value\n")
+
+        self.assertEqual(public_files.scan_paths(self.root, [utf16]), ["utf16.txt: credential-assignment"])
+        self.assertEqual(public_files.scan_paths(self.root, [nul_text]), ["embedded-null.txt: unclassifiable-text"])
 
 
 class WorkflowTests(unittest.TestCase):

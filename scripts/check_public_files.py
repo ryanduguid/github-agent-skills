@@ -10,15 +10,24 @@ from pathlib import Path
 
 CLONE_URL = "https://github.com/ryanduguid/github-agent-skills.git"
 REPOSITORY_NAME = "github-agent-skills"
+SUPPORTED_QUICK_START = (
+    f"git clone {CLONE_URL}",
+    f"cd {REPOSITORY_NAME}",
+    "pwsh -File scripts/sync-skills.ps1",
+    "python -m unittest discover -s tests -v",
+    "python scripts/validate_skills.py --strict",
+    "pwsh -File scripts/sync-skills.ps1 -Check",
+)
 QUICK_START = re.compile(r"^## Quick start\s*$([\s\S]*?)(?=^## |\Z)", re.MULTILINE)
 FENCED_COMMANDS = re.compile(r"```(?:powershell|shell)\n([\s\S]*?)```")
-PRIVATE_CONFIG = re.compile(r"(?:^|/)(?:\.env(?:\.[^/]+)?|\.netrc|\.npmrc|credentials(?:\.[^/]+)?)$", re.IGNORECASE)
+PRIVATE_CONFIG = re.compile(r"(?:^|/)(?:\.env(?:\.[^/]+)?|\.netrc|\.npmrc|credentials(?:\.[^/]+)?|\.(?:ssh|aws)(?:/|$)|(?:home|Users)/[^/]+/\.config(?:/|$))", re.IGNORECASE)
+CLIENT_DATA_PATH = re.compile(r"(?:^|/)(?:clients?|customers?)(?:/|$)|(?:^|/)(?:client|customer)[_-](?:data|records?|export|files?)(?:[._-]|$)", re.IGNORECASE)
 TEXT_RULES = (
     ("transcript-path", re.compile(r"(?:^|[\s/\\])(?:transcripts?|sessions?)[/\\][^\s]+", re.IGNORECASE)),
     ("raw-sdd-path", re.compile(r"\.superpowers[/\\]sdd[/\\][^/\\*\s]+[/\\]raw[/\\]", re.IGNORECASE)),
     ("private-user-path", re.compile(r"(?:[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|/(?:home|Users)/)[^/\\\s]+", re.IGNORECASE)),
-    ("credential-assignment", re.compile(r"\b(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password)\b\s*[:=]\s*\S+", re.IGNORECASE)),
-    ("client-data", re.compile(r"\bclient[_-]?(?:data|records?|export|file)\b\s*[:=]", re.IGNORECASE)),
+    ("credential-assignment", re.compile(r"\b(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key)\b\s*[:=]\s*\S+", re.IGNORECASE)),
+    ("client-data", re.compile(r"^\s*(?:client|customer)[_-]?(?:data|records?|export|file|id|name)\s*[:=]", re.IGNORECASE | re.MULTILINE)),
 )
 
 
@@ -35,33 +44,8 @@ def quick_start_commands(readme: str) -> list[str]:
 
 
 def quick_start_failures(root: Path, readme: str) -> list[str]:
-    commands = quick_start_commands(readme)
-    if not commands:
-        return ["README.md: missing Quick start commands"]
-    failures = []
-    for command in commands:
-        parts = command.split()
-        if parts == ["git", "clone", CLONE_URL] or parts == ["cd", REPOSITORY_NAME]:
-            continue
-        if parts[:4] == ["python", "-m", "unittest", "discover"]:
-            try:
-                target = parts[parts.index("-s") + 1]
-            except (ValueError, IndexError):
-                failures.append(f"README.md: invalid unittest command: {command}")
-            else:
-                if not (root / target).is_dir():
-                    failures.append(f"README.md: missing test target: {target}")
-            continue
-        if len(parts) >= 2 and parts[0] == "python" and parts[1].endswith(".py"):
-            if not (root / parts[1]).is_file():
-                failures.append(f"README.md: missing Python script: {parts[1]}")
-            continue
-        if parts[:2] == ["pwsh", "-File"] and len(parts) >= 3:
-            if not (root / parts[2]).is_file():
-                failures.append(f"README.md: missing PowerShell script: {parts[2]}")
-            continue
-        failures.append(f"README.md: unsupported Quick start command: {command}")
-    return failures
+    del root
+    return [] if tuple(quick_start_commands(readme)) == SUPPORTED_QUICK_START else ["README.md: Quick start commands differ from the supported list"]
 
 
 def tracked_paths(root: Path) -> list[Path]:
@@ -70,10 +54,24 @@ def tracked_paths(root: Path) -> list[Path]:
 
 
 def looks_like_text(content: bytes) -> bool:
-    if not content or b"\0" in content:
+    if not content:
         return False
     printable = sum(byte in (9, 10, 13) or 32 <= byte <= 126 for byte in content)
     return printable / len(content) >= 0.8
+
+
+def decoded_text(content: bytes) -> tuple[str | None, str | None]:
+    if content.startswith((b"\xff\xfe", b"\xfe\xff")):
+        try:
+            return content.decode("utf-16"), None
+        except UnicodeDecodeError:
+            return None, "unclassifiable-text"
+    if b"\0" in content:
+        return (None, "unclassifiable-text") if looks_like_text(content.replace(b"\0", b"")) else (None, None)
+    try:
+        return content.decode("utf-8"), None
+    except UnicodeDecodeError:
+        return (None, "undecodable-text") if looks_like_text(content) else (None, None)
 
 
 def scan_paths(root: Path, paths: list[Path]) -> list[str]:
@@ -83,12 +81,15 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
         if PRIVATE_CONFIG.search(relative):
             failures.append(f"{relative}: private-config")
             continue
+        if CLIENT_DATA_PATH.search(relative):
+            failures.append(f"{relative}: client-data")
+            continue
         content = (root / path).read_bytes()
-        try:
-            text = content.decode("utf-8")
-        except UnicodeDecodeError:
-            if looks_like_text(content):
-                failures.append(f"{relative}: undecodable-text")
+        text, decoding_failure = decoded_text(content)
+        if decoding_failure:
+            failures.append(f"{relative}: {decoding_failure}")
+            continue
+        if text is None:
             continue
         for rule, pattern in TEXT_RULES:
             if pattern.search(text):
