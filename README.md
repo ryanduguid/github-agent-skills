@@ -25,6 +25,7 @@ cd github-agent-skills
 pwsh -File scripts/sync-skills.ps1
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
+python scripts/check_public_files.py
 pwsh -File scripts/sync-skills.ps1 -Check
 ```
 
