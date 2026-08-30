@@ -15,11 +15,13 @@ retains its viewer wording mismatch. The affected runtime and baseline-test
 files are byte-unchanged across their reviewed ranges, the failure counts match
 the earlier task evidence, and the new guidance tests pass.
 
-The integrated set is not publication-ready because the toolkit public-file
-gate rejects two Task 1 inventory artifacts, as detailed below. This review
+The scanner false positive and the plan's fixed-total assumption have now been
+corrected in two separately scoped toolkit commits. The complete integrated
+verification was then replayed at the same five showcase heads. The set is
+locally publication-ready, subject to action-time confirmation of remote
+ancestry, hosted checks and then-current public account evidence. This review
 authorises no push, publication, tag, release, repository creation, remote
-configuration or GitHub setting change. The exact local commit set is retained
-below for review and a later fix loop, not for immediate publication.
+configuration or GitHub setting change.
 
 ## Exact reviewed checkpoints
 
@@ -30,7 +32,7 @@ below for review and a later fix loop, not for immediate publication.
 | `aus-accounting-mcp` | `c140f78ef4b2c4cad7d3631f2ad090efc426e7cd` | `ea23b9fe6240a885e9aada0f75a0b6e4435f968c` | `911d8d730b6538527a600ff849c1c4991d60e97c`, `ea23b9fe6240a885e9aada0f75a0b6e4435f968c` | `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `tests/test_repository_guidance.py` |
 | `au-tax-legislation-corpus` | `1844b865dab04267645d74a8ad1c1fb8f3a4a7db` | `55de4ac49bf21f5d64e858eea80d67377bd6fccc` | `53ad362bf71e3d8c2c4b7667a18a49221e18432f`, `1594a1086ca3a30b4f694aadc0a568cc723133f3`, `55de4ac49bf21f5d64e858eea80d67377bd6fccc` | `AGENTS.md`, `CLAUDE.md`, `tests/radar/test_repository_guidance.py` |
 | `monthly-close-controls` | `d14d39741219387a929f68a4bbba8a4e844a7c13` | `184e8e72dd6a8d56556791904d453779308e019b` | `184e8e72dd6a8d56556791904d453779308e019b` | `AGENTS.md`, `CLAUDE.md`, `tests/test_repository_guidance.py` |
-| `github-agent-skills` audit content | prior reviewed history through `4fac42cdb70fb9c6e4bad4e1fa1dec876bf0bb8f` | this audit commit | one audit-only commit | `audits/showcase-hardening-review.md` only |
+| `github-agent-skills` review content | `4fac42cdb70fb9c6e4bad4e1fa1dec876bf0bb8f` | `387a720c54c6f463ba1bec8965d329c9ad62a6c3` | `8d5e3836d2e7caf6ea8891b82090f89aa30bb7a0`, `b71afdce82915802f389e6a2fb0ea7e28cff2503`, `387a720c54c6f463ba1bec8965d329c9ad62a6c3` | `audits/showcase-hardening-review.md`, `docs/superpowers/plans/2026-08-31-showcase-repository-hardening.md`, `scripts/check_public_files.py`, `tests/test_public_repository.py` |
 
 For every repository range, `git merge-base --is-ancestor <base> <head>`
 exited 0. Before testing and again after testing, each supplied head was checked
@@ -39,12 +41,15 @@ out and `git status --short --untracked-files=all`, `git diff --exit-code` and
 
 ### Toolkit content parent and audit-commit self-reference
 
-`4fac42cdb70fb9c6e4bad4e1fa1dec876bf0bb8f` is the exact toolkit content parent
-reviewed before this file was added. A Git commit cannot contain its own final
-object ID because inserting that ID changes the object being named. Therefore
-this file records the content parent and the exact audit-only commit scope. The
-resulting audit commit ID is recorded in the ignored Task 7 report and must be
-included in the later action-time handoff.
+`4fac42cdb70fb9c6e4bad4e1fa1dec876bf0bb8f` was the exact toolkit content
+parent before the initial audit-only commit
+`8d5e3836d2e7caf6ea8891b82090f89aa30bb7a0`. The scanner fix and plan
+amendment then produced content parent
+`387a720c54c6f463ba1bec8965d329c9ad62a6c3` for this closing audit amendment.
+A Git commit cannot contain its own final object ID because inserting that ID
+changes the object being named. Therefore this file records the exact parent
+and audit-only scope; the resulting closing-audit commit ID is recorded in the
+ignored Task 7 report and must be included in the action-time handoff.
 
 ## Independent diff and boundary review
 
@@ -53,7 +58,7 @@ check compared `git diff --name-only <base> <head>` with the approved paths in
 the table above; all five comparisons passed. `git diff --check <base> <head>`
 and `git show --check --format= <head>` also exited 0 for every repository.
 
-No reviewed range changes:
+No five-showcase-repository range changes:
 
 - a GitHub Actions workflow, action pin or permissions block;
 - a dependency, lockfile, package manifest or supported runtime;
@@ -66,6 +71,11 @@ No reviewed range changes:
 The build checks created only ignored local build outputs. No generated output
 was added to or changed in a reviewed commit, and every tracked worktree
 remained clean after the checks.
+
+The authorised toolkit follow-up changes only the scanner, its regression
+coverage, this audit and the Task 1 plan interface. It changes no workflow,
+dependency, lockfile, badge, release or security policy, showcase runtime,
+public product claim, raw capture, client data or tracked generated artifact.
 
 The three known Windows defect seams were checked directly with
 `git diff --quiet <base> <head> -- <affected paths>` and all exited 0:
@@ -224,8 +234,8 @@ The full Windows suite used the task-report-safe temporary base:
 
 ```powershell
 $env:UV_PYTHON='3.12'
-$task7Pytest = Join-Path ([System.IO.Path]::GetTempPath()) ("tax-radar-task7-" + [guid]::NewGuid().ToString("N"))
-uv run --locked --extra dev pytest tests --basetemp $task7Pytest
+$task7FixPytest = Join-Path ([System.IO.Path]::GetTempPath()) ("tax-radar-task7-fix-" + [guid]::NewGuid().ToString("N"))
+uv run --locked --extra dev pytest tests --basetemp $task7FixPytest
 ```
 
 Both red commands reach the unchanged live-evidence promotion seam and surface
@@ -274,44 +284,71 @@ publication action.
 
 ## Toolkit verification
 
-The public repository's Quick start verification commands, public-file scan
-and diff check were run after this audit was staged so the scanner included it:
+The false positive was reproduced before the production edit. This focused RED
+command ran one test and failed because the exact public GitHub REST
+user-repositories URL was reported as `private-user-path`:
+
+```powershell
+python -m unittest tests.test_public_repository.PublicFileScannerTests.test_allows_public_github_user_url_but_rejects_rooted_private_paths -v
+```
+
+Commit `b71afdce82915802f389e6a2fb0ea7e28cff2503` applies the minimal scanner
+change: the POSIX user-root alternative now requires a non-alphanumeric root
+boundary. It does not exempt HTTP content globally. Its regression matrix
+allows only the exact public API URL while continuing to reject Windows user
+roots with either separator, POSIX home and root-level user paths, file URIs,
+local paths embedded in URL query/path values, and a mixed payload containing
+both the public URL and a real local path. The focused GREEN command passed:
+
+```powershell
+python -m unittest tests.test_public_repository.PublicFileScannerTests.test_allows_public_github_url_and_rejects_unsafe_content_without_echoing_it -v
+```
+
+Commit `387a720c54c6f463ba1bec8965d329c9ad62a6c3` separately amends the Task 1
+plan interface. It requires the complete currently observable public inventory
+and an authenticated private aggregate only when available; it forbids assuming
+a fixed total and forbids publishing private rows. The existing account audit
+and JSON retain their historical 42-to-39 reconciliation unchanged.
+
+The public repository's complete local verification set was run after both
+commits and again after this audit amendment was staged so the scanner included
+it:
 
 ```powershell
 python -m unittest discover -s tests -v
+python -m unittest tests.test_public_repository -v
+python scripts/validate_skills.py
 python scripts/validate_skills.py --strict
 pwsh -File scripts/sync-skills.ps1 -Check
 python scripts/check_public_files.py
 git diff --cached --check
 ```
 
-Final results: strict validation, sync-drift and staged diff checks exited 0.
-The unit suite ran 35 tests and exited 1 with 1 failure; the direct public-file
-scan also exited 1 with 2 findings. Both commands report the same scanner false
-positive: the case-insensitive `private-user-path` rule treats the public
-GitHub REST user-repositories endpoint segment plus the public account name as
-a local user directory in
-`audits/2026-08-31-account-repository-audit.md` and
-`audits/repository-inventory.json`. Both files and the triggering URL are
-present at the Task 7 toolkit content parent, but were introduced by Task 1
-commit `f61b9c61f7a91cf74578afc4e2297a014607e2ba` relative to the showcase
-base `11fc9e4ef26d37595f42574f4d96643e309cacc4`. They are therefore part of
-the integrated showcase range, not an unrelated baseline. The newly staged
-integrated audit adds no public-file finding. The toolkit Quick start/public-
-file set is not green, and publication readiness is blocked pending a separate
-scanner/test fix.
+Final results: the complete unit suite passed 35 tests; the public-repository
+module passed 14 tests; incremental and strict validation, sync-drift, direct
+public-file scanning and staged diff checks all exited 0. The prior false
+positive was introduced by Task 1 commit
+`f61b9c61f7a91cf74578afc4e2297a014607e2ba` relative to showcase base
+`11fc9e4ef26d37595f42574f4d96643e309cacc4`, not inherited from the
+pre-showcase baseline. The focused regression and full public-file gate now
+prove it is fixed without weakening rejection of private paths.
 
 ## Public account inventory discrepancy
 
-The existing public audit remains intentionally incomplete at the account
-total. The public GitHub REST endpoint returned 39 unique public repositories,
-while the implementation plan expected 42 records. No authenticated private
-aggregate was available. The difference of three is unresolved and is not
-attributed to private repositories. No private repository name, URL, path,
-metadata or configuration is present in the public inventory or this review.
+The preserved Task 1 evidence records a historical expectation of 42 followed
+by 39 unique repositories returned by the unauthenticated public endpoint. No
+authenticated private aggregate was available. The difference of three is
+unresolved and is not attributed to private repositories. No private repository
+name, URL, path, metadata or configuration is present in the public inventory
+or this review.
 
-That discrepancy is a current residual risk for any future account-wide
-completeness claim. It does not change the exact five-repository hardening set.
+The amended plan no longer treats 42 as a required input or assumes any fixed
+account total. Its publication unit is the complete public inventory observable
+at collection time; a private count is an aggregate action input only when
+authenticated evidence is available and private rows are never public. The
+retained 39-public/unknown-private boundary is a residual limitation on any
+account-wide completeness claim, but does not change the exact five-repository
+hardening set.
 
 ## Residual risks and stop-before-push boundary
 
@@ -325,17 +362,14 @@ completeness claim. It does not change the exact five-repository hardening set.
   current remote default-branch ancestry.
 - The PATH `uv` 0.12.6 versus installed Python-module `uv` 0.12.0 distinction
   prevents a claim that every local `uv` process used the hosted pin.
-- The toolkit unit/public-file gate currently rejects the public GitHub REST
-  user-repositories endpoint in the two Task 1 inventory artifacts as a private
-  user path. This entered the integrated range in `f61b9c6`; strict validation,
-  runtime-copy sync and the audit diff pass, but the complete toolkit check set
-  is not green and the publication set is blocked pending a fix.
-- The public account inventory remains 39 observed records versus 42 expected,
-  with the difference unresolved.
+- The saved public account inventory contains 39 observed records. The current
+  private aggregate is unknown, and public/private account completeness must be
+  confirmed from then-current evidence at action time; no fixed total may be
+  assumed.
 
 No push, publication, release, tag, remote change, repository creation or
-GitHub setting mutation has been performed. Do not advance to an external-write
-handoff until the toolkit scanner/test blocker has been fixed and the complete
-publication set has been reverified. A later action-time handoff must present
-the five exact reviewed heads in this file and the final audit-only toolkit
-commit recorded in the Task 7 report.
+GitHub setting mutation has been performed. The locally verified publication
+set stops here. A later action-time handoff must present the five exact reviewed
+heads in this file, confirm then-current remote ancestry and hosted state, use
+then-current observable account evidence, and include the final audit-only
+toolkit commit recorded in the Task 7 report before any external write.
