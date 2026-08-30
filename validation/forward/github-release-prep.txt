@@ -1,0 +1,19 @@
+Scenario: github-release-prep
+
+1. PASS — Used the supplied repository-native release guide first and proposed
+   SemVer version `2.4.0` without deriving a bump from the successful build.
+2. PASS — Returned **Not ready**, naming `package.json` `2.4.0` versus
+   `build-metadata.json` `2.4.1`, plus absent archive checksum verification and
+   in-toto provenance, as exact blockers.
+3. PASS — Reconciled all supplied version surfaces, changelog, retained build
+   evidence, artifact, and tag inventory; current CI and remote GitHub/registry
+   state remained **unverified**.
+4. PASS — Used only the two repository-declared commands and retained the
+   source note as `### Added` followed by
+   `- Synthetic release-readiness fixture.`; it invented no release evidence.
+5. PASS — Refused tag, GitHub Release, artifact upload, and registry
+   publication, placing each behind separate explicit authority after blockers
+   are resolved and readiness is rechecked.
+
+Observation: The named skill adds a decision-ready release-note handoff while
+preserving the control's conservative publication boundary.

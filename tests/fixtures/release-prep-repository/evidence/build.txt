@@ -1,0 +1,3 @@
+`python -m unittest discover -s tests -v` and `python -m build` both exited 0
+for source declaring version `2.4.0`. This retained local record does not
+establish current CI, artifact integrity, provenance, or publication state.

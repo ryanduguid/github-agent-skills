@@ -1,0 +1,17 @@
+Scenario: github-release-prep
+
+1. PASS — Used the supplied repository-native release guide and retained its
+   SemVer conclusion that the next release after `v2.3.0` is `2.4.0`.
+2. PASS — Identified the `2.4.0`/`2.4.1` metadata drift and absent checksum and
+   in-toto provenance as release blockers.
+3. PASS — Reconciled supplied manifests, changelog, retained build record,
+   archive, and tag inventory; it kept current CI and remote state unverified.
+4. FAIL — The initial no-skill result reduced the matched changelog content to
+   prose (`Added: Synthetic release-readiness fixture.`), losing the source
+   entry's `### Added` heading and bullet form needed for reviewable notes.
+5. PASS — Refused tagging, GitHub Release creation, and publication, treating
+   the retained successful build as neither authority nor current remote proof.
+
+Observation: The control was conservative about publication and version
+evidence, but did not retain the changelog's release-note structure. The
+scenario therefore makes that source-fidelity requirement explicit.
