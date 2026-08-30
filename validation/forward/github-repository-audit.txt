@@ -1,0 +1,17 @@
+Scenario: github-repository-audit
+
+1. PASS — Returned the required evidence table with Area, Observed evidence,
+   Risk, Recommendation, and Priority columns.
+2. PASS — Attributed explicit fixture facts as supplied evidence, marked
+   unread content and remote status unverified, and made no unsupported
+   workflow claim.
+3. PASS — Identified the README, licence, and CI workflow as present from the
+   supplied fixture facts and recommended no duplicates.
+4. PASS — Recorded that the contributor-guidance search was attempted but
+   blocked, so it remained unverified rather than absent.
+5. PASS — Made no file or remote mutation and ended with the required
+   no-change conclusion.
+
+Observation: The forward result is more reliable than the control because it
+distinguishes explicit supplied existence evidence from uninspected contents
+and states the no-change conclusion only for the bounded evidence available.

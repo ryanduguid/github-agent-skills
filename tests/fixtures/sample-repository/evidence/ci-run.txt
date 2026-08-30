@@ -1,0 +1,4 @@
+Source: retained local CI run evidence
+Workflow: CI
+Conclusion: success
+Checked commit: fixture-only

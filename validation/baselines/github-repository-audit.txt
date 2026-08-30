@@ -1,0 +1,17 @@
+Scenario: github-repository-audit
+
+1. PASS — Returned the required five-column evidence table.
+2. FAIL — The runner denied repository read commands; the response therefore
+   relied on fixture assertions instead of direct inspection, so its presence
+   claims were not observed evidence.
+3. PASS — Recognised README, licence, and CI configuration as present and did
+   not recommend duplicates.
+4. PASS — Reported contributor guidance as unverified after its search attempt
+   was blocked; it did not assert an absence.
+5. PASS — Reported no writes or remote contact, consistent with the read-only
+   evaluation.
+
+Observation: The no-skill control could not complete an evidence-first local
+audit under the evaluator's denied read-command policy. Its conservative
+fallback was useful, but it did not distinguish supplied assertions from
+directly observed fixture evidence.
