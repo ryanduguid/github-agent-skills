@@ -82,6 +82,7 @@ Run: `git add AGENTS.md CLAUDE.md CONTRIBUTING.md tools/tests/test_repository_po
 **Files:**
 - Modify only if a failing check proves drift: `australian-accounting-skills/AGENTS.md`
 - Modify only if a failing check proves drift: `australian-accounting-skills/CLAUDE.md`
+- Modify only if consolidation is required: `australian-accounting-skills/tests/test_contributor_checks.py`
 - Create: `github-agent-skills/audits/australian-accounting-skills-review.md`
 
 **Interfaces:**
