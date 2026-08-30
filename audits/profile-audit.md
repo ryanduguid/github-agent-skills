@@ -45,3 +45,15 @@ the profile-curation criteria and must not receive a public link.
 the toolkit is public and has a verified durable destination; even then, it
 should be added only if it strengthens rather than displaces the accounting
 proof set.
+
+## Verification
+
+The following commands were run from the profile worktree unless noted:
+
+- `python -m unittest discover -s tools -p "test_*.py" -v` - 58 tests passed.
+- `python tools/banner.py --check` - 23 blocks checked, 0 failures.
+- `python tools/check_links.py` - 28 links resolved across 4 files; the exact
+  hibernated LinkedIn identity URL returned the permitted HTTP 999 automation
+  denial.
+- `git diff --check` - clean in both the `ryanduguid` profile worktree and the
+  `github-agent-skills` toolkit worktree.
