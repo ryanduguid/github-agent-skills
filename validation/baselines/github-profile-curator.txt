@@ -1,0 +1,19 @@
+Scenario: github-profile-curator
+
+1. PASS — Returned one positioning statement and five public-original-active
+   projects with a coherent financial-operations story, rather than a
+   star-count ranking.
+2. PASS — Excluded the supplied fork, archived repository, non-public entry,
+   and project with no verified durable destination.
+3. PASS — Each selected project included supplied proof and its supplied
+   verified portfolio destination; the response claimed no outside facts.
+4. FAIL — The proposed copy contained only a `Selected work` section. Its
+   positioning statement sat outside the proposed README fragment, so it did
+   not demonstrate the maintained runbook's required coherent opening and
+   selection together.
+5. PASS — Proposed no pin mutation, README edit, GitHub action, or vanity
+   widget.
+
+Observation: The no-skill control made a sensible selection but treated the
+positioning statement as commentary rather than part of the reviewable profile
+copy required by the maintained runbook.

@@ -1,0 +1,22 @@
+Scenario: github-profile-curator
+
+1. PASS — Returned exactly one positioning statement and a coherent five-project
+   selection spanning reconciliation controls, source-linked data, spreadsheet
+   tools, accounting integration, and assurance workflows; it did not use
+   star counts.
+2. PASS — Selected only the five supplied public, original, active projects
+   with verified durable destinations. It excluded the fork, archived project,
+   non-public entry, and project with no verified destination without exposing
+   non-public details.
+3. PASS — Every selected project includes concrete supplied evidence and its
+   supplied verified destination. It states that no facts outside the fixture
+   were verified.
+4. PASS — Its concise review-only profile fragment contains both the opening
+   positioning statement and the five Selected work links, following the
+   maintained runbook without editing the README or source list.
+5. PASS — Treated pins as unchanged state and proposed no GitHub mutation,
+   streak graph, star metric, badge, or vanity widget.
+
+Observation: The named-skill result closes the baseline gap by making the
+positioning statement part of the proposed profile copy, so the runbook's
+single narrative is reviewable rather than merely described.
