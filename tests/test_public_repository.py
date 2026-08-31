@@ -98,6 +98,7 @@ class PublicFileScannerTests(unittest.TestCase):
             ("t", "notes.txt", ("C:" + "/" + "Users/Pat/notes").encode(), "private-user-path"),
             ("u", "notes.txt", ("file:" + "///" + "Users/pat/notes").encode(), "private-user-path"),
             ("v", "notes.txt", ("https://example.test/download?path=" + "/" + "home/pat/notes").encode(), "private-user-path"),
+            ("unc", "notes.txt", ("\\\\server\\Users\\Pat\\notes").encode(), "private-user-path"),
             (
                 "w",
                 "notes.txt",
@@ -105,6 +106,15 @@ class PublicFileScannerTests(unittest.TestCase):
                     "https://api.github.com/users/ryanduguid/repos\nLocal copy: "
                     + "C:"
                     + "\\Users\\Pat\\notes"
+                ).encode(),
+                "private-user-path",
+            ),
+            (
+                "unc-mixed",
+                "notes.txt",
+                (
+                    "https://api.github.com/users/ryanduguid/repos\nLocal copy: "
+                    + "\\\\server\\Users\\Pat\\notes"
                 ).encode(),
                 "private-user-path",
             ),
