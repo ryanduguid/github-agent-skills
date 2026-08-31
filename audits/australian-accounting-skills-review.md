@@ -4,93 +4,79 @@ Date: 2026-08-31
 
 ## Decision
 
-Change the cross-runtime contributor entry points. The untouched repository
-passed every documented gate, but the preflight contract check exposed drift:
-`AGENTS.md` delegated the full contributor guide to `CLAUDE.md`, and
-`CLAUDE.md` did not import `@AGENTS.md`. This inverted the approved shared-entry
-contract and was not covered by the baseline suite.
+Retain the tested cross-runtime contributor consolidation after reconciling it
+onto the current remote `main`. The untouched repository originally passed its
+documented gates, but its entry points inverted the approved shared-guide
+contract: `AGENTS.md` delegated to `CLAUDE.md`, while `CLAUDE.md` did not import
+`@AGENTS.md`.
 
-Repository base: `9955e59e783cdd0967e11d09e2e25cfb55809483`
+Current fetched remote base:
+`faae4fdff7b8e4c5c1dc12d6746559d9c0839715`
+(`docs: define canonical release history (#66)`).
 
-Repository commit: `41cbbc5e019731813a11320ade261d4b2b704688`
-(`docs: consolidate cross-runtime contributor guidance`)
+Current local head:
+`dc4af1493a12cc888847fa889ebaea3fc3b8601d`
+(`docs: consolidate cross-runtime contributor guidance`).
 
-## Untouched baseline
+Pre-reconciliation recovery branch:
+`codex/backup-showcase-before-reconcile-20260831` at
+`41cbbc5e019731813a11320ade261d4b2b704688`.
 
-The following commands ran before any edit, from the Accounting Skills
-worktree:
+The exact verified origin was
+`https://github.com/ryanduguid/australian-accounting-skills.git` for fetch and
+push. The worktree was clean before the read-only fetch. The local commit was
+rebased onto fetched `origin/main` without conflict; no remote ref was changed.
+`git merge-base --is-ancestor origin/main HEAD` exits 0.
 
-| Command | Result |
-| --- | --- |
-| `pip install --disable-pip-version-check --no-deps --requirement requirements-test.txt` | Passed; installed pinned `PyYAML==6.0.3`. |
-| `python -m unittest discover -s tests -v` | Passed; 62 tests, 0 failures, 1 environment-dependent symlink skip. |
-| `python scripts/validate_validation.py` | Passed; 17 fabricated cards, 19 skills, exact tracked inventory. |
-| `python tests/verify_skills_cli.py` | Passed; `skills@1.5.22` discovered all 19 expected skills. |
-| `git diff --check` | Passed with exit code 0. |
-
-The passing baseline established that repository behaviour and existing CI
-gates were healthy. It did not override the separately documented
-cross-runtime entry-point requirement.
-
-## Drift proof and test-first consolidation
-
-Before the documentation changed, `AGENTS.md` said that `CLAUDE.md` was the
-full contributor guide and instructed agents to read it. A literal search of
-`CLAUDE.md` found no `@AGENTS.md` import.
+## Test-first consolidation
 
 The focused contributor-check test was added first. It requires `AGENTS.md` to
-retain the substantive repository, safety, privacy, accuracy, map,
-verification, maintenance, writing and hand-off sections, and requires
-`CLAUDE.md` to be exactly `@AGENTS.md`, with an optional final newline.
+retain the substantive repository, safety, privacy, accuracy, verification,
+maintenance, writing, and hand-off sections, and requires `CLAUDE.md` to be
+exactly `@AGENTS.md`, with an optional final newline.
 
-RED command:
+RED:
 
 ```powershell
 python -m unittest tests.test_contributor_checks -v
 ```
 
-Result: failed as intended. The new contract test reported the four sections
-still held only in `CLAUDE.md` and rejected the existing non-importing
-`CLAUDE.md`; the existing CI-command coverage test passed.
+The new contract test failed because four substantive sections still existed
+only in `CLAUDE.md` and because `CLAUDE.md` was not an import.
 
 The consolidation then:
 
 - made `AGENTS.md` the shared cross-runtime contributor guide;
-- moved the existing Scope and data, Accuracy and professional boundaries,
-  Maintaining skills, and Before hand-off guidance into `AGENTS.md`;
-- retained the existing privacy restrictions, source-verification rules,
-  professional and human-action boundaries, repository map, 19-skill
-  inventory, check commands, writing rules and hand-off requirements, without
-  altering the separate 17-card validation inventory; and
-- reduced `CLAUDE.md` to `@AGENTS.md` only.
+- moved the existing scope, privacy, accuracy, professional-boundary,
+  maintenance, and hand-off material into it;
+- retained the repository map, 19-skill inventory, commands, and the distinct
+  17-card validation inventory; and
+- reduced `CLAUDE.md` to `@AGENTS.md`.
 
-GREEN command:
+GREEN: the focused suite passes 2 tests.
 
-```powershell
-python -m unittest tests.test_contributor_checks -v
-```
+## Current verification
 
-Result: passed, 2 tests, 0 failures.
-
-## Final verification
-
-After the final documentation wording was settled, the focused suite and the
-complete requested gates ran again:
+All checks below ran again at the reconciled head:
 
 | Command | Result |
 | --- | --- |
-| `python -m unittest tests.test_contributor_checks -v` | Passed; 2 tests, 0 failures. |
-| `pip install --disable-pip-version-check --no-deps --requirement requirements-test.txt` | Passed; pinned dependency already satisfied. |
-| `python -m unittest discover -s tests -v` | Passed; 63 tests, 0 failures, 1 environment-dependent symlink skip. |
-| `python scripts/validate_validation.py` | Passed; 17 fabricated cards, 19 skills, exact tracked inventory. |
-| `python tests/verify_skills_cli.py` | Passed; all 19 expected skills discovered. |
-| `git diff --check` | Passed with exit code 0; Git emitted only its existing LF-to-CRLF checkout warning. |
+| `python -m unittest tests.test_contributor_checks -v` | Passed; 2 tests. |
+| `python -m pip install --disable-pip-version-check --no-deps --requirement requirements-test.txt` | Passed; pinned `PyYAML==6.0.3` satisfied. |
+| `python -m unittest discover -s tests -v` | Passed; 63 tests and 1 expected environment-dependent symlink skip. |
+| `python scripts/validate_validation.py` | Passed; 17 fabricated cards and 19 skills. |
+| `python tests/verify_skills_cli.py` | Passed; `skills@1.5.22` discovered all 19 expected skills. |
+| `git diff --check origin/main...HEAD` | Passed. |
 
-## Boundaries
+The current range contains exactly:
 
-The Accounting Skills commit changes only `AGENTS.md`, `CLAUDE.md`, and
-`tests/test_contributor_checks.py`. It adds no generic community file and does
-not modify `CONTRIBUTING.md`, security or release policy, dependencies,
-workflows, manifests, skill content, validation cards, or runtime behaviour.
-No push, publication, repository setting change, or other external action was
-performed.
+- `AGENTS.md`;
+- `CLAUDE.md`; and
+- `tests/test_contributor_checks.py`.
+
+The upstream release-history documentation is preserved. The local range
+changes no workflow, action pin, dependency, lockfile, manifest, release or
+security policy, skill content, validation card, runtime behaviour, raw
+capture, client data, or generated artifact. The worktree is clean. No push,
+publication, repository setting change, or other external action was
+performed; hosted CI was not observed or claimed.
