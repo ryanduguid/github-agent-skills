@@ -4,11 +4,15 @@ Date: 31 August 2026
 
 ## Verdict
 
-The local publication set is coherent and ready only for an action-time
-confirmation. No external action was taken. The profile remains
-accounting-first and unchanged; the site remains adoption-first and adds a
-bounded fourth adoption route for the portable skills. The new repository URL
-is not currently public: a read-only request to
+The reconciled local publication set is coherent and ready only for an
+action-time confirmation. No external action was taken. The profile remains
+accounting-first and unchanged; the site remains adoption-first and carries a
+bounded fourth adoption route for the portable skills. The site is now rebased
+onto exact remote `main` checkpoint
+`a76c096cdae71fe9e35aabeb67f8b5dcb62bef43` and ends at local checkpoint
+`40496693ed6761e8e8b853d28e48234541d916cf`. The old local site head is retained
+at recovery ref `codex/backup-site-before-reconcile-20260831`. The new
+repository URL is not currently public: a read-only request to
 `https://github.com/ryanduguid/github-agent-skills` returned HTTP 404. It is
 therefore valid only as part of the same pending publication wave as the local
 toolkit content, not as an independently resolving public link today.
@@ -18,22 +22,21 @@ toolkit content, not as an independently resolving public link today.
 | Surface | Local branch | Reviewed checkpoint | Result |
 | --- | --- | --- | --- |
 | Profile `ryanduguid` | `codex/profile-agent-skills` | `b45ca45aa753e4297b73f6d9528f3c2f1f5f600e` | Unchanged no-op. The profile has no new toolkit link or repository commit. |
-| Website `ryanduguid.github.io` | `codex/site-agent-skills` | `93d51f77b34e27e985cfc3785d3f7e15f1b7fe64` | Adds the fourth adoption route and completes its browser contract with current desktop/mobile baselines, a passing evidence-based mobile height guard and a fixed visual-diff allowance. |
-| Toolkit `github-agent-skills` content | `codex/github-agent-skills` | `fbb28060c0ededb00a6206e1fc8c507e17c27cdb` | The locally verified content parent included in the pending wave. |
+| Website `ryanduguid.github.io` | `codex/site-agent-skills` | `40496693ed6761e8e8b853d28e48234541d916cf` | Rebased onto exact remote base `a76c096cdae71fe9e35aabeb67f8b5dcb62bef43`; preserves all upstream identity, contact, dependency and register changes while retaining the bounded fourth adoption route and refreshed strict desktop/mobile visual contracts. |
+| Toolkit `github-agent-skills` content | `codex/github-agent-skills` | `9714c70af4d2dba06f0e0cc9d0a223aa23fddd82` | The final locally reviewed toolkit content state immediately before this audit-only reconciliation amendment. |
 
-The toolkit checkpoint above deliberately names the content parent, not this
-amendment's resulting commit. A Git commit object cannot contain its own final
-object ID because the file contents determine that ID. The prior audit commits
-are `713907317e3edacbae009ddf7c93e60ed875d20b` and
-`63187599c9c35abaf5c1a364127a762cae762e2d`; this amendment's final commit is
-recorded in the SDD task report. The external candidate is that ordered audit
-chain on top of `fbb28060c0ededb00a6206e1fc8c507e17c27cdb`.
+The toolkit checkpoint above deliberately names the final content state
+reviewed immediately before this audit-only amendment, not the amendment's
+resulting commit. A Git commit object cannot contain its own final object ID
+because the file contents determine that ID. This amendment's final commit is
+recorded in the SDD task report. The complete external candidate is that audit
+commit on top of `9714c70af4d2dba06f0e0cc9d0a223aa23fddd82`.
 
-The former website checkpoint
-`fcc38c6aca97a774d6702f135cb1c643043653e0` remains reviewed history for the
-adoption-route terminology correction, but it is superseded for publication:
-its 9,538px mobile guard could not accept the final 9,726px render, and its
-desktop baseline still showed the former heading.
+The former website checkpoints
+`fcc38c6aca97a774d6702f135cb1c643043653e0` and
+`93d51f77b34e27e985cfc3785d3f7e15f1b7fe64` remain reviewed local history. The
+latter is the exact old head preserved by the recovery ref, but both are
+superseded for publication by the rebased site checkpoint above.
 
 ## Cross-surface review
 
@@ -49,9 +52,12 @@ desktop baseline still showed the former heading.
   boundaries. It makes no credential, employment, certification, regulatory,
   or client-data claim.
 - The changed profile range is empty. The website range
-  `4a29bdcfc469a73ff8cd9cec449fe8b5ea5f8c3d..93d51f77b34e27e985cfc3785d3f7e15f1b7fe64`
-  changes only the adoption copy, contracts, protected `llms.txt` digest, and
-  justified homepage browser contracts and baselines.
+  `a76c096cdae71fe9e35aabeb67f8b5dcb62bef43..40496693ed6761e8e8b853d28e48234541d916cf`
+  changes only the adoption copy and documentation, contracts, protected
+  `llms.txt` digest, and justified homepage browser contracts and baselines.
+  `origin/main...HEAD` contains exactly those nine intended local site files;
+  upstream-only identity, contact, package and register paths have no local
+  delta.
 - Review of the textual website delta found no em dash or en dash. No
   credential wording changed, no canonical `https://duguid.com.au/` route was
   replaced, and no form, client-data prompt, OAuth path, fabricated-data
@@ -77,29 +83,31 @@ means success.
 | --- | --- |
 | `python scripts/test_contracts.py` | Passed: 26 design mutations and 49 public-contract mutations. |
 | `python scripts/check_site.py` | Passed with exit 0, including contract, local server MIME, design, link-policy, Search Console self-test, SEO and link checks. |
-| `npm ci` | Passed: 331 packages added and 332 audited; lockfile unchanged. npm repeated seven existing audit findings: one moderate and six high. It also reported four deprecated transitive packages. |
+| `npm ci` | Passed: 331 packages added and 332 audited; lockfile unchanged. npm reported six high-severity audit findings and three deprecated transitive packages. |
 | `npm run test:capture` | Passed: 2 tests. |
-| `npm run test:browser` | Passed from a clear port: 70 tests, 4 skipped. The final homepage renders were 1,440x6,710 desktop and 390x9,726 mobile; both current baselines were visually inspected. The 9,960px mobile cap is the 9,278px pre-route render plus the complete 448px adoption-route delta and the original 234px guard margin. |
+| `npm run test:browser` | Passed from a clear port: 70 tests, 4 skipped. The final homepage renders are 1,440x6,823 desktop and 390x9,882 mobile; both regenerated baselines were visually inspected. The existing strict 9,960px mobile height cap passes with 78px headroom, and the fixed visual-diff allowance remains in force. |
 | `npm run test:lighthouse` | Passed with final exit code 0. Pretest passed 5 of 5 tests; Lighthouse completed 3 runs for each of 4 URLs, processed 12 results and wrote 12 local reports. |
 | `git diff --check` and `git diff --exit-code` | Passed: clean worktree. |
 
-Before the focused browser diagnosis, `127.0.0.1:4173` had no listener. The
-repository-supported `python -u scripts/serve_site.py` command was started in a
-dedicated execution session; its sole listener was identified as owned PID
-14024 from that exact command line and parent session. After the focused tests,
-the identity was checked again, only PID 14024 was stopped, and the port was
-confirmed clear. The port was also confirmed clear before the final Playwright
-browser suite and Lighthouse collector, so their configured servers could not
-reuse a transient process. The earlier browser result at the superseded
-checkpoint did not establish that ownership and is not used as final evidence.
+`127.0.0.1:4173` was confirmed clear before capture, the initial browser run,
+the focused snapshot regeneration, the final browser suite and Lighthouse.
+Playwright ran with `CI=1`, forcing its configured repository server not to
+reuse any existing listener, and the port was confirmed clear after every run.
+Lighthouse started the same repository-supported
+`python -u scripts/serve_site.py` command and also left the port clear. The
+initial combined browser run passed all non-visual tests but failed only the
+two deliberately retained upstream homepage baselines: expected mobile
+390x9,434 versus actual 390x9,882, and expected desktop 1,440x6,630 versus
+actual 1,440x6,823. That evidence justified regenerating exactly those two
+baselines; a fresh full browser suite then passed.
 
 The representative Lighthouse results from the final 12-run median set were:
 
 | Route | Performance | Accessibility | Best practices | SEO | LCP | TBT | CLS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `/` | 98 | 100 | 100 | 100 | 1,953 ms | 0 ms | 0 |
-| `/tools/` | 98 | 100 | 100 | 100 | 1,802 ms | 0 ms | 0 |
-| `/evidence/` | 97 | 100 | 100 | 100 | 2,102 ms | 0 ms | 0 |
+| `/` | 98 | 100 | 100 | 100 | 1,952 ms | 0 ms | 0 |
+| `/tools/` | 98 | 100 | 100 | 100 | 1,953 ms | 0 ms | 0 |
+| `/evidence/` | 97 | 100 | 100 | 100 | 2,103 ms | 0 ms | 0 |
 | `/tools/coal-lsl-levy/` | 98 | 100 | 100 | 100 | 1,953 ms | 0 ms | 0 |
 
 ### Toolkit publication set
@@ -112,6 +120,7 @@ this exact audit-only amendment immediately before commit.
 | --- | --- |
 | `pwsh -File scripts/sync-skills.ps1` | Passed with no generated-copy changes. |
 | `python -m unittest discover -s tests -v` | Passed: 35 tests. |
+| `python scripts/validate_skills.py` | Passed with exit 0. |
 | `python scripts/validate_skills.py --strict` | Passed with exit 0. |
 | `pwsh -File scripts/sync-skills.ps1 -Check` | Passed with exit 0. |
 | `python scripts/check_public_files.py` | Passed with exit 0; every tracked path was scanned. |
@@ -130,18 +139,22 @@ local state again:
    `ryanduguid/github-agent-skills` repository. This local toolkit has no
    configured remote today. Only after that confirmation, configure `origin`
    as `https://github.com/ryanduguid/github-agent-skills.git`.
-3. Confirm the complete toolkit candidate: content parent
-   `fbb28060c0ededb00a6206e1fc8c507e17c27cdb`, prior audit commits
-   `713907317e3edacbae009ddf7c93e60ed875d20b` and
-   `63187599c9c35abaf5c1a364127a762cae762e2d`, and this amendment's final
-   commit recorded in the SDD task report. Publish that final local candidate
-   from `codex/github-agent-skills` to public `main`.
+3. Confirm the complete toolkit candidate: final content state
+   `9714c70af4d2dba06f0e0cc9d0a223aa23fddd82` and this audit-only
+   amendment's final commit recorded in the SDD task report. Publish that
+   complete local candidate from `codex/github-agent-skills` to public `main`.
 4. Verify the public repository URL and its public README resolve after the
    toolkit publication. Do not treat the current HTTP 404 as a valid public
    destination.
 5. Only after step 4 succeeds, publish or deploy
    `ryanduguid.github.io`, branch `codex/site-agent-skills`, checkpoint
-   `93d51f77b34e27e985cfc3785d3f7e15f1b7fe64`.
+   `40496693ed6761e8e8b853d28e48234541d916cf`, which is based on exact fetched
+   remote checkpoint `a76c096cdae71fe9e35aabeb67f8b5dcb62bef43`. Keep recovery ref
+   `codex/backup-site-before-reconcile-20260831` until the publication decision
+   is complete.
+
+The publication boundary remains toolkit first, public toolkit URL and README
+verification next, and site second. No profile mutation is part of that wave.
 
 No push, repository creation, deployment, metadata edit, pin edit, OAuth
 consent or browser-side public action occurred during this audit.
