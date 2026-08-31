@@ -687,7 +687,7 @@
         ]
       },
       "presentation_value": "high",
-      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "risk": "Limited local documentary/configuration inspection found the listed public files and workflows; tests, presentation readiness, code quality, security posture and current hosted CI remain unverified.",
       "action": "maintain"
     },
     {
@@ -714,7 +714,7 @@
         ]
       },
       "presentation_value": "high",
-      "risk": "Metadata-only assessment; documentation, tests and presentation readiness are unverified.",
+      "risk": "Limited local documentary/configuration inspection found the listed public files and workflows; tests, presentation readiness, code quality, security posture and current hosted CI remain unverified.",
       "action": "maintain"
     },
     {
