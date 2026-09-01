@@ -41,13 +41,13 @@ target. A repository name or plausible URL alone is not sufficient.
 
 Return, in this order:
 
-1. **Positioning statement** — exactly one concise sentence.
-2. **Project selection** — four through six projects, each with its narrative
+1. **Positioning statement**: exactly one concise sentence.
+2. **Project selection**: four through six projects, each with its narrative
    role, supplied evidence, and verified destination.
-3. **Proposed profile copy** — a concise, review-only README fragment that
+3. **Proposed profile copy**: a concise, review-only README fragment that
    includes both the opening statement and the selected-project links, so the
    narrative is visible in the copy itself.
-4. **Boundaries** — facts not verified, runbook constraints followed, and that
+4. **Boundaries**: facts not verified, runbook constraints followed, and that
    supplied pins remain unchanged unless a pin change was explicitly requested.
 
 Keep the copy professional and specific. When there are fewer than four

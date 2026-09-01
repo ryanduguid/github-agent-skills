@@ -39,15 +39,15 @@ person's unrelated work.
 
 Use this order:
 
-1. **Acceptance criteria and assumptions** — observable issue scope and any
+1. **Acceptance criteria and assumptions**: observable issue scope and any
    unverified interpretation.
-2. **Change and evidence** — files changed, test-first evidence, commands and
+2. **Change and evidence**: files changed, test-first evidence, commands and
    results, preserved unrelated changes, and remaining uncertainty.
-3. **Commit summary** — a concise imperative subject and body matching only
+3. **Commit summary**: a concise imperative subject and body matching only
    the reviewed local diff. Do not invent a hash, branch, or staged state.
-4. **PR body** — `## Summary`, `## Tests`, and `## Assumptions` (when needed),
+4. **PR body**: `## Summary`, `## Tests`, and `## Assumptions` (when needed),
    with only observed results and a clear scope boundary.
-5. **Publication checkpoint** — state the exact local commit and target branch
+5. **Publication checkpoint**: state the exact local commit and target branch
    that need confirmation before pushing or creating a PR.
 
 Remote push and pull-request creation occur only after the local diff and

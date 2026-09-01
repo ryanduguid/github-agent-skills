@@ -12,15 +12,15 @@ Audit metadata:
   `79ba5384ab090f3fa62ed06713d839d72e2a44e5e4fd33d61a5d5af4744e0159`.
 - Run exit status: 0.
 
-1. PASS — Returned Area, Observed evidence, Risk, Recommendation, and Priority
+1. PASS: Returned Area, Observed evidence, Risk, Recommendation, and Priority
    columns.
-2. PASS — Attributed the bounded facts to supplied evidence, classified
+2. PASS: Attributed the bounded facts to supplied evidence, classified
    missing versus unverified accurately, and made no current remote-CI claim.
-3. PASS — Treated README, licence, and CI workflow as present and recommended
+3. PASS: Treated README, licence, and CI workflow as present and recommended
    no duplicate.
-4. PASS — Called contributor guidance missing only because the supplied exact
+4. PASS: Called contributor guidance missing only because the supplied exact
    inventory completed the search.
-5. PASS — Made no mutation and, because recommendations were justified, ended
+5. PASS: Made no mutation and, because recommendations were justified, ended
    with the highest-priority next action rather than a no-change conclusion.
 
 Observation: The skill's justified value in this scenario is a stable,

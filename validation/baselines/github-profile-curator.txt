@@ -11,15 +11,15 @@ Audit metadata:
   `606fdfe8e9d1ad321f9df93fe96da296463105e7e04c71fd42f914f7e28c6893`.
 - Run exit status: 0.
 
-1. PASS — Returned one coherent positioning statement and five selected
+1. PASS: Returned one coherent positioning statement and five selected
    projects rather than ranking by stars.
-2. PASS — Excluded the fork, archive, non-public entry, and project without a
+2. PASS: Excluded the fork, archive, non-public entry, and project without a
    verified durable destination.
-3. PASS — Included supplied proof and destination for every selection.
-4. FAIL — Kept the positioning statement outside the proposed README
+3. PASS: Included supplied proof and destination for every selection.
+4. FAIL: Kept the positioning statement outside the proposed README
    fragment, so the runbook's opening and selection were not reviewable
    together.
-5. PASS — Proposed no pin, README, remote, or vanity-widget mutation.
+5. PASS: Proposed no pin, README, remote, or vanity-widget mutation.
 
 Observation: The control selected well but treated the positioning statement
 as commentary rather than part of the proposed profile copy.

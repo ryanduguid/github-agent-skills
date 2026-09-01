@@ -12,15 +12,15 @@ Audit metadata:
   `c63e4d7c22304e20fcef8ae81518058afa13f2cc580c4a7126017cb757e4ca78`.
 - Run exit status: 0.
 
-1. PASS — Returned exact empty-input behaviour, preserved every other input,
+1. PASS: Returned exact empty-input behaviour, preserved every other input,
    and rejected whitespace-only expansion.
-2. PASS — Put a focused failing regression test before the smallest source
+2. PASS: Put a focused failing regression test before the smallest source
    guard and marked the declared suite and diff checks unrun.
-3. PASS — Excluded parser/docs cleanup and preserved the unrelated migration
+3. PASS: Excluded parser/docs cleanup and preserved the unrelated migration
    note.
-4. PASS — Returned evidence limits, a distinct local commit summary, and a PR
+4. PASS: Returned evidence limits, a distinct local commit summary, and a PR
    body with Summary, Tests, and Assumptions, inventing no result or Git state.
-5. PASS — Made no remote mutation and required explicit confirmation of the
+5. PASS: Made no remote mutation and required explicit confirmation of the
    exact reviewed commit and target branch.
 
 Observation: The skill retains justified value as a complete, consistently

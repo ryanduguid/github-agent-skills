@@ -41,23 +41,23 @@ These values are proposals only and have not been applied remotely.
 d30aa347916787cf4bbb26a69f9b002f6a75b932` contains these 17 commits, oldest
 first:
 
-1. `34d0ab9a66fc9f80820475fae2d06b17d751219a` — `docs: design cross-agent GitHub improvement system`
-2. `cbbf081b0579973b5d0a8b00facabdb61a237925` — `docs: plan portable skills and GitHub portfolio hardening`
-3. `7ec9205b84b810e83558721084ea9c9e7ea3f867` — `test: establish portable skill repository contracts`
-4. `ab3a6e3788f88bcc2de38492f81f1e6f61d00502` — `fix: enforce generated skill drift checks`
-5. `52fd9d4cf33b9b0767de10415ef80015a7e7e149` — `feat: add evidence-first repository audit skill`
-6. `5ddabe3986aff1698872a0aeda371d95986c2a89` — `feat: add truth-first README polishing skill`
-7. `de663d2cad09def7bed3de0c7192aa2c6f90a421` — `feat: add coherent GitHub profile curation skill`
-8. `29334a8aeb58061cc307af7e1d202afd8cff64d2` — `feat: add release readiness and handoff skill`
-9. `9be096ff0b6821ad090d25d945a189214796f1ae` — `feat: add issue-to-PR delivery skill`
-10. `12a52905aa21f7084585434157aeea52cff39687` — `feat: synchronise skills for Codex and Claude Code`
-11. `c92a0a2a8412ee7e8c1a72192a330f7c78ed5825` — `fix: reject linked skill destinations`
-12. `fd6fcf69529fbd7559e8b5f726149eac4983c35a` — `docs: prepare portable GitHub skills for publication`
-13. `981667ed74a44158ed1665ab8467d1a301f366e3` — `test: harden public repository checks`
-14. `7edf9cc78c1aa7fb1c818177b6308c0746520681` — `test: fail closed for publication checks`
-15. `22f9e36ed9d81302c64edc27f1f8291fba57f051` — `test: detect non-public key assignments`
-16. `16836baf4ca637435626bcedc20b508bcc60e412` — `audit: prepare publication checkpoint`
-17. `d30aa347916787cf4bbb26a69f9b002f6a75b932` — `audit: enumerate full publication history`
+1. `34d0ab9a66fc9f80820475fae2d06b17d751219a`: `docs: design cross-agent GitHub improvement system`
+2. `cbbf081b0579973b5d0a8b00facabdb61a237925`: `docs: plan portable skills and GitHub portfolio hardening`
+3. `7ec9205b84b810e83558721084ea9c9e7ea3f867`: `test: establish portable skill repository contracts`
+4. `ab3a6e3788f88bcc2de38492f81f1e6f61d00502`: `fix: enforce generated skill drift checks`
+5. `52fd9d4cf33b9b0767de10415ef80015a7e7e149`: `feat: add evidence-first repository audit skill`
+6. `5ddabe3986aff1698872a0aeda371d95986c2a89`: `feat: add truth-first README polishing skill`
+7. `de663d2cad09def7bed3de0c7192aa2c6f90a421`: `feat: add coherent GitHub profile curation skill`
+8. `29334a8aeb58061cc307af7e1d202afd8cff64d2`: `feat: add release readiness and handoff skill`
+9. `9be096ff0b6821ad090d25d945a189214796f1ae`: `feat: add issue-to-PR delivery skill`
+10. `12a52905aa21f7084585434157aeea52cff39687`: `feat: synchronise skills for Codex and Claude Code`
+11. `c92a0a2a8412ee7e8c1a72192a330f7c78ed5825`: `fix: reject linked skill destinations`
+12. `fd6fcf69529fbd7559e8b5f726149eac4983c35a`: `docs: prepare portable GitHub skills for publication`
+13. `981667ed74a44158ed1665ab8467d1a301f366e3`: `test: harden public repository checks`
+14. `7edf9cc78c1aa7fb1c818177b6308c0746520681`: `test: fail closed for publication checks`
+15. `22f9e36ed9d81302c64edc27f1f8291fba57f051`: `test: detect non-public key assignments`
+16. `16836baf4ca637435626bcedc20b508bcc60e412`: `audit: prepare publication checkpoint`
+17. `d30aa347916787cf4bbb26a69f9b002f6a75b932`: `audit: enumerate full publication history`
 
 The terminal final-fix commit will be the only additional reachable commit.
 
@@ -137,7 +137,7 @@ unverified artifact rather than a packaged executable.
   its first GitHub-hosted run remains pending publication.
 - GitHub CLI is unavailable locally, so the preview has not been executed.
 
-## Publication preview — do not execute without confirmation
+## Publication preview: do not execute without confirmation
 
 Immediately before execution, show the user the terminal final-fix checkpoint
 hash from the ignored action-time handoff, target

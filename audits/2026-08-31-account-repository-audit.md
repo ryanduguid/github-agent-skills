@@ -1,4 +1,4 @@
-# Account repository audit — 31 August 2026
+# Account repository audit: 31 August 2026
 
 ## Scope and source
 
