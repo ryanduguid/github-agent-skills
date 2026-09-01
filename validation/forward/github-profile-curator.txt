@@ -11,15 +11,15 @@ Audit metadata:
   `ad5058e8f06eb8540a641b31d81c370ccf88d4a7b105f3a8d546573eab75ada8`.
 - Run exit status: 0.
 
-1. PASS — Returned one coherent positioning statement and five complementary
+1. PASS: Returned one coherent positioning statement and five complementary
    projects without star ranking.
-2. PASS — Selected only eligible public, original, active projects with
+2. PASS: Selected only eligible public, original, active projects with
    durable destinations.
-3. PASS — Included supplied evidence and verified destination for every
+3. PASS: Included supplied evidence and verified destination for every
    selected project.
-4. PASS — Put both the opening positioning statement and Selected work links
+4. PASS: Put both the opening positioning statement and Selected work links
    in the review-only profile fragment.
-5. PASS — Proposed no pin, source, remote, or vanity-widget mutation.
+5. PASS: Proposed no pin, source, remote, or vanity-widget mutation.
 
 Observation: The named-skill result closes the measured profile-copy gap by
 making the narrative itself part of the reviewable artifact.

@@ -194,9 +194,9 @@ Its exact content parent before this audit commit is
 `28ccb5a02f0f7011b807a8bbe68597a44633feb9`. The final-fix implementation
 commits before this audit are:
 
-- `036ef0258d6c825c9479115077a1d5d64c941450` —
+- `036ef0258d6c825c9479115077a1d5d64c941450`,
   `fix: detect private UNC user paths`; and
-- `28ccb5a02f0f7011b807a8bbe68597a44633feb9` —
+- `28ccb5a02f0f7011b807a8bbe68597a44633feb9`,
   `docs: align profile audit risk wording`.
 
 Fresh toolkit verification passes:

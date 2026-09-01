@@ -42,17 +42,17 @@ specific absent or unreadable evidence as a blocker. Do not fabricate it.
 
 Return these sections in order:
 
-1. **Readiness verdict** — ready only when every required surface matches and
+1. **Readiness verdict**: ready only when every required surface matches and
    required verification evidence is present; otherwise state **not ready**.
-2. **Release-surface reconciliation** — the status table above, including
+2. **Release-surface reconciliation**: the status table above, including
    unverified limits.
-3. **Exact blockers** — path, observed value/evidence, and the condition that
+3. **Exact blockers**: path, observed value/evidence, and the condition that
    clears each blocker.
-4. **Proposed version and notes** — the declared SemVer result and the matching
+4. **Proposed version and notes**: the declared SemVer result and the matching
    changelog entry without invented release claims.
-5. **Verification commands** — only commands declared by repository guidance;
+5. **Verification commands**: only commands declared by repository guidance;
    record their results separately from the intended remote action.
-6. **Publication checkpoint** — after readiness is rechecked, list the remote
+6. **Publication checkpoint**: after readiness is rechecked, list the remote
    tag, GitHub Release, artifact upload, and registry publication actions that
    still need explicit user authority.
 

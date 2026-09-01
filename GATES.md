@@ -19,13 +19,13 @@ Environment: Python 3.11.9 and PowerShell 7.6.4.
 
 | Gate | Evidence measured locally | Status |
 | --- | --- | --- |
-| Unit suite | `python -m unittest discover -s tests -v` — 35 tests in 21.230s | Passed |
-| Incremental validator | `python scripts/validate_skills.py` — exit 0 | Passed |
-| Strict validator | `python scripts/validate_skills.py --strict` — exit 0 | Passed |
-| Generated copies | `pwsh -File scripts/sync-skills.ps1 -Check` — exit 0 | Passed |
-| Public tracked-file scanner | `python scripts/check_public_files.py` — exit 0 | Passed |
+| Unit suite | `python -m unittest discover -s tests -v`: 35 tests in 21.230s | Passed |
+| Incremental validator | `python scripts/validate_skills.py`: exit 0 | Passed |
+| Strict validator | `python scripts/validate_skills.py --strict`: exit 0 | Passed |
+| Generated copies | `pwsh -File scripts/sync-skills.ps1 -Check`: exit 0 | Passed |
+| Public tracked-file scanner | `python scripts/check_public_files.py`: exit 0 | Passed |
 | Windows sync safety | Real NTFS junction tests for linked generated and canonical descendants; external sentinels unchanged | Passed |
-| Branch whitespace | `git diff --check` — exit 0 | Passed |
+| Branch whitespace | `git diff --check`: exit 0 | Passed |
 | Local branch review | All fixed ancestors through `d30aa347916787cf4bbb26a69f9b002f6a75b932` plus the reviewed terminal working-tree fix | Findings corrected |
 | Remote publication | Repository creation, push, metadata, topics, default branch, and hosted CI | **Pending explicit action-time confirmation** |
 

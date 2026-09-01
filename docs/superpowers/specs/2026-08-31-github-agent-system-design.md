@@ -32,11 +32,11 @@ Improve these two presentation repositories:
 
 Audit all public first-party repositories, then make tailored changes only to these five showcase projects:
 
-- `ryanduguid/Ozzit` — Excel LAMBDA and modelling utility
-- `ryanduguid/australian-accounting-skills` — domain Agent Skills collection
-- `ryanduguid/aus-accounting-mcp` — MCP and AI integration
-- `ryanduguid/au-tax-legislation-corpus` — provenance-rich legal data
-- `ryanduguid/monthly-close-controls` — deterministic accounting controls
+- `ryanduguid/Ozzit`: Excel LAMBDA and modelling utility
+- `ryanduguid/australian-accounting-skills`: domain Agent Skills collection
+- `ryanduguid/aus-accounting-mcp`: MCP and AI integration
+- `ryanduguid/au-tax-legislation-corpus`: provenance-rich legal data
+- `ryanduguid/monthly-close-controls`: deterministic accounting controls
 
 Forks, archives, and private repositories are excluded from mutation. Other first-party public repositories receive an audit report and prioritised recommendations only.
 

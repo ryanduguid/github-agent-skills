@@ -6,11 +6,11 @@ Claude Code.
 
 ## Skills
 
-- `github-repository-audit` — assess a repository from inspected evidence.
-- `github-readme-polish` — improve README clarity without unsupported claims.
-- `github-profile-curator` — select and present a coherent profile portfolio.
-- `github-release-prep` — prepare an evidence-backed release handoff.
-- `github-issue-to-pr` — turn an issue into a narrow, tested local change.
+- `github-repository-audit`: assess a repository from inspected evidence.
+- `github-readme-polish`: improve README clarity without unsupported claims.
+- `github-profile-curator`: select and present a coherent profile portfolio.
+- `github-release-prep`: prepare an evidence-backed release handoff.
+- `github-issue-to-pr`: turn an issue into a narrow, tested local change.
 
 ## Requirements
 

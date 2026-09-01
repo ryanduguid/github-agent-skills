@@ -12,16 +12,16 @@ Audit metadata:
   `6e8a6ac874ced8ce849f88ecf764f89c317b024cef3109a72f655acd5736630e`.
 - Run exit status: 0.
 
-1. FAIL — Returned a three-column severity table rather than the rubric's
+1. FAIL: Returned a three-column severity table rather than the rubric's
    five-column evidence table.
-2. PASS — Distinguished supplied evidence, missing contributor guidance, and
+2. PASS: Distinguished supplied evidence, missing contributor guidance, and
    unverified current CI/remote state without accepting a bare README mention
    or historical CI result as present-state proof.
-3. PASS — Recognised README, licence, and CI workflow as present and did not
+3. PASS: Recognised README, licence, and CI workflow as present and did not
    recommend duplicate files.
-4. PASS — Classified contributor guidance missing from the exact supplied
+4. PASS: Classified contributor guidance missing from the exact supplied
    inventory, while keeping unread areas unverified.
-5. PASS — Made no local or remote mutation and ended with evidence-backed
+5. PASS: Made no local or remote mutation and ended with evidence-backed
    approval conditions rather than a false no-change conclusion.
 
 Observation: The unassisted control made sound evidence judgements but did not
