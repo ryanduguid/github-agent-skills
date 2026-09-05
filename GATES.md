@@ -32,6 +32,4 @@ Environment: Python 3.11.9 and PowerShell 7.6.4.
 The local results do not establish GitHub-hosted CI or remote repository state.
 Because the tracked review cannot contain its own commit hash, the ignored
 final-fix report supplies the terminal immutable checkpoint and complete
-reachable manifest for the action-time handoff. See
-`audits/publication-review.md` for the fixed ancestors, inventory, evaluation
-comparison, remaining risks, and unexecuted publication preview.
+reachable manifest for the action-time handoff.
