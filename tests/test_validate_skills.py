@@ -125,6 +125,15 @@ class ValidateSkillsTests(unittest.TestCase):
             [".claude/skills/github-repository-audit/SKILL.md: differs from skills/github-repository-audit/SKILL.md"],
         )
 
+    def test_strict_mode_reports_mismatched_generated_copy(self):
+        self.valid_skill_set()
+        self.write(".claude/skills/github-repository-audit/SKILL.md", "different\n")
+
+        self.assertEqual(
+            validate(self.root, strict=True),
+            [".claude/skills/github-repository-audit/SKILL.md: differs from skills/github-repository-audit/SKILL.md"],
+        )
+
     def test_incremental_mode_accepts_an_approved_subset(self):
         self.valid_skill()
 

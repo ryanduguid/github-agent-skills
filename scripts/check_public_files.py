@@ -16,7 +16,6 @@ SUPPORTED_QUICK_START = (
     "pwsh -File scripts/sync-skills.ps1",
     "python -m unittest discover -s tests -v",
     "python scripts/validate_skills.py --strict",
-    "pwsh -File scripts/sync-skills.ps1 -Check",
 )
 QUICK_START = re.compile(r"^## Quick start\s*$([\s\S]*?)(?=^## |\Z)", re.MULTILINE)
 FENCED_COMMANDS = re.compile(r"```(?:powershell|shell)\n([\s\S]*?)```")
@@ -43,8 +42,7 @@ def quick_start_commands(readme: str) -> list[str]:
     return [line.strip() for block in FENCED_COMMANDS.findall(section.group(1)) for line in block.splitlines() if line.strip()]
 
 
-def quick_start_failures(root: Path, readme: str) -> list[str]:
-    del root
+def quick_start_failures(readme: str) -> list[str]:
     return [] if tuple(quick_start_commands(readme)) == SUPPORTED_QUICK_START else ["README.md: Quick start commands differ from the supported list"]
 
 
@@ -105,6 +103,10 @@ def tracked_failures(root: Path) -> list[str]:
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     failures = tracked_failures(root)
+    failures += quick_start_failures((root / "README.md").read_text(encoding="utf-8"))
+    workflow = (root / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+    if permissions_block(workflow) != ["  contents: read"]:
+        failures.append(".github/workflows/validate.yml: workflow permissions are not read-only contents")
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1

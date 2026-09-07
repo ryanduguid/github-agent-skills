@@ -7,8 +7,7 @@ boundary. Edit only `skills/`, then regenerate the Codex and Claude Code copies:
 pwsh -File scripts/sync-skills.ps1
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
-pwsh -File scripts/sync-skills.ps1 -Check
 ```
 
-Include a focused test or scenario when behavior changes, preserve unrelated
+Include a focused test or scenario when behaviour changes, preserve unrelated
 work, and describe the verification results in the pull request.

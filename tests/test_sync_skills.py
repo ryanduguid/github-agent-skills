@@ -67,43 +67,6 @@ class SyncSkillsTests(unittest.TestCase):
             check=False,
         )
 
-    def test_check_rejects_changed_generated_file(self):
-        (self.root / ".agents" / "skills" / NAME / "SKILL.md").write_text("changed\n", encoding="utf-8")
-
-        result = self.run_sync("-Check")
-
-        self.assertNotEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(
-            (self.root / ".agents" / "skills" / NAME / "SKILL.md").read_text(encoding="utf-8"),
-            "changed\n",
-        )
-
-    def test_check_accepts_empty_canonical_set(self):
-        shutil.rmtree(self.root / "skills")
-        shutil.rmtree(self.root / ".agents")
-        shutil.rmtree(self.root / ".claude")
-
-        result = self.run_sync("-Check")
-
-        self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_check_rejects_unexpected_generated_directory(self):
-        unexpected = self.root / ".claude" / "skills" / "not-approved" / "SKILL.md"
-        unexpected.parent.mkdir(parents=True)
-        unexpected.write_text("extra\n", encoding="utf-8")
-
-        result = self.run_sync("-Check")
-
-        self.assertNotEqual(result.returncode, 0, result.stderr)
-
-    def test_check_rejects_unexpected_generated_file(self):
-        unexpected = self.root / ".claude" / "skills" / NAME / "extra.md"
-        unexpected.write_text("extra\n", encoding="utf-8")
-
-        result = self.run_sync("-Check")
-
-        self.assertNotEqual(result.returncode, 0, result.stderr)
-
     def test_sync_creates_exact_five_byte_identical_skill_trees(self):
         shutil.rmtree(self.root / "skills")
         for name in NAMES:
