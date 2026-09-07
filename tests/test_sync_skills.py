@@ -67,6 +67,15 @@ class SyncSkillsTests(unittest.TestCase):
             check=False,
         )
 
+    def test_sync_rejects_arguments_without_mutating(self):
+        copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
+        copy.write_text("drifted\n", encoding="utf-8")
+
+        result = self.run_sync("-Check")
+
+        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(copy.read_text(encoding="utf-8"), "drifted\n")
+
     def test_sync_creates_exact_five_byte_identical_skill_trees(self):
         shutil.rmtree(self.root / "skills")
         for name in NAMES:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import filecmp
 import re
+import stat
 import sys
 from pathlib import Path
 
@@ -17,6 +18,15 @@ APPROVED_NAMES = (
     "github-repository-audit",
 )
 RUNTIME_ROOTS = (".agents/skills", ".claude/skills")
+
+
+def _is_link(path: Path) -> bool:
+    if path.is_symlink():
+        return True
+    attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
+
+
 PLACEHOLDER = re.compile(r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b", re.IGNORECASE)
 
 
@@ -90,6 +100,10 @@ def validate(root: Path, strict: bool = False) -> list[str]:
                 if copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
                     failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
     else:
+        for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS)):
+            for path in ([tree, *tree.rglob("*")] if tree.exists() else []):
+                if _is_link(path):
+                    failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
         expected_directories = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_dir()}
         expected_files = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_file()}
         for runtime in RUNTIME_ROOTS:

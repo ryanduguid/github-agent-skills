@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+if ($args.Count) { throw "sync-skills.ps1 takes no arguments; the -Check mode was removed, run python scripts/validate_skills.py --strict for a read-only check" }
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $source = Join-Path $repo 'skills'
 $approved = @('github-issue-to-pr', 'github-profile-curator', 'github-readme-polish', 'github-release-prep', 'github-repository-audit')

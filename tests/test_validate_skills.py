@@ -1,3 +1,6 @@
+import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -138,6 +141,29 @@ class ValidateSkillsTests(unittest.TestCase):
         self.valid_skill()
 
         self.assertEqual(validate(self.root), [])
+
+    def test_strict_mode_rejects_linked_runtime_directory(self):
+        self.valid_skill_set()
+        outside = self.root / "outside" / "github-repository-audit"
+        outside.mkdir(parents=True)
+        shutil.copyfile(self.root / "skills" / "github-repository-audit" / "SKILL.md", outside / "SKILL.md")
+        link = self.root / ".claude" / "skills" / "github-repository-audit"
+        shutil.rmtree(link)
+        try:
+            os.symlink(outside, link, target_is_directory=True)
+        except OSError as error:
+            junction = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True, check=False)
+            if junction.returncode:
+                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        try:
+            failures = validate(self.root, strict=True)
+        finally:
+            if os.name == "nt":
+                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
+            else:
+                os.unlink(link)
+
+        self.assertIn(".claude/skills/github-repository-audit: is a link, not an ordinary file or directory", failures)
 
     def test_strict_mode_requires_all_five_skills(self):
         self.valid_skill()
