@@ -27,6 +27,21 @@ def _is_link(path: Path) -> bool:
     return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
 
 
+def _ordinary_entries(tree: Path, root: Path, failures: list[str]) -> list[Path]:
+    """Every path under tree, never descending into a link, which is reported instead."""
+    found: list[Path] = []
+    pending = [tree]
+    while pending:
+        for path in sorted(pending.pop().iterdir()):
+            if _is_link(path):
+                failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
+                continue
+            found.append(path)
+            if path.is_dir():
+                pending.append(path)
+    return found
+
+
 PLACEHOLDER = re.compile(r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b", re.IGNORECASE)
 
 
@@ -100,16 +115,18 @@ def validate(root: Path, strict: bool = False) -> list[str]:
                 if copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
                     failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
     else:
-        for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS)):
-            for path in ([tree, *tree.rglob("*")] if tree.exists() else []):
-                if _is_link(path):
-                    failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
-        expected_directories = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_dir()}
-        expected_files = {path.relative_to(canonical).as_posix() for path in canonical.rglob("*") if path.is_file()}
+        trees = {tree: [] for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS))}
+        for tree in trees:
+            if _is_link(tree):
+                failures.append(f"{tree.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
+            elif tree.is_dir():
+                trees[tree] = _ordinary_entries(tree, root, failures)
+        expected_directories = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_dir()}
+        expected_files = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_file()}
         for runtime in RUNTIME_ROOTS:
             destination = root / runtime
-            actual_directories = {path.relative_to(destination).as_posix() for path in destination.rglob("*") if path.is_dir()} if destination.is_dir() else set()
-            actual_files = {path.relative_to(destination).as_posix() for path in destination.rglob("*") if path.is_file()} if destination.is_dir() else set()
+            actual_directories = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_dir()}
+            actual_files = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_file()}
             for relative in sorted(expected_directories - actual_directories):
                 failures.append(f"{runtime}/{relative}: missing generated directory")
             for relative in sorted(expected_files):

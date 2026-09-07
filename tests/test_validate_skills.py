@@ -144,10 +144,9 @@ class ValidateSkillsTests(unittest.TestCase):
 
     def test_strict_mode_rejects_linked_runtime_directory(self):
         self.valid_skill_set()
-        outside = self.root / "outside" / "github-repository-audit"
-        outside.mkdir(parents=True)
-        shutil.copyfile(self.root / "skills" / "github-repository-audit" / "SKILL.md", outside / "SKILL.md")
-        link = self.root / ".claude" / "skills" / "github-repository-audit"
+        # The link points back at its own tree, so descending into it would never end.
+        outside = self.root / ".claude" / "skills"
+        link = outside / "github-repository-audit"
         shutil.rmtree(link)
         try:
             os.symlink(outside, link, target_is_directory=True)
