@@ -1,7 +1,5 @@
-[CmdletBinding()]
-param([switch]$Check)
-
 $ErrorActionPreference = 'Stop'
+if ($args.Count) { throw "sync-skills.ps1 takes no arguments; the -Check mode was removed, run python scripts/validate_skills.py --strict for a read-only check" }
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $source = Join-Path $repo 'skills'
 $approved = @('github-issue-to-pr', 'github-profile-curator', 'github-readme-polish', 'github-release-prep', 'github-repository-audit')
@@ -55,10 +53,9 @@ $names = if ($canonicalTree.Directories.Count) {
 $sourceTrees = @{}
 foreach ($name in $names) { $sourceTrees[$name] = Get-OrdinaryTree (Join-Path $source $name) "Canonical skill '$name'" }
 
-$destinationTrees = @{}
 foreach ($destination in $destinations) {
     Assert-SafeDestination $destination
-    $destinationTrees[$destination] = Get-OrdinaryTree $destination 'Generated runtime tree'
+    [void](Get-OrdinaryTree $destination 'Generated runtime tree')
 }
 
 $expectedDirectories = @()
@@ -69,18 +66,6 @@ foreach ($name in $names) {
 }
 
 foreach ($destination in $destinations) {
-    if ($Check) {
-        $actualDirectories = @($destinationTrees[$destination].Directories | Where-Object { $_ -ne $destination } | ForEach-Object { [IO.Path]::GetRelativePath($destination, $_) })
-        $actualFiles = @($destinationTrees[$destination].Files | ForEach-Object { [IO.Path]::GetRelativePath($destination, $_) })
-        $drift = (Compare-Object (@($expectedDirectories) + '') (@($actualDirectories) + '')) -or (Compare-Object (@($expectedFiles) + '') (@($actualFiles) + ''))
-        foreach ($file in $expectedFiles) {
-            $copy = Join-Path $destination $file
-            if (-not (Test-Path -LiteralPath $copy -PathType Leaf) -or (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source $file)).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath $copy).Hash) { $drift = $true }
-        }
-        if ($drift) { Write-Error "Skill copies are out of sync in $destination" }
-        continue
-    }
-
     foreach ($name in $approved) {
         $target = Join-Path $destination $name
         if ($null -ne (Get-Item -Force -LiteralPath $target -ErrorAction SilentlyContinue)) { Remove-OrdinaryTree $target }

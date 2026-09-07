@@ -25,7 +25,6 @@ cd github-agent-skills
 pwsh -File scripts/sync-skills.ps1
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
-pwsh -File scripts/sync-skills.ps1 -Check
 ```
 
 ## Runtimes and installation
@@ -43,8 +42,8 @@ copy the generated runtime directory again. Use only the runtime you need.
 ## Validation
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
-change, run the Quick start checks: the unit suite, strict validator, and
-sync-drift check. `GATES.md` lists the same repository gate.
+change, run the Quick start checks: the unit suite and strict validator.
+`GATES.md` lists the same repository gate.
 
 ## Boundary
 

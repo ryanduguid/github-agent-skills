@@ -1,3 +1,6 @@
+import os
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -125,10 +128,41 @@ class ValidateSkillsTests(unittest.TestCase):
             [".claude/skills/github-repository-audit/SKILL.md: differs from skills/github-repository-audit/SKILL.md"],
         )
 
+    def test_strict_mode_reports_mismatched_generated_copy(self):
+        self.valid_skill_set()
+        self.write(".claude/skills/github-repository-audit/SKILL.md", "different\n")
+
+        self.assertEqual(
+            validate(self.root, strict=True),
+            [".claude/skills/github-repository-audit/SKILL.md: differs from skills/github-repository-audit/SKILL.md"],
+        )
+
     def test_incremental_mode_accepts_an_approved_subset(self):
         self.valid_skill()
 
         self.assertEqual(validate(self.root), [])
+
+    def test_strict_mode_rejects_linked_runtime_directory(self):
+        self.valid_skill_set()
+        # The link points back at its own tree, so descending into it would never end.
+        outside = self.root / ".claude" / "skills"
+        link = outside / "github-repository-audit"
+        shutil.rmtree(link)
+        try:
+            os.symlink(outside, link, target_is_directory=True)
+        except OSError as error:
+            junction = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True, check=False)
+            if junction.returncode:
+                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        try:
+            failures = validate(self.root, strict=True)
+        finally:
+            if os.name == "nt":
+                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
+            else:
+                os.unlink(link)
+
+        self.assertIn(".claude/skills/github-repository-audit: is a link, not an ordinary file or directory", failures)
 
     def test_strict_mode_requires_all_five_skills(self):
         self.valid_skill()

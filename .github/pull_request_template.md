@@ -6,7 +6,6 @@
 
 - [ ] `python -m unittest discover -s tests -v`
 - [ ] `python scripts/validate_skills.py --strict`
-- [ ] `pwsh -File scripts/sync-skills.ps1 -Check`
 
 ## Scope
 
