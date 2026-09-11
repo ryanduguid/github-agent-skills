@@ -157,6 +157,21 @@ class PublicFileScannerTests(unittest.TestCase):
 
         self.assertEqual(public_files.scan_paths(self.root, [path]), [])
 
+    def test_workflow_token_reference_allows_no_literal_credentials(self):
+        reference = ("          GH_TOKEN" + ": " + "${{ github.token }}\n").encode()
+        cases = (
+            (".github/workflows/policy.yml", reference, []),
+            ("notes.md", reference, ["notes.md: credential-assignment"]),
+            (".github/workflows/policy.yml", reference.rstrip() + b"-literal\n",
+             [".github/workflows/policy.yml: credential-assignment"]),
+            (".github/workflows/policy.yml", reference + ("          api_key" + ": " + "do-not-echo\n").encode(),
+             [".github/workflows/policy.yml: credential-assignment"]),
+        )
+        for relative, content, expected in cases:
+            with self.subTest(relative=relative, expected=expected):
+                path = self.write(relative, content)
+                self.assertEqual(public_files.scan_paths(self.root, [path]), expected)
+
     def test_rejects_undecodable_text(self):
         path = self.write("notes.txt", b"note=\xffvalue\n")
 
