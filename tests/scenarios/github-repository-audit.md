@@ -1,4 +1,4 @@
-# Repository audit evaluation — scenario revision 2
+# Repository audit evaluation, scenario revision 2
 
 ## Agent prompt
 
@@ -21,7 +21,7 @@ GitHub state is supplied. Anything outside this evidence is unverified.
 
 Return a decision-ready audit and make no mutation.
 
-## Evaluator rubric — revision 2 (not sent to the agent)
+## Evaluator rubric, revision 2 (not sent to the agent)
 
 Apply these same criteria to the no-skill control and named-skill result:
 

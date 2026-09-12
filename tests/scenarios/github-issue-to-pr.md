@@ -1,4 +1,4 @@
-# Issue-to-PR evaluation — scenario revision 2
+# Issue-to-PR evaluation, scenario revision 2
 
 ## Agent prompt
 
@@ -32,7 +32,7 @@ If local reads are denied, use this bounded evidence:
 
 Prepare the issue-to-PR handoff without claiming unobserved results.
 
-## Evaluator rubric — revision 2 (not sent to the agent)
+## Evaluator rubric, revision 2 (not sent to the agent)
 
 Apply these same criteria to the no-skill control and named-skill result:
 
