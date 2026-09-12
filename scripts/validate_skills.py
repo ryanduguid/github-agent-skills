@@ -23,7 +23,10 @@ RUNTIME_ROOTS = (".agents/skills", ".claude/skills")
 def _is_link(path: Path) -> bool:
     if path.is_symlink():
         return True
-    attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    try:
+        attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    except FileNotFoundError:
+        return False
     return bool(attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))
 
 

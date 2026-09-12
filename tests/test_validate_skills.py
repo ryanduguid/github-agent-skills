@@ -177,6 +177,12 @@ class ValidateSkillsTests(unittest.TestCase):
             ],
         )
 
+    def test_strict_mode_reports_missing_runtime_root(self):
+        self.valid_skill_set()
+        shutil.rmtree(self.root / ".agents")
+        failures = validate(self.root, strict=True)
+        self.assertTrue(any("missing generated" in failure for failure in failures))
+
     def test_strict_mode_requires_every_canonical_file_in_each_runtime(self):
         self.valid_skill_set()
         self.write("skills/github-repository-audit/references/checklist.md", "canonical\n")

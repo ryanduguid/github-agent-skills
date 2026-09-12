@@ -177,6 +177,13 @@ class PublicFileScannerTests(unittest.TestCase):
 
         self.assertEqual(public_files.scan_paths(self.root, [path]), ["notes.txt: undecodable-text"])
 
+    def test_scans_both_utf32_byte_orders_without_echoing_values(self):
+        for encoding, bom in (("utf-32-le", b"\xff\xfe\0\0"), ("utf-32-be", b"\0\0\xfe\xff")):
+            with self.subTest(encoding=encoding):
+                content = ("api" + "_key" + " = " + "do-not-echo").encode(encoding)
+                path = self.write("utf32.txt", bom + content)
+                self.assertEqual(public_files.scan_paths(self.root, [path]), ["utf32.txt: credential-assignment"])
+
     def test_scans_bom_marked_utf16_and_flags_unclassifiable_nul_text(self):
         utf16 = self.write("utf16.txt", ("api" + "_key" + " = " + "do-not-echo").encode("utf-16"))
         nul_text = self.write("embedded-null.txt", b"note=\0value\n")
