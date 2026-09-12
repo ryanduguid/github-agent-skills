@@ -1,0 +1,34 @@
+name: CodeRabbit review trigger
+
+# CodeRabbit does not review public repositories with fewer than 10 stars
+# automatically; it requires a manual "@coderabbitai review" comment. This
+# workflow posts that comment for every pull request update. It runs from the
+# trusted base branch and never checks out or runs pull request code.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: coderabbit-trigger-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  request-review:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask CodeRabbit for a review
+        run: gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "@coderabbitai review"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
