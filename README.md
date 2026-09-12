@@ -45,6 +45,20 @@ During authoring, run `python scripts/validate_skills.py`. Before sharing a
 change, run the Quick start checks: the unit suite and strict validator.
 `GATES.md` lists the same repository gate.
 
+## Recorded runs
+
+`validation/baselines/` and `validation/forward/` hold the recorded A/B Codex
+runs behind these skills: for every scenario in `tests/scenarios/`, one
+no-skill control run and one named-skill run. Each file records the scenario
+and rubric revision, the Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
+isolation flags, a PASS or FAIL against each rubric criterion, the SHA-256
+digest of the retained raw output, and the run exit status.
+
+Across the five pairs the controls fail four criteria in total and the
+named-skill runs pass every criterion, but the release-prep pair is
+non-discriminating because both of its runs pass. These files record what those
+runs produced; they are not a promise that a rerun reproduces them.
+
 ## Boundary
 
 These skills help inspect and prepare local work. They do not grant authority

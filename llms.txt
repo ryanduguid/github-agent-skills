@@ -1,0 +1,47 @@
+# Portable GitHub Skills
+
+> Five focused Agent Skills for evidence-based GitHub work, portable between
+> Codex and Claude Code. They use only the Python standard library, so a clone
+> is the whole installation.
+
+`skills/` is the canonical source. Two tracked runtime copies, `.agents/skills/`
+for Codex and `.claude/skills/` for Claude Code, are byte-identical to it and
+are regenerated rather than edited. Every skill inspects and prepares local
+work; none of them carries authority to push, open a pull request or release,
+change GitHub settings, or make any other remote mutation.
+
+## Skills
+
+- [github-repository-audit](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-repository-audit/SKILL.md): assess whether a repository is trustworthy, maintainable, presentable, or ready to feature.
+- [github-readme-polish](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-readme-polish/SKILL.md): improve a README's clarity, quick start, credibility, and badges without overstating repository evidence.
+- [github-profile-curator](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-profile-curator/SKILL.md): select profile projects, refine the profile README narrative, review pins, and prepare portfolio-facing copy.
+- [github-release-prep](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-release-prep/SKILL.md): assess release readiness, reconcile version drift, and prepare an evidence-backed tag, release, or publication handoff.
+- [github-issue-to-pr](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-to-pr/SKILL.md): turn an issue into a narrow, tested local change with a commit and pull-request handoff.
+
+## Install
+
+- [Quick start](https://github.com/ryanduguid/github-agent-skills#quick-start): clone the repository, run the unit suite, then run the strict validator.
+- Codex: copy `.agents/skills/<skill>` into the Codex skill discovery path of the project you are working in.
+- Claude Code: copy `.claude/skills/<skill>` into that project's Claude Code skill discovery path.
+- Install only the runtime you use, and keep `skills/` as the source of truth for any local edit.
+
+## Recorded runs
+
+- [validation/baselines](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/baselines): the no-skill control run for each of the five scenarios.
+- [validation/forward](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/forward): the named-skill run for the same scenarios.
+- [tests/scenarios](https://github.com/ryanduguid/github-agent-skills/tree/main/tests/scenarios): the scenario prompt and evaluator rubric behind each pair.
+
+Each recorded file lists the scenario and rubric revision, the Codex CLI version
+(`codex-cli 0.151.0-alpha.7.2`), the isolation flags, a PASS or FAIL for every
+rubric criterion, the SHA-256 digest of the retained raw output, and the exit
+status. The controls fail four criteria in total and the named-skill runs pass
+every criterion, though the release-prep pair is non-discriminating because both
+of its runs pass. The files record those runs; they do not promise that a rerun
+reproduces them.
+
+## Optional
+
+- [AGENTS.md](https://github.com/ryanduguid/github-agent-skills/blob/main/AGENTS.md): repository instructions for agents.
+- [CONTRIBUTING.md](https://github.com/ryanduguid/github-agent-skills/blob/main/CONTRIBUTING.md): how to change a skill and what to verify.
+- [GATES.md](https://github.com/ryanduguid/github-agent-skills/blob/main/GATES.md): the local and repository gates.
+- [SECURITY.md](https://github.com/ryanduguid/github-agent-skills/blob/main/SECURITY.md): how to report a vulnerability.
