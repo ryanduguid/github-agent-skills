@@ -8,6 +8,8 @@ from pathlib import Path
 from scripts.validate_skills import validate
 
 
+ROOT = Path(__file__).parents[1]
+
 SKILL = """---
 name: {name}
 description: Use when {description}.
@@ -209,6 +211,14 @@ class ValidateSkillsTests(unittest.TestCase):
                 ".claude/skills/not-approved: unexpected generated directory",
             ],
         )
+
+
+class ScenarioCoverageTests(unittest.TestCase):
+    def test_every_canonical_skill_has_one_scenario_of_the_same_name(self):
+        skills = {path.name for path in (ROOT / "skills").iterdir() if path.is_dir()}
+        scenarios = {path.stem for path in (ROOT / "tests" / "scenarios").glob("*.md")}
+
+        self.assertEqual(scenarios, skills)
 
 
 if __name__ == "__main__":

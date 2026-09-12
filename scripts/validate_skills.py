@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import filecmp
 import re
+import shutil
 import stat
 import sys
 from pathlib import Path
@@ -147,6 +148,41 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     return failures
 
 
+def sync(root: Path) -> list[str]:
+    """Regenerate both runtime copies from skills/, refusing before any mutation if a link is found."""
+    root = Path(root)
+    canonical = root / "skills"
+    destinations = [root / runtime for runtime in RUNTIME_ROOTS]
+    failures: list[str] = []
+    trees: dict[Path, list[Path]] = {}
+    for tree in (canonical, *destinations):
+        if _is_link(tree):
+            failures.append(f"{tree.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
+        else:
+            trees[tree] = _ordinary_entries(tree, root, failures) if tree.is_dir() else []
+    if failures:
+        return failures
+
+    approved = [
+        path.relative_to(canonical)
+        for path in trees[canonical]
+        if path.relative_to(canonical).parts[0] in APPROVED_NAMES
+    ]
+    for destination in destinations:
+        for path in sorted(trees[destination], key=lambda path: len(path.parts), reverse=True):
+            if path.is_dir():
+                path.rmdir()
+            else:
+                path.unlink()
+        destination.mkdir(parents=True, exist_ok=True)
+        for relative in approved:
+            if (canonical / relative).is_dir():
+                (destination / relative).mkdir(exist_ok=True)
+            else:
+                shutil.copyfile(canonical / relative, destination / relative)
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate portable Agent Skills.")
     parser.add_argument(
@@ -154,8 +190,16 @@ def main() -> int:
         action="store_true",
         help="require all five canonical skills and both generated runtime copies (default: validate discovered approved skills and existing copies)",
     )
+    parser.add_argument(
+        "--sync",
+        action="store_true",
+        help="regenerate the runtime copies from skills/ before validating",
+    )
     args = parser.parse_args()
-    failures = validate(Path(__file__).resolve().parents[1], strict=args.strict)
+    root = Path(__file__).resolve().parents[1]
+    failures = sync(root) if args.sync else []
+    if not failures:
+        failures = validate(root, strict=args.strict)
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1

@@ -14,25 +14,28 @@ Claude Code.
 
 ## Requirements
 
-Python 3.11+ and PowerShell 7+ (`pwsh`) are required. The repository uses the
-Python standard library; no package installation is needed.
+Python 3.11+ is required. The repository uses the Python standard library; no
+package installation is needed.
 
 ## Quick start
 
-```powershell
+```shell
 git clone https://github.com/ryanduguid/github-agent-skills.git
 cd github-agent-skills
-pwsh -File scripts/sync-skills.ps1
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
+python scripts/check_public_files.py
 ```
+
+These are the checks the Validate workflow runs, in the same order. The runtime
+copies are tracked, so a fresh clone needs no synchronising step.
 
 ## Runtimes and installation
 
-`skills/` is the only canonical source. Run the synchroniser after changing a
-canonical skill; it regenerates byte-identical copies in `.agents/skills/` for
-Codex and `.claude/skills/` for Claude Code. Do not edit either generated
-directory directly.
+`skills/` is the only canonical source. After changing a canonical skill, run
+`python scripts/validate_skills.py --sync`; it regenerates byte-identical
+copies in `.agents/skills/` for Codex and `.claude/skills/` for Claude Code,
+then validates the result. Do not edit either generated directory directly.
 
 For a project-local installation, copy the generated directory for the runtime
 you use into that project's corresponding discovery path. To keep a local
@@ -42,8 +45,22 @@ copy the generated runtime directory again. Use only the runtime you need.
 ## Validation
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
-change, run the Quick start checks: the unit suite and strict validator.
-`GATES.md` lists the same repository gate.
+change, run the Quick start checks: the unit suite, the strict validator and
+the public-file check. `GATES.md` lists the same repository gate.
+
+## Recorded runs
+
+`validation/baselines/` and `validation/forward/` hold the recorded A/B Codex
+runs behind these skills: for every scenario in `tests/scenarios/`, one
+no-skill control run and one named-skill run. Each file records the scenario
+and rubric revision, the Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
+isolation flags, a PASS or FAIL against each rubric criterion, the SHA-256
+digest of the retained raw output, and the run exit status.
+
+Across the five pairs the controls fail four criteria in total and the
+named-skill runs pass every criterion, but the release-prep pair is
+non-discriminating because both of its runs pass. These files record what those
+runs produced; they are not a promise that a rerun reproduces them.
 
 ## Boundary
 

@@ -5,8 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scripts.validate_skills import sync, validate
 
-SCRIPT = Path(__file__).parents[1] / "scripts" / "sync-skills.ps1"
+
+ROOT = Path(__file__).parents[1]
 NAME = "github-repository-audit"
 NAMES = (
     "github-issue-to-pr",
@@ -23,13 +25,10 @@ class SyncSkillsTests(unittest.TestCase):
         self.outside = tempfile.TemporaryDirectory()
         self.links = []
         self.root = Path(self.tmp.name)
-        script = self.root / "scripts" / "sync-skills.ps1"
-        script.parent.mkdir()
-        shutil.copyfile(SCRIPT, script)
         source = self.root / "skills" / NAME / "SKILL.md"
         source.parent.mkdir(parents=True)
         source.write_text("canonical\n", encoding="utf-8")
-        self.run_sync()
+        self.assertEqual(sync(self.root), [])
 
     def tearDown(self):
         for link in reversed(self.links):
@@ -59,31 +58,15 @@ class SyncSkillsTests(unittest.TestCase):
             os.symlink(target, link, target_is_directory=True)
         self.links.append(link)
 
-    def run_sync(self, *args):
-        return subprocess.run(
-            ["pwsh", "-File", str(self.root / "scripts" / "sync-skills.ps1"), *args],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    def test_sync_rejects_arguments_without_mutating(self):
-        copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
-        copy.write_text("drifted\n", encoding="utf-8")
-
-        result = self.run_sync("-Check")
-
-        self.assertNotEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(copy.read_text(encoding="utf-8"), "drifted\n")
-
     def test_sync_removes_unexpected_generated_content(self):
         for runtime in (".agents/skills", ".claude/skills"):
             root = self.root / runtime
             (root / "retired-skill").mkdir()
             (root / "retired-skill" / "SKILL.md").write_text("retired\n")
             (root / "obsolete.txt").write_text("obsolete\n")
-        result = self.run_sync()
-        self.assertEqual(result.returncode, 0, result.stderr)
+
+        self.assertEqual(sync(self.root), [])
+
         for runtime in (".agents/skills", ".claude/skills"):
             self.assertEqual({path.name for path in (self.root / runtime).iterdir()}, {NAME})
 
@@ -96,9 +79,8 @@ class SyncSkillsTests(unittest.TestCase):
             (skill / "references" / "check.bin").parent.mkdir()
             (skill / "references" / "check.bin").write_bytes(b"\x00\xff\x10")
 
-        result = self.run_sync()
+        self.assertEqual(sync(self.root), [])
 
-        self.assertEqual(result.returncode, 0, result.stderr)
         for runtime in (".agents/skills", ".claude/skills"):
             destination = self.root / runtime
             self.assertEqual({path.name for path in destination.iterdir()}, set(NAMES))
@@ -128,9 +110,9 @@ class SyncSkillsTests(unittest.TestCase):
             if junction.returncode:
                 self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
 
-        result = self.run_sync()
+        failures = sync(self.root)
 
-        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn(".agents/skills: is a link, not an ordinary file or directory", failures)
         self.assertEqual(outside_skill.read_text(encoding="utf-8"), "outside\n")
 
     def test_sync_rejects_linked_approved_child_before_any_mutation(self):
@@ -144,9 +126,9 @@ class SyncSkillsTests(unittest.TestCase):
         agents_copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
         agents_copy.write_text("agents-before\n", encoding="utf-8")
 
-        result = self.run_sync()
+        failures = sync(self.root)
 
-        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f".claude/skills/{NAME}: is a link, not an ordinary file or directory", failures)
         self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
         self.assertEqual(agents_copy.read_text(encoding="utf-8"), "agents-before\n")
 
@@ -160,9 +142,12 @@ class SyncSkillsTests(unittest.TestCase):
         claude_copy = self.root / ".claude" / "skills" / NAME / "SKILL.md"
         claude_copy.write_text("claude-before\n", encoding="utf-8")
 
-        result = self.run_sync()
+        failures = sync(self.root)
 
-        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            f".agents/skills/{NAME}/references/linked: is a link, not an ordinary file or directory",
+            failures,
+        )
         self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
         self.assertEqual(claude_copy.read_text(encoding="utf-8"), "claude-before\n")
 
@@ -176,11 +161,19 @@ class SyncSkillsTests(unittest.TestCase):
         agents_copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
         agents_copy.write_text("agents-before\n", encoding="utf-8")
 
-        result = self.run_sync()
+        failures = sync(self.root)
 
-        self.assertNotEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            f"skills/{NAME}/references/linked: is a link, not an ordinary file or directory",
+            failures,
+        )
         self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
         self.assertEqual(agents_copy.read_text(encoding="utf-8"), "agents-before\n")
+
+
+class TrackedCopyTests(unittest.TestCase):
+    def test_tracked_runtime_copies_are_byte_identical_to_canonical_skills(self):
+        self.assertEqual(validate(ROOT, strict=True), [])
 
 
 if __name__ == "__main__":

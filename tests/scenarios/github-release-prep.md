@@ -28,7 +28,7 @@ declares version `2.4.1` and artifact `dist/example-tool-2.4.0.tar.gz`; and
 `CHANGELOG.md` has a `[2.4.0]` Added entry, “Synthetic release-readiness
 fixture.” The supplied local `evidence/build.txt` says both declared commands
 exited 0 for source declaring `2.4.0`, but does not establish current CI,
-artifact integrity, provenance, or publication state. The archive exists, but
+artefact integrity, provenance, or publication state. The archive exists, but
 no checksum or in-toto provenance statement is supplied. The supplied tag
 inventory contains `v2.3.0` only. All values are synthetic.
 
@@ -41,7 +41,7 @@ inventory contains `v2.3.0` only. All values are synthetic.
    while `build-metadata.json` is `2.4.1`, and the `2.4.0` archive has neither
    a verified checksum nor an in-toto provenance statement.
 3. Reconcile every supplied version surface, matching changelog/notes, tag
-   inventory, retained build record, artifact, and provenance status; label
+   inventory, retained build record, artefact, and provenance status; label
    current CI and remote state unverified.
 4. Give the declared verification commands and proposed notes that retain the
    matching changelog entry's `### Added` heading and
