@@ -3,7 +3,7 @@ name: github-repository-audit
 description: Use when assessing whether a GitHub repository is trustworthy, maintainable, presentable, or ready to feature.
 ---
 
-# Evidence-first repository audit
+# Repository audit
 
 Assess the supplied local repository or explicit repository evidence without
 changing it. An audit is a decision aid, not permission to improve the
@@ -14,7 +14,7 @@ repository.
 List relevant files and read the evidence before making a claim. Check the
 README, licence, CI configuration and any supplied CI result; search for
 contributor guidance before calling it absent. Record the source path or
-supplied artifact for every observation.
+supplied artefact for every observation.
 
 | Status | Use only when |
 | --- | --- |

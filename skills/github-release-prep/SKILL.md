@@ -3,7 +3,7 @@ name: github-release-prep
 description: Use when assessing release readiness, reconciling version drift, preparing release notes, or handing off a GitHub tag, release, or package publication.
 ---
 
-# Evidence-first release preparation
+# Release preparation
 
 Prepare a release decision from repository evidence. Preparation establishes
 readiness; it never makes publication authority implicit.
@@ -31,7 +31,7 @@ build. Search the relevant repository surfaces and report each one:
 
 Classify each surface as **matched**, **drift**, **missing**, or **unverified**.
 Call out every mismatch with both path and value. A retained successful build
-is historical evidence only: it neither verifies current CI nor proves artifact
+is historical evidence only: it neither verifies current CI nor proves artefact
 integrity, provenance, release state, or authority to publish.
 
 An artefact is not verified merely because it exists. Where the repository
@@ -53,13 +53,13 @@ Return these sections in order:
 5. **Verification commands**: only commands declared by repository guidance;
    record their results separately from the intended remote action.
 6. **Publication checkpoint**: after readiness is rechecked, list the remote
-   tag, GitHub Release, artifact upload, and registry publication actions that
+   tag, GitHub Release, artefact upload, and registry publication actions that
    still need explicit user authority.
 
 ## Authority boundary
 
 Do not create, move, or push a tag; create or edit a GitHub Release; upload an
-artifact; publish to a registry; or contact a remote service during release
+artefact; publish to a registry; or contact a remote service during release
 preparation. Even a request to publish requires a separate explicit checkpoint
 after the readiness verdict is ready. Present the proposed remote actions for
 approval instead of performing them.
