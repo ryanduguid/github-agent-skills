@@ -166,8 +166,13 @@ class PublicFileScannerTests(unittest.TestCase):
 
     def test_workflow_token_reference_allows_no_literal_credentials(self):
         reference = ("          GH_TOKEN" + ": " + "${{ github.token }}\n").encode()
+        named_reference = ("      GH_TOKEN" + ": " + "${{ secrets.TRIGGER_TOKEN }}\n").encode()
         cases = (
             (".github/workflows/policy.yml", reference, []),
+            (".github/workflows/policy.yml", named_reference, []),
+            ("notes.md", named_reference, ["notes.md: credential-assignment"]),
+            (".github/workflows/policy.yml", named_reference.rstrip() + b"-literal\n",
+             [".github/workflows/policy.yml: credential-assignment"]),
             ("notes.md", reference, ["notes.md: credential-assignment"]),
             (".github/workflows/policy.yml", reference.rstrip() + b"-literal\n",
              [".github/workflows/policy.yml: credential-assignment"]),

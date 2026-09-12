@@ -99,8 +99,8 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
         for rule, pattern in TEXT_RULES:
             candidate = text
             if rule == "credential-assignment" and path.parent.as_posix() == ".github/workflows" and path.suffix in (".yml", ".yaml"):
-                # This exact Actions expression references a runtime token; it contains no credential value.
-                candidate = re.sub(r"(?m)^[ \t]+(?:GH_TOKEN|GITHUB_TOKEN):[ \t]*\$\{\{[ \t]*github\.token[ \t]*\}\}[ \t]*\r?$", "", text)
+                # These Actions expressions reference the runtime token or a named secret; neither contains a credential value.
+                candidate = re.sub(r"(?m)^[ \t]+(?:GH_TOKEN|GITHUB_TOKEN):[ \t]*\$\{\{[ \t]*(?:github\.token|secrets\.[A-Z][A-Z0-9_]*)[ \t]*\}\}[ \t]*\r?$", "", text)
             if pattern.search(candidate):
                 failures.append(f"{relative}: {rule}")
                 break
