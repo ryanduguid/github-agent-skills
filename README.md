@@ -14,25 +14,28 @@ Claude Code.
 
 ## Requirements
 
-Python 3.11+ and PowerShell 7+ (`pwsh`) are required. The repository uses the
-Python standard library; no package installation is needed.
+Python 3.11+ is required. The repository uses the Python standard library; no
+package installation is needed.
 
 ## Quick start
 
-```powershell
+```shell
 git clone https://github.com/ryanduguid/github-agent-skills.git
 cd github-agent-skills
-pwsh -File scripts/sync-skills.ps1
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
+python scripts/check_public_files.py
 ```
+
+These are the checks the Validate workflow runs, in the same order. The runtime
+copies are tracked, so a fresh clone needs no synchronising step.
 
 ## Runtimes and installation
 
-`skills/` is the only canonical source. Run the synchroniser after changing a
-canonical skill; it regenerates byte-identical copies in `.agents/skills/` for
-Codex and `.claude/skills/` for Claude Code. Do not edit either generated
-directory directly.
+`skills/` is the only canonical source. After changing a canonical skill, run
+`python scripts/validate_skills.py --sync`; it regenerates byte-identical
+copies in `.agents/skills/` for Codex and `.claude/skills/` for Claude Code,
+then validates the result. Do not edit either generated directory directly.
 
 For a project-local installation, copy the generated directory for the runtime
 you use into that project's corresponding discovery path. To keep a local
@@ -42,8 +45,8 @@ copy the generated runtime directory again. Use only the runtime you need.
 ## Validation
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
-change, run the Quick start checks: the unit suite and strict validator.
-`GATES.md` lists the same repository gate.
+change, run the Quick start checks: the unit suite, the strict validator and
+the public-file check. `GATES.md` lists the same repository gate.
 
 ## Recorded runs
 

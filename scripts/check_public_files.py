@@ -10,14 +10,9 @@ from pathlib import Path
 
 CLONE_URL = "https://github.com/ryanduguid/github-agent-skills.git"
 REPOSITORY_NAME = "github-agent-skills"
-SUPPORTED_QUICK_START = (
-    f"git clone {CLONE_URL}",
-    f"cd {REPOSITORY_NAME}",
-    "pwsh -File scripts/sync-skills.ps1",
-    "python -m unittest discover -s tests -v",
-    "python scripts/validate_skills.py --strict",
-)
 QUICK_START = re.compile(r"^## Quick start\s*$([\s\S]*?)(?=^## |\Z)", re.MULTILINE)
+VALIDATE_JOB = re.compile(r"^  validate:\n((?:^(?:    .*)?$\n)+)", re.MULTILINE)
+WORKFLOW_CHECK = re.compile(r"^ {8}run: (python .+?)\s*$", re.MULTILINE)
 FENCED_COMMANDS = re.compile(r"```(?:powershell|shell)\n([\s\S]*?)```")
 PRIVATE_CONFIG = re.compile(r"(?:^|/)(?:\.env(?:\.[^/]+)?|\.netrc|\.npmrc|credentials(?:\.[^/]+)?|\.(?:ssh|aws)(?:/|$)|(?:home|Users)/[^/]+/\.config(?:/|$))", re.IGNORECASE)
 CLIENT_DATA_PATH = re.compile(r"(?:^|/)(?:clients?|customers?)(?:/|$)|(?:^|/)(?:client|customer)[_-](?:data|records?|export|files?)(?:[._-]|$)", re.IGNORECASE)
@@ -42,8 +37,15 @@ def quick_start_commands(readme: str) -> list[str]:
     return [line.strip() for block in FENCED_COMMANDS.findall(section.group(1)) for line in block.splitlines() if line.strip()]
 
 
-def quick_start_failures(readme: str) -> list[str]:
-    return [] if tuple(quick_start_commands(readme)) == SUPPORTED_QUICK_START else ["README.md: Quick start commands differ from the supported list"]
+def supported_quick_start(workflow: str) -> tuple[str, ...]:
+    """The quick start the workflow supports: clone this repository, then run its checks in order."""
+    job = VALIDATE_JOB.search(workflow)
+    checks = WORKFLOW_CHECK.findall(job.group(1)) if job else []
+    return (f"git clone {CLONE_URL}", f"cd {REPOSITORY_NAME}", *checks)
+
+
+def quick_start_failures(readme: str, workflow: str) -> list[str]:
+    return [] if tuple(quick_start_commands(readme)) == supported_quick_start(workflow) else ["README.md: Quick start commands differ from the checks the Validate workflow runs"]
 
 
 def tracked_paths(root: Path) -> list[Path]:
@@ -112,8 +114,8 @@ def tracked_failures(root: Path) -> list[str]:
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     failures = tracked_failures(root)
-    failures += quick_start_failures((root / "README.md").read_text(encoding="utf-8"))
     workflow = (root / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+    failures += quick_start_failures((root / "README.md").read_text(encoding="utf-8"), workflow)
     if permissions_block(workflow) != ["  contents: read"]:
         failures.append(".github/workflows/validate.yml: workflow permissions are not read-only contents")
     if failures:

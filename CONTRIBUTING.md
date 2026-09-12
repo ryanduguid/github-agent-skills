@@ -3,8 +3,8 @@
 Keep each skill focused, evidence-based, and explicit about its authority
 boundary. Edit only `skills/`, then regenerate the Codex and Claude Code copies:
 
-```powershell
-pwsh -File scripts/sync-skills.ps1
+```shell
+python scripts/validate_skills.py --sync
 python -m unittest discover -s tests -v
 python scripts/validate_skills.py --strict
 ```

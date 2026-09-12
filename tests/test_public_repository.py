@@ -7,13 +7,20 @@ from scripts import check_public_files as public_files
 
 
 ROOT = Path(__file__).parents[1]
+WORKFLOW = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
 
 
 class PublicRepositoryTests(unittest.TestCase):
     def test_quick_start_commands_are_semantically_traceable(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-        self.assertEqual(public_files.quick_start_failures(readme), [])
+        self.assertEqual(public_files.quick_start_failures(readme, WORKFLOW), [])
+
+    def test_quick_start_matches_the_workflow_checks(self):
+        self.assertEqual(
+            public_files.supported_quick_start(WORKFLOW)[2:],
+            ("python -m unittest discover -s tests -v", "python scripts/validate_skills.py --strict", "python scripts/check_public_files.py"),
+        )
 
     def test_quick_start_rejects_any_command_list_change(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -30,7 +37,7 @@ class PublicRepositoryTests(unittest.TestCase):
         for name, changed in mutations.items():
             with self.subTest(name=name):
                 changed_readme = readme.replace("\n".join(commands), "\n".join(changed))
-                self.assertTrue(public_files.quick_start_failures(changed_readme))
+                self.assertTrue(public_files.quick_start_failures(changed_readme, WORKFLOW))
 
     def test_tracked_text_has_no_public_safety_failures(self):
         self.assertEqual(public_files.tracked_failures(ROOT), [])
