@@ -76,6 +76,17 @@ class SyncSkillsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stderr)
         self.assertEqual(copy.read_text(encoding="utf-8"), "drifted\n")
 
+    def test_sync_removes_unexpected_generated_content(self):
+        for runtime in (".agents/skills", ".claude/skills"):
+            root = self.root / runtime
+            (root / "retired-skill").mkdir()
+            (root / "retired-skill" / "SKILL.md").write_text("retired\n")
+            (root / "obsolete.txt").write_text("obsolete\n")
+        result = self.run_sync()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for runtime in (".agents/skills", ".claude/skills"):
+            self.assertEqual({path.name for path in (self.root / runtime).iterdir()}, {NAME})
+
     def test_sync_creates_exact_five_byte_identical_skill_trees(self):
         shutil.rmtree(self.root / "skills")
         for name in NAMES:

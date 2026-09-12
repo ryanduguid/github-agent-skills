@@ -59,6 +59,11 @@ def looks_like_text(content: bytes) -> bool:
 
 
 def decoded_text(content: bytes) -> tuple[str | None, str | None]:
+    if content.startswith((b"\xff\xfe\0\0", b"\0\0\xfe\xff")):
+        try:
+            return content.decode("utf-32"), None
+        except UnicodeDecodeError:
+            return None, "unclassifiable-text"
     if content.startswith((b"\xff\xfe", b"\xfe\xff")):
         try:
             return content.decode("utf-16"), None

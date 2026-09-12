@@ -66,10 +66,9 @@ foreach ($name in $names) {
 }
 
 foreach ($destination in $destinations) {
-    foreach ($name in $approved) {
-        $target = Join-Path $destination $name
-        if ($null -ne (Get-Item -Force -LiteralPath $target -ErrorAction SilentlyContinue)) { Remove-OrdinaryTree $target }
-    }
+    Assert-SafeDestination $destination
+    Remove-OrdinaryTree $destination
+    New-Item -ItemType Directory -Force -Path $destination | Out-Null
     foreach ($directory in $expectedDirectories) { New-Item -ItemType Directory -Force -Path (Join-Path $destination $directory) | Out-Null }
     foreach ($file in $expectedFiles) { Copy-Item -Force -LiteralPath (Join-Path $source $file) -Destination (Join-Path $destination $file) }
 }
