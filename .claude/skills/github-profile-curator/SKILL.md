@@ -29,7 +29,7 @@ target is verified.
 ## Build the narrative
 
 Write one positioning statement that connects the selected work around a
-credible role, audience, and capability. Choose four to six eligible projects
+credible role, audience, and capability. Choose 4 to 6 eligible projects
 that together substantiate that statement; prefer complementary proof over
 near-duplicates or popularity. Follow any maintained profile runbook's
 ordering, source-of-truth, and review requirements.
@@ -42,7 +42,7 @@ target. A repository name or plausible URL alone is not sufficient.
 Return, in this order:
 
 1. **Positioning statement**: exactly one concise sentence.
-2. **Project selection**: four through six projects, each with its narrative
+2. **Project selection**: 4 through 6 projects, each with its narrative
    role, supplied evidence, and verified destination.
 3. **Proposed profile copy**: a concise, review-only README fragment that
    includes both the opening statement and the selected-project links, so the
@@ -50,7 +50,7 @@ Return, in this order:
 4. **Boundaries**: facts not verified, runbook constraints followed, and that
    supplied pins remain unchanged unless a pin change was explicitly requested.
 
-Keep the copy professional and specific. When there are fewer than four
+Keep the copy professional and specific. When there are fewer than 4
 eligible projects, explain the shortage rather than filling the list with an
 ineligible project.
 

@@ -1,4 +1,4 @@
-# Portable GitHub Skills
+# Portable GitHub skills
 
 > Five focused Agent Skills for evidence-based GitHub work, portable between
 > Codex and Claude Code. They use only the Python standard library, so a clone
@@ -34,7 +34,7 @@ change GitHub settings, or make any other remote mutation.
 Each recorded file lists the scenario and rubric revision, the Codex CLI version
 (`codex-cli 0.151.0-alpha.7.2`), the isolation flags, a PASS or FAIL for every
 rubric criterion, the SHA-256 digest of the retained raw output, and the exit
-status. The controls fail four criteria in total and the named-skill runs pass
+status. The controls fail 4 criteria in total and the named-skill runs pass
 every criterion, though the release-prep pair is non-discriminating because both
 of its runs pass. The files record those runs; they do not promise that a rerun
 reproduces them.
