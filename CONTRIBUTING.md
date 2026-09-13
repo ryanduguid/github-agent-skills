@@ -1,7 +1,7 @@
 # Contributing
 
 Keep each skill focused, evidence-based, and explicit about its authority
-boundary. Edit only `skills/`, then regenerate the Codex and Claude Code copies:
+boundary. Edit only `.claude/skills/`, then regenerate the Codex copy:
 
 ```shell
 python scripts/validate_skills.py --sync

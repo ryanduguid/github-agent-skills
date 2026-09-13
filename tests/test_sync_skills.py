@@ -25,7 +25,7 @@ class SyncSkillsTests(unittest.TestCase):
         self.outside = tempfile.TemporaryDirectory()
         self.links = []
         self.root = Path(self.tmp.name)
-        source = self.root / "skills" / NAME / "SKILL.md"
+        source = self.root / ".claude" / "skills" / NAME / "SKILL.md"
         source.parent.mkdir(parents=True)
         source.write_text("canonical\n", encoding="utf-8")
         self.assertEqual(sync(self.root), [])
@@ -59,7 +59,7 @@ class SyncSkillsTests(unittest.TestCase):
         self.links.append(link)
 
     def test_sync_removes_unexpected_generated_content(self):
-        for runtime in (".agents/skills", ".claude/skills"):
+        for runtime in (".agents/skills",):
             root = self.root / runtime
             (root / "retired-skill").mkdir()
             (root / "retired-skill" / "SKILL.md").write_text("retired\n")
@@ -67,13 +67,13 @@ class SyncSkillsTests(unittest.TestCase):
 
         self.assertEqual(sync(self.root), [])
 
-        for runtime in (".agents/skills", ".claude/skills"):
+        for runtime in (".agents/skills",):
             self.assertEqual({path.name for path in (self.root / runtime).iterdir()}, {NAME})
 
     def test_sync_creates_exact_five_byte_identical_skill_trees(self):
-        shutil.rmtree(self.root / "skills")
+        shutil.rmtree(self.root / ".claude" / "skills")
         for name in NAMES:
-            skill = self.root / "skills" / name
+            skill = self.root / ".claude" / "skills" / name
             (skill / "SKILL.md").parent.mkdir(parents=True)
             (skill / "SKILL.md").write_bytes(f"{name}\n".encode())
             (skill / "references" / "check.bin").parent.mkdir()
@@ -81,13 +81,13 @@ class SyncSkillsTests(unittest.TestCase):
 
         self.assertEqual(sync(self.root), [])
 
-        for runtime in (".agents/skills", ".claude/skills"):
+        for runtime in (".agents/skills",):
             destination = self.root / runtime
             self.assertEqual({path.name for path in destination.iterdir()}, set(NAMES))
-            for source in (self.root / "skills").rglob("*"):
+            for source in (self.root / ".claude" / "skills").rglob("*"):
                 if source.is_file():
                     self.assertEqual(
-                        (destination / source.relative_to(self.root / "skills")).read_bytes(),
+                        (destination / source.relative_to(self.root / ".claude" / "skills")).read_bytes(),
                         source.read_bytes(),
                     )
 
@@ -152,7 +152,7 @@ class SyncSkillsTests(unittest.TestCase):
         self.assertEqual(claude_copy.read_text(encoding="utf-8"), "claude-before\n")
 
     def test_sync_rejects_nested_canonical_link_before_copy(self):
-        canonical_link = self.root / "skills" / NAME / "references" / "linked"
+        canonical_link = self.root / ".claude" / "skills" / NAME / "references" / "linked"
         outside_source = Path(self.outside.name) / "nested-canonical"
         sentinel = outside_source / "sentinel.txt"
         sentinel.parent.mkdir(parents=True)
@@ -164,7 +164,7 @@ class SyncSkillsTests(unittest.TestCase):
         failures = sync(self.root)
 
         self.assertIn(
-            f"skills/{NAME}/references/linked: is a link, not an ordinary file or directory",
+            f".claude/skills/{NAME}/references/linked: is a link, not an ordinary file or directory",
             failures,
         )
         self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")

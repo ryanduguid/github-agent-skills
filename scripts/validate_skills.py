@@ -1,4 +1,4 @@
-"""Validate canonical skills and their generated runtime copies."""
+"""Validate the canonical skills in .claude/skills and the generated Codex copy."""
 
 from __future__ import annotations
 
@@ -18,7 +18,8 @@ APPROVED_NAMES = (
     "github-release-prep",
     "github-repository-audit",
 )
-RUNTIME_ROOTS = (".agents/skills", ".claude/skills")
+CANONICAL = ".claude/skills"
+RUNTIME_ROOTS = (".agents/skills",)
 
 
 def _is_link(path: Path) -> bool:
@@ -69,7 +70,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     """Return deterministic contract failures; strict enforces fixed-five parity."""
     root = Path(root)
     failures: list[str] = []
-    canonical = root / "skills"
+    canonical = root / CANONICAL
     skills = sorted((path for path in canonical.iterdir() if path.is_dir()), key=lambda path: path.name) if canonical.is_dir() else []
     valid: list[tuple[str, Path]] = []
 
@@ -109,7 +110,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
         present = {directory.name for directory in skills}
         for name in APPROVED_NAMES:
             if name not in present:
-                failures.append(f"skills: missing required skill '{name}'")
+                failures.append(f"{CANONICAL}: missing required skill '{name}'")
 
     if not strict:
         for name, source in valid:
@@ -140,7 +141,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
                 if not copy.is_file():
                     failures.append(f"{copy_name}: missing generated copy")
                 elif not filecmp.cmp(source, copy, shallow=False):
-                    failures.append(f"{copy_name}: differs from skills/{relative}")
+                    failures.append(f"{copy_name}: differs from {CANONICAL}/{relative}")
             for relative in sorted(actual_files - expected_files):
                 failures.append(f"{runtime}/{relative}: unexpected generated file")
             for relative in sorted(actual_directories - expected_directories):
@@ -149,9 +150,9 @@ def validate(root: Path, strict: bool = False) -> list[str]:
 
 
 def sync(root: Path) -> list[str]:
-    """Regenerate both runtime copies from skills/, refusing before any mutation if a link is found."""
+    """Regenerate the Codex copy from .claude/skills/, refusing before any mutation if a link is found."""
     root = Path(root)
-    canonical = root / "skills"
+    canonical = root / CANONICAL
     destinations = [root / runtime for runtime in RUNTIME_ROOTS]
     failures: list[str] = []
     trees: dict[Path, list[Path]] = {}
@@ -188,12 +189,12 @@ def main() -> int:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="require all five canonical skills and both generated runtime copies (default: validate discovered approved skills and existing copies)",
+        help="require all five canonical skills and the generated Codex copy (default: validate discovered approved skills and an existing copy)",
     )
     parser.add_argument(
         "--sync",
         action="store_true",
-        help="regenerate the runtime copies from skills/ before validating",
+        help="regenerate the Codex copy from .claude/skills/ before validating",
     )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
