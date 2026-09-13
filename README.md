@@ -1,8 +1,8 @@
 # Portable GitHub Skills
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
-canonical source is `skills/`; generated runtime copies support both Codex and
-Claude Code.
+canonical source is `.claude/skills/`, which Claude Code reads in place; a
+generated copy in `.agents/skills/` serves Codex.
 
 ## Skills
 
@@ -27,20 +27,20 @@ python scripts/validate_skills.py --strict
 python scripts/check_public_files.py
 ```
 
-These are the checks the Validate workflow runs, in the same order. The runtime
-copies are tracked, so a fresh clone needs no synchronising step.
+These are the checks the Validate workflow runs, in the same order. The Codex
+copy is tracked, so a fresh clone needs no synchronising step.
 
 ## Runtimes and installation
 
-`skills/` is the only canonical source. After changing a canonical skill, run
-`python scripts/validate_skills.py --sync`; it regenerates byte-identical
-copies in `.agents/skills/` for Codex and `.claude/skills/` for Claude Code,
-then validates the result. Do not edit either generated directory directly.
+`.claude/skills/` is the only canonical source, and Claude Code reads it in
+place. After changing a skill, run `python scripts/validate_skills.py --sync`;
+it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
+validates the result. Do not edit the generated directory directly.
 
-For a project-local installation, copy the generated directory for the runtime
-you use into that project's corresponding discovery path. To keep a local
-clone as the source of truth, update `skills/`, rerun the synchroniser, and
-copy the generated runtime directory again. Use only the runtime you need.
+For a project-local installation, copy the directory for the runtime you use
+into that project's corresponding discovery path. To keep a local clone as the
+source of truth, update `.claude/skills/`, rerun the synchroniser, and copy the
+runtime directory again. Use only the runtime you need.
 
 ## Validation
 
