@@ -2,7 +2,7 @@
 
 `.claude/skills/` is the canonical source for portable skills. This repository requires Python 3.11+. After every skill edit, run `python scripts/validate_skills.py --sync` to refresh the Codex copy in `.agents/skills/`.
 
-During incremental authoring, run `python scripts/validate_skills.py`; it validates the discovered approved subset and any existing generated copy. Before release, run `python scripts/validate_skills.py --strict` to require all five skills and the Codex copy.
+During incremental authoring, run `python scripts/validate_skills.py`; it validates the discovered approved subset and any existing generated copy. Before release, run `python scripts/validate_skills.py --strict` to require all 5 skills and the Codex copy.
 
 Before changing a skill, read [CONTRIBUTING.md](CONTRIBUTING.md). Edit the canonical
 `.claude/skills/` source, then synchronise; the Codex copy is generated.
