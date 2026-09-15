@@ -162,7 +162,15 @@ def sync(root: Path) -> list[str]:
                 failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
                 break
             if path == root:
-                trees[tree] = _ordinary_entries(tree, root, failures) if tree.is_dir() else []
+                if tree.exists() and not tree.is_dir():
+                    # An empty tree here would let the sync below reach
+                    # mkdir(exist_ok=True), which raises FileExistsError against a
+                    # regular file. Report it as a validation failure instead.
+                    failures.append(
+                        f"{tree.relative_to(root).as_posix()}: is not an ordinary directory"
+                    )
+                else:
+                    trees[tree] = _ordinary_entries(tree, root, failures) if tree.is_dir() else []
                 break
     if failures:
         return failures
