@@ -157,10 +157,13 @@ def sync(root: Path) -> list[str]:
     failures: list[str] = []
     trees: dict[Path, list[Path]] = {}
     for tree in (canonical, *destinations):
-        if _is_link(tree):
-            failures.append(f"{tree.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
-        else:
-            trees[tree] = _ordinary_entries(tree, root, failures) if tree.is_dir() else []
+        for path in (tree, *tree.parents):
+            if _is_link(path):
+                failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
+                break
+            if path == root:
+                trees[tree] = _ordinary_entries(tree, root, failures) if tree.is_dir() else []
+                break
     if failures:
         return failures
 
