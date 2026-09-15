@@ -71,6 +71,21 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     root = Path(root)
     failures: list[str] = []
     canonical = root / CANONICAL
+    # Both modes, not strict alone. is_dir() and is_file() follow a link or a
+    # junction, so an approved skill whose directory pointed outside the repository
+    # reported success from the documented incremental command as long as its text
+    # matched. Stop at the first linked tree: nothing below it can be trusted.
+    for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS)):
+        for path in (tree, *tree.parents):
+            if _is_link(path):
+                failures.append(
+                    f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory"
+                )
+                break
+            if path == root:
+                break
+    if failures:
+        return failures
     skills = sorted((path for path in canonical.iterdir() if path.is_dir()), key=lambda path: path.name) if canonical.is_dir() else []
     valid: list[tuple[str, Path]] = []
 
@@ -79,7 +94,13 @@ def validate(root: Path, strict: bool = False) -> list[str]:
         if directory.name not in APPROVED_NAMES:
             failures.append(f"{relative}: unexpected skill name")
             continue
+        if _is_link(directory):
+            failures.append(f"{relative}: is a link, not an ordinary file or directory")
+            continue
         path = directory / "SKILL.md"
+        if _is_link(path):
+            failures.append(f"{relative}/SKILL.md: is a link, not an ordinary file or directory")
+            continue
         if not path.is_file():
             failures.append(f"{relative}: missing SKILL.md")
             continue
@@ -117,7 +138,9 @@ def validate(root: Path, strict: bool = False) -> list[str]:
             for runtime in RUNTIME_ROOTS:
                 copy = root / runtime / name / "SKILL.md"
                 copy_name = copy.relative_to(root).as_posix()
-                if copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
+                if _is_link(copy):
+                    failures.append(f"{copy_name}: is a link, not an ordinary file or directory")
+                elif copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
                     failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
     else:
         trees = {tree: [] for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS))}
@@ -162,7 +185,14 @@ def sync(root: Path) -> list[str]:
                 failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
                 break
             if path == root:
-                if tree.exists() and not tree.is_dir():
+                if tree == canonical and not tree.exists():
+                    # A missing canonical tree scanned as an empty source list, so the
+                    # sync below deleted every generated skill, copied nothing and
+                    # returned success.
+                    failures.append(
+                        f"{tree.relative_to(root).as_posix()}: is missing"
+                    )
+                elif tree.exists() and not tree.is_dir():
                     # An empty tree here would let the sync below reach
                     # mkdir(exist_ok=True), which raises FileExistsError against a
                     # regular file. Report it as a validation failure instead.

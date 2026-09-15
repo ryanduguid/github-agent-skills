@@ -143,6 +143,41 @@ class ValidateSkillsTests(unittest.TestCase):
 
         self.assertEqual(validate(self.root), [])
 
+    def test_incremental_mode_rejects_a_linked_canonical_skill(self):
+        """The link check ran only in strict mode, so the documented incremental
+        command reported success for an approved skill whose directory pointed
+        outside the repository, as long as its text matched."""
+        self.valid_skill()
+        outside = Path(self.tmp.name) / "outside"
+        (outside / "github-repository-audit").mkdir(parents=True)
+        (outside / "github-repository-audit" / "SKILL.md").write_text(
+            (self.root / ".claude" / "skills" / "github-repository-audit" / "SKILL.md").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        link = self.root / ".claude" / "skills" / "github-repository-audit"
+        shutil.rmtree(link)
+        try:
+            os.symlink(outside / "github-repository-audit", link, target_is_directory=True)
+        except OSError as error:
+            junction = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(link), str(outside / "github-repository-audit")],
+                capture_output=True, text=True, check=False,
+            )
+            if junction.returncode:
+                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        try:
+            failures = validate(self.root)
+        finally:
+            if os.name == "nt":
+                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
+            else:
+                os.unlink(link)
+
+        self.assertIn(
+            ".claude/skills/github-repository-audit: is a link, not an ordinary file or directory",
+            failures,
+        )
+
     def test_strict_mode_rejects_linked_runtime_directory(self):
         self.valid_skill_set()
         # The link points back at its own tree, so descending into it would never end.
