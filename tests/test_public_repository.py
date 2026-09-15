@@ -227,13 +227,12 @@ class WorkflowTests(unittest.TestCase):
 
     def test_workflow_runs_junction_safety_tests_on_windows(self):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+        windows_job = workflow.split("  windows-sync-safety:", 1)[1]
 
-        self.assertIn("runs-on: windows-latest", workflow)
+        self.assertIn("runs-on: windows-latest", windows_job)
         self.assertIn(
-            "python -m unittest tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_linked_approved_child_before_any_mutation "
-            "tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_linked_destination_descendant "
-            "tests.test_sync_skills.SyncSkillsTests.test_sync_rejects_nested_canonical_link_before_copy -v",
-            workflow,
+            "python -m unittest tests.test_sync_skills.SyncSkillsTests -v",
+            windows_job,
         )
 
 

@@ -170,6 +170,48 @@ class SyncSkillsTests(unittest.TestCase):
         self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
         self.assertEqual(agents_copy.read_text(encoding="utf-8"), "agents-before\n")
 
+    def test_sync_rejects_linked_destination_parent_before_any_mutation(self):
+        parent = self.root / ".agents"
+        outside_parent = Path(self.outside.name) / "destination-parent"
+        parent.rename(outside_parent)
+        sentinel = outside_parent / "skills" / "sentinel.txt"
+        sentinel.write_text("outside\n", encoding="utf-8")
+        outside_copy = outside_parent / "skills" / NAME / "SKILL.md"
+        outside_copy.write_text("outside-copy\n", encoding="utf-8")
+        self.link_directory(outside_parent, parent)
+
+        failures = sync(self.root)
+
+        self.assertIn(".agents: is a link, not an ordinary file or directory", failures)
+        self.assertEqual(sentinel.read_text(encoding="utf-8"), "outside\n")
+        self.assertEqual(outside_copy.read_text(encoding="utf-8"), "outside-copy\n")
+
+    def test_sync_rejects_linked_canonical_parent_before_any_mutation(self):
+        parent = self.root / ".claude"
+        outside_parent = Path(self.outside.name) / "canonical-parent"
+        parent.rename(outside_parent)
+        self.link_directory(outside_parent, parent)
+        agents_copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
+        agents_copy.write_text("agents-before\n", encoding="utf-8")
+        outside_copy = outside_parent / "skills" / NAME / "SKILL.md"
+
+        failures = sync(self.root)
+
+        self.assertIn(".claude: is a link, not an ordinary file or directory", failures)
+        self.assertEqual(outside_copy.read_text(encoding="utf-8"), "canonical\n")
+        self.assertEqual(agents_copy.read_text(encoding="utf-8"), "agents-before\n")
+
+    def test_sync_rejects_linked_repository_root_before_any_mutation(self):
+        alias = Path(self.outside.name) / "repository"
+        self.link_directory(self.root, alias)
+        agents_copy = self.root / ".agents" / "skills" / NAME / "SKILL.md"
+        agents_copy.write_text("agents-before\n", encoding="utf-8")
+
+        failures = sync(alias)
+
+        self.assertIn(".: is a link, not an ordinary file or directory", failures)
+        self.assertEqual(agents_copy.read_text(encoding="utf-8"), "agents-before\n")
+
 
 class TrackedCopyTests(unittest.TestCase):
     def test_tracked_runtime_copies_are_byte_identical_to_canonical_skills(self):
