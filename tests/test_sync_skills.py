@@ -115,6 +115,19 @@ class SyncSkillsTests(unittest.TestCase):
         self.assertIn(".agents/skills: is a link, not an ordinary file or directory", failures)
         self.assertEqual(outside_skill.read_text(encoding="utf-8"), "outside\n")
 
+    def test_sync_rejects_a_runtime_root_that_is_a_regular_file(self):
+        # A regular file at the runtime root stored an empty tree, and the sync
+        # then reached mkdir(exist_ok=True), which raises FileExistsError against
+        # a file. That aborted --sync instead of reporting a validation failure.
+        runtime = self.root / ".agents" / "skills"
+        shutil.rmtree(runtime)
+        runtime.write_text("not a directory\n", encoding="utf-8")
+
+        failures = sync(self.root)
+
+        self.assertIn(".agents/skills: is not an ordinary directory", failures)
+        self.assertEqual(runtime.read_text(encoding="utf-8"), "not a directory\n")
+
     def test_sync_rejects_linked_approved_child_before_any_mutation(self):
         linked_child = self.root / ".claude" / "skills" / NAME
         shutil.rmtree(linked_child)
