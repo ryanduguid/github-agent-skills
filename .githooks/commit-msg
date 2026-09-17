@@ -57,13 +57,13 @@ if [ -z "${PY:-}" ]; then
 fi
 
 # core.commentString is the modern spelling and core.commentChar the older
-# alias; either may carry the special value `auto`. Both are passed through and
-# resolved below rather than defaulted here, so an unset value stays unset.
+# alias. Pass the ordered entries through so Python can match Git's effective
+# setting (including the pre-2.45 compatibility behavior).
 MSG_FILE=$msg_file \
 AUTHOR_IDENT=$(git var GIT_AUTHOR_IDENT) \
 COMMITTER_IDENT=$(git var GIT_COMMITTER_IDENT) \
-COMMENT_STRING=$(git config --get core.commentString 2>/dev/null || true) \
-COMMENT_CHAR=$(git config --get core.commentChar 2>/dev/null || true) \
+COMMENT_CONFIG=$(git config --get-regexp '^core\.comment(Char|String)$' 2>/dev/null || true) \
+GIT_VERSION=$(git version | sed -n 's/^git version \([0-9.]*\).*$/\1/p') \
 	"$PY" - <<'PY'
 import os
 import re
@@ -126,7 +126,21 @@ def comment_markers():
     `auto` names no single character, so every character Git may pick is
     treated as a marker: that scans more lines, never fewer.
     """
-    configured = (os.environ.get("COMMENT_STRING") or os.environ.get("COMMENT_CHAR") or "").strip()
+    entries = []
+    for line in os.environ.get("COMMENT_CONFIG", "").splitlines():
+        key, _, value = line.partition(" ")
+        if key in ("core.commentChar", "core.commentString"):
+            entries.append((key, value))
+
+    version = tuple(int(part) for part in os.environ.get("GIT_VERSION", "0").split(".")[:2])
+    if version < (2, 45):
+        configured = next((value for key, value in reversed(entries)
+                           if key == "core.commentChar"), "")
+    elif entries:
+        configured = entries[-1][1]
+    else:
+        configured = ""
+
     if not configured:
         return ("#",)
     if configured.casefold() == "auto":
