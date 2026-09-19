@@ -1,0 +1,35 @@
+#!/bin/sh
+# Keep this local guard until the shared release policy handles the same
+# normalized commit-message forms. Git comment markers are not discarded from
+# the stored message, and trailer continuations may be folded onto a trailer.
+
+message=$1
+
+awk '
+function check(text,    lower) {
+  lower = tolower(text)
+  if (lower ~ /(^|[^[:alnum:]])(co-authored-by|co- authored-by|generated-by|assisted-by|authored-by)([^[:alnum:]]|$)/ &&
+      lower ~ /(claude|anthropic|chatgpt|openai|copilot|github[[:space:]-]*copilot|gemini|google[[:space:]-]*ai)/) {
+    found = 1
+  }
+}
+{
+  physical = $0
+  line = physical
+  sub(/^[[:space:]]*#[[:space:]]?/, "", line)
+  check(line)
+
+  # A folded trailer is meaningful both as its physical continuation and
+  # when joined to the preceding trailer value.
+  if (physical ~ /^[[:space:]]+/ && previous ~ /-[[:space:]]*[^:]+:/)
+    check(previous " " line)
+  if (physical !~ /^[[:space:]]+/)
+    previous = line
+}
+END { exit found ? 1 : 0 }
+' "$message"
+
+if [ $? -ne 0 ]; then
+  echo "commit rejected: AI attribution detected in commit message" >&2
+  exit 1
+fi
