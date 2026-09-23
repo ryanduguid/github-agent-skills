@@ -58,6 +58,14 @@ class SyncSkillsTests(unittest.TestCase):
             os.symlink(target, link, target_is_directory=True)
         self.links.append(link)
 
+    def test_sync_refuses_a_missing_canonical_tree_and_keeps_generated_skills(self):
+        generated = self.root / ".agents" / "skills"
+        before = sorted(path.relative_to(generated).as_posix() for path in generated.rglob("*"))
+        shutil.rmtree(self.root / ".claude" / "skills")
+
+        self.assertEqual(sync(self.root), [".claude/skills: is missing"])
+        self.assertEqual(sorted(path.relative_to(generated).as_posix() for path in generated.rglob("*")), before)
+
     def test_sync_removes_unexpected_generated_content(self):
         for runtime in (".agents/skills",):
             root = self.root / runtime

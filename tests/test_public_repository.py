@@ -184,6 +184,41 @@ class PublicFileScannerTests(unittest.TestCase):
                 path = self.write(relative, content)
                 self.assertEqual(public_files.scan_paths(self.root, [path]), expected)
 
+    def test_rejects_prefixed_credential_names(self):
+        names = ("OPENAI" + "_API" + "_KEY", "SSH" + "_PRIVATE" + "_KEY")
+        for name in names:
+            with self.subTest(name=name):
+                path = self.write("notes.md", (name + "=" + "do-not-echo\n").encode())
+                self.assertEqual(public_files.scan_paths(self.root, [path]), ["notes.md: credential-assignment"])
+
+    def test_prefixed_workflow_secret_reference_is_not_a_credential(self):
+        content = ("      OPENAI" + "_API" + "_KEY" + ": " + "${{ secrets.OPENAI_API_KEY }}\n").encode()
+        path = self.write(".github/workflows/policy.yml", content)
+
+        self.assertEqual(public_files.scan_paths(self.root, [path]), [])
+
+    def test_rejects_quoted_client_data_keys_in_ordinary_filenames(self):
+        cases = (
+            ("records.json", '{"' + 'client' + '_data": "do-not-echo"}\n'),
+            ("config.yaml", '  "' + 'customer' + '-records": do-not-echo\n'),
+            ("config.toml", '[section]\n"' + 'client' + '_export" = "do-not-echo"\n'),
+        )
+        for relative, content in cases:
+            with self.subTest(relative=relative):
+                path = self.write(relative, content.encode())
+                self.assertEqual(public_files.scan_paths(self.root, [path]), [f"{relative}: client-data"])
+
+    def test_scans_symlink_text_without_following_the_target(self):
+        self.write("target.txt", ("api" + "_key" + " = " + "do-not-echo\n").encode())
+        cases = (("safe.link", "target.txt", []), ("unsafe.link", "/home" + "/pat/notes", ["unsafe.link: private-user-path"]))
+        for name, target, expected in cases:
+            with self.subTest(name=name):
+                try:
+                    (self.root / name).symlink_to(target)
+                except OSError as error:
+                    self.skipTest(f"symlinks are unavailable: {error}")
+                self.assertEqual(public_files.scan_paths(self.root, [Path(name)]), expected)
+
     def test_rejects_undecodable_text(self):
         path = self.write("notes.txt", b"note=\xffvalue\n")
 

@@ -20,8 +20,14 @@ TEXT_RULES = (
     ("transcript-path", re.compile(r"(?:^|[\s/\\])(?:transcripts?|sessions?)[/\\][^\s]+", re.IGNORECASE)),
     ("raw-sdd-path", re.compile(r"\.superpowers[/\\]sdd[/\\][^/\\*\s]+[/\\]raw[/\\]", re.IGNORECASE)),
     ("private-user-path", re.compile(r"(?:[A-Za-z]:[/\\](?:Users|Documents and Settings)[/\\]|\\\\[^/\\\s]+[/\\]+(?:Users|Documents and Settings)[/\\]|(?<![A-Za-z0-9])/(?:home|Users)/)[^/\\\s]+", re.IGNORECASE)),
-    ("credential-assignment", re.compile(r"(?<![A-Za-z0-9_-])['\"]?(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key|(?!(?:public|example)[_-]?key\b)[A-Za-z0-9-]+[_-]key)['\"]?\s*[:=]\s*['\"]?\S+", re.IGNORECASE)),
-    ("client-data", re.compile(r"^\s*(?:client|customer)[_-]?(?:data|records?|export|file|id|name)\s*[:=]", re.IGNORECASE | re.MULTILINE)),
+    # The generic key prefix takes underscores, so OPENAI_API_KEY and SSH_PRIVATE_KEY
+    # match. Without them the prefix stopped at the first underscore and any name with
+    # two or more underscore-separated segments passed the gate with its value.
+    ("credential-assignment", re.compile(r"(?<![A-Za-z0-9_-])['\"]?(?:[A-Za-z0-9_-]*(?:password|secret|token)[A-Za-z0-9_-]*|api[_ -]?key|access[_ -]?key|client[_ -]?secret|private[_ -]?key|(?!(?:public|example)[_-]?key\b)[A-Za-z0-9_-]+[_-]key)['\"]?\s*[:=]\s*['\"]?\S+", re.IGNORECASE)),
+    # A structured-data key carries quotes and sits after an opening brace, bracket or
+    # comma, so a quoted JSON, YAML or TOML key is caught as well as a bare assignment
+    # at the start of its line.
+    ("client-data", re.compile(r"(?:^|[{\[,])[ \t]*['\"]?(?:client|customer)[_-]?(?:data|records?|export|file|id|name)['\"]?[ \t]*[:=]", re.IGNORECASE | re.MULTILINE)),
 )
 
 
@@ -89,8 +95,22 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
         if CLIENT_DATA_PATH.search(relative):
             failures.append(f"{relative}: client-data")
             continue
-        content = (root / path).read_bytes()
-        text, decoding_failure = decoded_text(content)
+        full = root / path
+        if full.is_symlink():
+            # Scan the link text that Git stores, never the target. Following the link
+            # read a file outside the checkout, so unsafe link text passed whenever the
+            # target was safe, and a dangling link raised FileNotFoundError and aborted
+            # the whole check.
+            text, decoding_failure = full.readlink().as_posix(), None
+        else:
+            try:
+                content = full.read_bytes()
+            except OSError as error:
+                # A gitlink or an entry missing from the working tree. Report it rather
+                # than letting the required check die part way through the file list.
+                failures.append(f"{relative}: unreadable ({type(error).__name__})")
+                continue
+            text, decoding_failure = decoded_text(content)
         if decoding_failure:
             failures.append(f"{relative}: {decoding_failure}")
             continue
@@ -100,7 +120,7 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
             candidate = text
             if rule == "credential-assignment" and path.parent.as_posix() == ".github/workflows" and path.suffix in (".yml", ".yaml"):
                 # These Actions expressions reference the runtime token or a named secret; neither contains a credential value.
-                candidate = re.sub(r"(?m)^[ \t]+(?:GH_TOKEN|GITHUB_TOKEN):[ \t]*\$\{\{[ \t]*(?:github\.token|secrets\.[A-Z][A-Z0-9_]*)[ \t]*\}\}[ \t]*\r?$", "", text)
+                candidate = re.sub(r"(?m)^[ \t]+[A-Za-z_][A-Za-z0-9_]*:[ \t]*\$\{\{[ \t]*(?:github\.token|secrets\.[A-Z][A-Z0-9_]*)[ \t]*\}\}[ \t]*\r?$", "", text)
             if pattern.search(candidate):
                 failures.append(f"{relative}: {rule}")
                 break
