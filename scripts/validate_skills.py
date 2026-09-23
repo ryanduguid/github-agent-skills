@@ -138,8 +138,12 @@ def validate(root: Path, strict: bool = False) -> list[str]:
             for runtime in RUNTIME_ROOTS:
                 copy = root / runtime / name / "SKILL.md"
                 copy_name = copy.relative_to(root).as_posix()
-                if _is_link(copy):
-                    failures.append(f"{copy_name}: is a link, not an ordinary file or directory")
+                # The skill directory too: is_file() and filecmp follow a linked parent.
+                linked = next((path for path in (copy.parent, copy) if _is_link(path)), None)
+                if linked is not None:
+                    failures.append(
+                        f"{linked.relative_to(root).as_posix()}: is a link, not an ordinary file or directory"
+                    )
                 elif copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
                     failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
     else:
