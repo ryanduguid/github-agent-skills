@@ -14,15 +14,21 @@ concurrency:
 
 jobs:
   validate:
+    # The 3.11 leg keeps the bare name because branch protection requires "validate".
+    name: validate${{ matrix.python != '3.11' && format(' ({0})', matrix.python) || '' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.14']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python }}
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Strict validation

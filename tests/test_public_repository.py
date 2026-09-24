@@ -252,6 +252,7 @@ class WorkflowTests(unittest.TestCase):
             "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
             workflow,
         )
+        self.assertIn("python: ['3.11', '3.14']", workflow)
         self.assertIn("python-version: '3.11'", workflow)
         for command in (
             "python -m unittest discover -s tests -v",
