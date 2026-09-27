@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.validate_skills import validate
+from scripts.validate_skills import APPROVED_NAMES, validate
 
 
 ROOT = Path(__file__).parents[1]
@@ -41,16 +41,29 @@ class ValidateSkillsTests(unittest.TestCase):
         self.copies(name, text)
 
     def valid_skill_set(self):
-        for name in (
-            "github-issue-to-pr",
-            "github-profile-curator",
-            "github-readme-polish",
-            "github-release-prep",
-            "github-repository-audit",
-        ):
+        for name in APPROVED_NAMES:
             text = SKILL.format(name=name, description="assessing a repository")
             self.write(Path(".claude/skills") / name / "SKILL.md", text)
             self.copies(name, text)
+
+    def link_directory(self, link, target):
+        """Point link at target with a symlink, or an NTFS junction where symlinks need elevation."""
+        try:
+            os.symlink(target, link, target_is_directory=True)
+        except OSError as error:
+            junction = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(link), str(target)],
+                capture_output=True, text=True, check=False,
+            )
+            if junction.returncode:
+                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+
+    @staticmethod
+    def unlink_directory(link):
+        if os.name == "nt":
+            subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
+        else:
+            os.unlink(link)
 
     def test_reports_missing_frontmatter_delimiters(self):
         self.write(".claude/skills/github-repository-audit/SKILL.md", "name: github-repository-audit\n")
@@ -156,22 +169,11 @@ class ValidateSkillsTests(unittest.TestCase):
         )
         link = self.root / ".claude" / "skills" / "github-repository-audit"
         shutil.rmtree(link)
-        try:
-            os.symlink(outside / "github-repository-audit", link, target_is_directory=True)
-        except OSError as error:
-            junction = subprocess.run(
-                ["cmd", "/c", "mklink", "/J", str(link), str(outside / "github-repository-audit")],
-                capture_output=True, text=True, check=False,
-            )
-            if junction.returncode:
-                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        self.link_directory(link, outside / "github-repository-audit")
         try:
             failures = validate(self.root)
         finally:
-            if os.name == "nt":
-                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
-            else:
-                os.unlink(link)
+            self.unlink_directory(link)
 
         self.assertIn(
             ".claude/skills/github-repository-audit: is a link, not an ordinary file or directory",
@@ -191,19 +193,11 @@ class ValidateSkillsTests(unittest.TestCase):
         )
         link = self.root / ".agents" / "skills" / "github-repository-audit"
         shutil.rmtree(link)
-        try:
-            os.symlink(outside, link, target_is_directory=True)
-        except OSError as error:
-            junction = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True, check=False)
-            if junction.returncode:
-                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        self.link_directory(link, outside)
         try:
             failures = validate(self.root)
         finally:
-            if os.name == "nt":
-                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
-            else:
-                os.unlink(link)
+            self.unlink_directory(link)
 
         self.assertIn(".agents/skills/github-repository-audit: is a link, not an ordinary file or directory", failures)
 
@@ -213,19 +207,11 @@ class ValidateSkillsTests(unittest.TestCase):
         outside = self.root / ".agents" / "skills"
         link = outside / "github-repository-audit"
         shutil.rmtree(link)
-        try:
-            os.symlink(outside, link, target_is_directory=True)
-        except OSError as error:
-            junction = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True, text=True, check=False)
-            if junction.returncode:
-                self.skipTest(f"directory links are unavailable: {error}; {junction.stderr}")
+        self.link_directory(link, outside)
         try:
             failures = validate(self.root, strict=True)
         finally:
-            if os.name == "nt":
-                subprocess.run(["cmd", "/c", "rmdir", str(link)], capture_output=True, check=False)
-            else:
-                os.unlink(link)
+            self.unlink_directory(link)
 
         self.assertIn(".agents/skills/github-repository-audit: is a link, not an ordinary file or directory", failures)
 

@@ -19,7 +19,7 @@ APPROVED_NAMES = (
     "github-repository-audit",
 )
 CANONICAL = ".claude/skills"
-RUNTIME_ROOTS = (".agents/skills",)
+RUNTIME = ".agents/skills"
 
 
 def _is_link(path: Path) -> bool:
@@ -75,7 +75,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     # junction, so an approved skill whose directory pointed outside the repository
     # reported success from the documented incremental command as long as its text
     # matched. Stop at the first linked tree: nothing below it can be trusted.
-    for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS)):
+    for tree in (canonical, root / RUNTIME):
         for path in (tree, *tree.parents):
             if _is_link(path):
                 failures.append(
@@ -135,19 +135,19 @@ def validate(root: Path, strict: bool = False) -> list[str]:
 
     if not strict:
         for name, source in valid:
-            for runtime in RUNTIME_ROOTS:
-                copy = root / runtime / name / "SKILL.md"
-                copy_name = copy.relative_to(root).as_posix()
-                # The skill directory too: is_file() and filecmp follow a linked parent.
-                linked = next((path for path in (copy.parent, copy) if _is_link(path)), None)
-                if linked is not None:
-                    failures.append(
-                        f"{linked.relative_to(root).as_posix()}: is a link, not an ordinary file or directory"
-                    )
-                elif copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
-                    failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
+            copy = root / RUNTIME / name / "SKILL.md"
+            copy_name = copy.relative_to(root).as_posix()
+            # The skill directory too: is_file() and filecmp follow a linked parent.
+            linked = next((path for path in (copy.parent, copy) if _is_link(path)), None)
+            if linked is not None:
+                failures.append(
+                    f"{linked.relative_to(root).as_posix()}: is a link, not an ordinary file or directory"
+                )
+            elif copy.is_file() and not filecmp.cmp(source, copy, shallow=False):
+                failures.append(f"{copy_name}: differs from {source.relative_to(root).as_posix()}")
     else:
-        trees = {tree: [] for tree in (canonical, *(root / runtime for runtime in RUNTIME_ROOTS))}
+        destination = root / RUNTIME
+        trees = {tree: [] for tree in (canonical, destination)}
         for tree in trees:
             if _is_link(tree):
                 failures.append(f"{tree.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
@@ -155,24 +155,22 @@ def validate(root: Path, strict: bool = False) -> list[str]:
                 trees[tree] = _ordinary_entries(tree, root, failures)
         expected_directories = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_dir()}
         expected_files = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_file()}
-        for runtime in RUNTIME_ROOTS:
-            destination = root / runtime
-            actual_directories = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_dir()}
-            actual_files = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_file()}
-            for relative in sorted(expected_directories - actual_directories):
-                failures.append(f"{runtime}/{relative}: missing generated directory")
-            for relative in sorted(expected_files):
-                source = canonical / relative
-                copy = destination / relative
-                copy_name = f"{runtime}/{relative}"
-                if not copy.is_file():
-                    failures.append(f"{copy_name}: missing generated copy")
-                elif not filecmp.cmp(source, copy, shallow=False):
-                    failures.append(f"{copy_name}: differs from {CANONICAL}/{relative}")
-            for relative in sorted(actual_files - expected_files):
-                failures.append(f"{runtime}/{relative}: unexpected generated file")
-            for relative in sorted(actual_directories - expected_directories):
-                failures.append(f"{runtime}/{relative}: unexpected generated directory")
+        actual_directories = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_dir()}
+        actual_files = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_file()}
+        for relative in sorted(expected_directories - actual_directories):
+            failures.append(f"{RUNTIME}/{relative}: missing generated directory")
+        for relative in sorted(expected_files):
+            source = canonical / relative
+            copy = destination / relative
+            copy_name = f"{RUNTIME}/{relative}"
+            if not copy.is_file():
+                failures.append(f"{copy_name}: missing generated copy")
+            elif not filecmp.cmp(source, copy, shallow=False):
+                failures.append(f"{copy_name}: differs from {CANONICAL}/{relative}")
+        for relative in sorted(actual_files - expected_files):
+            failures.append(f"{RUNTIME}/{relative}: unexpected generated file")
+        for relative in sorted(actual_directories - expected_directories):
+            failures.append(f"{RUNTIME}/{relative}: unexpected generated directory")
     return failures
 
 
@@ -180,10 +178,10 @@ def sync(root: Path) -> list[str]:
     """Regenerate the Codex copy from .claude/skills/, refusing before any mutation if a link is found."""
     root = Path(root)
     canonical = root / CANONICAL
-    destinations = [root / runtime for runtime in RUNTIME_ROOTS]
+    destination = root / RUNTIME
     failures: list[str] = []
     trees: dict[Path, list[Path]] = {}
-    for tree in (canonical, *destinations):
+    for tree in (canonical, destination):
         for path in (tree, *tree.parents):
             if _is_link(path):
                 failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
@@ -214,18 +212,17 @@ def sync(root: Path) -> list[str]:
         for path in trees[canonical]
         if path.relative_to(canonical).parts[0] in APPROVED_NAMES
     ]
-    for destination in destinations:
-        for path in sorted(trees[destination], key=lambda path: len(path.parts), reverse=True):
-            if path.is_dir():
-                path.rmdir()
-            else:
-                path.unlink()
-        destination.mkdir(parents=True, exist_ok=True)
-        for relative in approved:
-            if (canonical / relative).is_dir():
-                (destination / relative).mkdir(exist_ok=True)
-            else:
-                shutil.copyfile(canonical / relative, destination / relative)
+    for path in sorted(trees[destination], key=lambda path: len(path.parts), reverse=True):
+        if path.is_dir():
+            path.rmdir()
+        else:
+            path.unlink()
+    destination.mkdir(parents=True, exist_ok=True)
+    for relative in approved:
+        if (canonical / relative).is_dir():
+            (destination / relative).mkdir(exist_ok=True)
+        else:
+            shutil.copyfile(canonical / relative, destination / relative)
     return []
 
 
