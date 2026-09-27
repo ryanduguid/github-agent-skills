@@ -5,18 +5,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.validate_skills import sync, validate
+from scripts.validate_skills import APPROVED_NAMES, sync, validate
 
 
 ROOT = Path(__file__).parents[1]
 NAME = "github-repository-audit"
-NAMES = (
-    "github-issue-to-pr",
-    "github-profile-curator",
-    "github-readme-polish",
-    "github-release-prep",
-    "github-repository-audit",
-)
 
 
 class SyncSkillsTests(unittest.TestCase):
@@ -80,7 +73,7 @@ class SyncSkillsTests(unittest.TestCase):
 
     def test_sync_creates_exact_five_byte_identical_skill_trees(self):
         shutil.rmtree(self.root / ".claude" / "skills")
-        for name in NAMES:
+        for name in APPROVED_NAMES:
             skill = self.root / ".claude" / "skills" / name
             (skill / "SKILL.md").parent.mkdir(parents=True)
             (skill / "SKILL.md").write_bytes(f"{name}\n".encode())
@@ -91,7 +84,7 @@ class SyncSkillsTests(unittest.TestCase):
 
         for runtime in (".agents/skills",):
             destination = self.root / runtime
-            self.assertEqual({path.name for path in destination.iterdir()}, set(NAMES))
+            self.assertEqual({path.name for path in destination.iterdir()}, set(APPROVED_NAMES))
             for source in (self.root / ".claude" / "skills").rglob("*"):
                 if source.is_file():
                     self.assertEqual(
