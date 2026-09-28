@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts.validate_skills import APPROVED_NAMES, validate
 
@@ -214,6 +215,57 @@ class ValidateSkillsTests(unittest.TestCase):
             self.unlink_directory(link)
 
         self.assertIn(".agents/skills/github-repository-audit: is a link, not an ordinary file or directory", failures)
+
+    def test_strict_mode_reports_both_linked_trees_before_stopping_comparison(self):
+        self.valid_skill_set()
+        name = "github-repository-audit"
+        self.write(f".claude/skills/{name}/references/checklist.md", "canonical\n")
+        linked_files = (
+            (self.root / f".claude/skills/{name}/references", "checklist.md"),
+            (self.root / f".agents/skills/{name}", "SKILL.md"),
+        )
+        links = []
+        try:
+            for index, (link, filename) in enumerate(linked_files):
+                outside = self.root / f"outside-generated-{index}"
+                outside.mkdir()
+                (outside / filename).write_bytes((link / filename).read_bytes())
+                (link / filename).unlink()
+                link.rmdir()
+                self.link_directory(link, outside)
+                links.append(link)
+            with patch("scripts.validate_skills.filecmp.cmp") as compare:
+                failures = validate(self.root, strict=True)
+        finally:
+            for link in reversed(links):
+                self.unlink_directory(link)
+
+        for link, _ in linked_files:
+            self.assertIn(
+                f"{link.relative_to(self.root).as_posix()}: is a link, not an ordinary file or directory",
+                failures,
+            )
+        compare.assert_not_called()
+
+    def test_strict_mode_reports_a_linked_canonical_skill_once(self):
+        self.valid_skill_set()
+        name = "github-repository-audit"
+        link = self.root / f".claude/skills/{name}"
+        outside = self.root / "outside-canonical"
+        outside.mkdir()
+        (outside / "SKILL.md").write_bytes((link / "SKILL.md").read_bytes())
+        (link / "SKILL.md").unlink()
+        link.rmdir()
+        self.link_directory(link, outside)
+        try:
+            with patch("scripts.validate_skills.filecmp.cmp") as compare:
+                failures = validate(self.root, strict=True)
+        finally:
+            self.unlink_directory(link)
+
+        message = f".claude/skills/{name}: is a link, not an ordinary file or directory"
+        self.assertEqual(failures.count(message), 1)
+        compare.assert_not_called()
 
     def test_strict_mode_requires_all_five_skills(self):
         self.valid_skill()
