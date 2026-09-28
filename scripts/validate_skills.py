@@ -155,7 +155,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
             elif tree.is_dir():
                 trees[tree] = _ordinary_entries(tree, root, failures)
         if len(failures) != failures_before_traversal:
-            return failures
+            return list(dict.fromkeys(failures))
         expected_directories = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_dir()}
         expected_files = {path.relative_to(canonical).as_posix() for path in trees[canonical] if path.is_file()}
         actual_directories = {path.relative_to(destination).as_posix() for path in trees[destination] if path.is_dir()}

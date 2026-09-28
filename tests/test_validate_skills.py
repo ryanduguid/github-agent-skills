@@ -247,6 +247,26 @@ class ValidateSkillsTests(unittest.TestCase):
             )
         compare.assert_not_called()
 
+    def test_strict_mode_reports_a_linked_canonical_skill_once(self):
+        self.valid_skill_set()
+        name = "github-repository-audit"
+        link = self.root / f".claude/skills/{name}"
+        outside = self.root / "outside-canonical"
+        outside.mkdir()
+        (outside / "SKILL.md").write_bytes((link / "SKILL.md").read_bytes())
+        (link / "SKILL.md").unlink()
+        link.rmdir()
+        self.link_directory(link, outside)
+        try:
+            with patch("scripts.validate_skills.filecmp.cmp") as compare:
+                failures = validate(self.root, strict=True)
+        finally:
+            self.unlink_directory(link)
+
+        message = f".claude/skills/{name}: is a link, not an ordinary file or directory"
+        self.assertEqual(failures.count(message), 1)
+        compare.assert_not_called()
+
     def test_strict_mode_requires_all_five_skills(self):
         self.valid_skill()
 
