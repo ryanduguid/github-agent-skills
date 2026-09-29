@@ -82,7 +82,10 @@ jobs:
         run: |
           import json, os, re
           text = open(".github/workflows/validate.yml", encoding="utf-8").read()
-          jobs = set(re.findall(r"(?m)^  ([A-Za-z_][\w-]*):", text.split("\njobs:\n", 1)[1]))
+          keys = re.findall(r"(?m)^  [\"']?([A-Za-z_][\w-]*)[\"']?:", text.split("\njobs:\n", 1)[1])
+          jobs = set(keys)
+          if "validate-gates" not in jobs:
+              raise SystemExit("Could not read the job list; the gate check needs updating")
           missing = sorted(jobs - {"validate-gates"} - set(json.loads(os.environ["RESULTS"])))
           if missing:
               raise SystemExit("Add these jobs to needs: " + ", ".join(missing))
