@@ -86,7 +86,15 @@ def validate(root: Path, strict: bool = False) -> list[str]:
                 break
     if failures:
         return failures
-    skills = sorted((path for path in canonical.iterdir() if path.is_dir()), key=lambda path: path.name) if canonical.is_dir() else []
+    # Retain links for rejection even when their targets are missing or are files.
+    skills = (
+        sorted(
+            (path for path in canonical.iterdir() if _is_link(path) or path.is_dir()),
+            key=lambda path: path.name,
+        )
+        if canonical.is_dir()
+        else []
+    )
     valid: list[tuple[str, Path]] = []
 
     for directory in skills:
