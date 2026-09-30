@@ -157,6 +157,81 @@ class ValidateSkillsTests(unittest.TestCase):
 
         self.assertEqual(validate(self.root), [])
 
+    def test_rejects_a_dangling_canonical_skill_link_in_both_modes(self):
+        self.valid_skill_set()
+        canonical = self.root / ".claude/skills"
+        link = canonical / "github-repository-audit"
+        (link / "SKILL.md").unlink()
+        link.rmdir()
+        self.link_directory(link, self.root / "missing-target")
+        try:
+            for strict in (False, True):
+                with self.subTest(strict=strict), patch(
+                    "scripts.validate_skills.filecmp.cmp", return_value=True
+                ) as compare:
+                    failures = validate(self.root, strict=strict)
+                    self.assertEqual(
+                        failures,
+                        [".claude/skills/github-repository-audit: is a link, not an ordinary file or directory"],
+                    )
+                    if strict:
+                        compare.assert_not_called()
+        finally:
+            self.unlink_directory(link)
+
+    def test_rejects_a_canonical_skill_link_to_a_file_in_both_modes(self):
+        self.valid_skill_set()
+        canonical = self.root / ".claude/skills"
+        target = self.root / "target.txt"
+        target.write_text("fabricated fixture\n", encoding="utf-8")
+        link = canonical / "github-repository-audit"
+        (link / "SKILL.md").unlink()
+        link.rmdir()
+        try:
+            os.symlink(target, link)
+        except OSError as error:
+            if os.name == "nt" and error.winerror == 1314:
+                self.skipTest(f"file symlinks require an unavailable privilege: {error}")
+            raise
+        try:
+            for strict in (False, True):
+                with self.subTest(strict=strict), patch(
+                    "scripts.validate_skills.filecmp.cmp", return_value=True
+                ) as compare:
+                    failures = validate(self.root, strict=strict)
+                    self.assertEqual(
+                        failures,
+                        [".claude/skills/github-repository-audit: is a link, not an ordinary file or directory"],
+                    )
+                    if strict:
+                        compare.assert_not_called()
+        finally:
+            link.unlink()
+
+    def test_ordinary_files_are_not_discovered_as_skills(self):
+        self.valid_skill_set()
+        self.write(".claude/skills/README.md", "Skill notes.\n")
+        self.write(".agents/skills/README.md", "Skill notes.\n")
+
+        for strict in (False, True):
+            with self.subTest(strict=strict):
+                self.assertEqual(validate(self.root, strict=strict), [])
+
+    def test_an_ordinary_file_cannot_satisfy_a_required_skill(self):
+        self.valid_skill_set()
+        name = "github-repository-audit"
+        for tree in (".claude/skills", ".agents/skills"):
+            path = self.root / tree / name
+            (path / "SKILL.md").unlink()
+            path.rmdir()
+            path.write_text("Skill notes.\n", encoding="utf-8")
+
+        self.assertEqual(validate(self.root), [])
+        self.assertEqual(
+            validate(self.root, strict=True),
+            [f".claude/skills: missing required skill '{name}'"],
+        )
+
     def test_incremental_mode_rejects_a_linked_canonical_skill(self):
         """The link check ran only in strict mode, so the documented incremental
         command reported success for an approved skill whose directory pointed
