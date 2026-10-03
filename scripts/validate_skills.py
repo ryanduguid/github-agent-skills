@@ -51,7 +51,10 @@ PLACEHOLDER = re.compile(r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b", r
 
 
 def frontmatter(path: Path) -> tuple[dict[str, str] | None, str | None]:
-    lines = path.read_text(encoding="utf-8").splitlines()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        return None, "not valid UTF-8 text"
     if not lines or lines[0] != "---":
         return None, "missing YAML frontmatter delimiters"
     try:
