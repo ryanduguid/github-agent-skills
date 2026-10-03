@@ -74,6 +74,18 @@ class ValidateSkillsTests(unittest.TestCase):
             [".claude/skills/github-repository-audit/SKILL.md: missing YAML frontmatter delimiters"],
         )
 
+    def test_reports_a_skill_file_that_is_not_utf8(self):
+        path = self.root / ".claude/skills/github-repository-audit/SKILL.md"
+        path.parent.mkdir(parents=True)
+        for encoded in (SKILL.format(name="github-repository-audit", description="x").encode("utf-16"),
+                        b"\xff\xfe\x00garbage"):
+            with self.subTest(prefix=encoded[:4]):
+                path.write_bytes(encoded)
+                self.assertEqual(
+                    validate(self.root),
+                    [".claude/skills/github-repository-audit/SKILL.md: not valid UTF-8 text"],
+                )
+
     def test_reports_missing_name(self):
         self.write(
             ".claude/skills/github-repository-audit/SKILL.md",
