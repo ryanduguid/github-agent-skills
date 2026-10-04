@@ -1,7 +1,7 @@
 # Portable GitHub skills
 
 > Five focused Agent Skills for evidence-based GitHub work, portable between
-> Codex and Claude Code. They need Python 3.11 or later and use only the
+> Codex and Claude Code. They need Python 3.14 or later and use only the
 > standard library, so a clone is the whole installation.
 
 `.claude/skills/` is the canonical source, read in place by Claude Code. The

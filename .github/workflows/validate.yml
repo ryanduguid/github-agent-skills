@@ -14,14 +14,14 @@ concurrency:
 
 jobs:
   validate:
-    # The 3.11 leg reports as bare "validate". Branch protection requires validate-gates instead.
-    name: validate${{ matrix.python != '3.11' && format(' ({0})', matrix.python) || '' }}
+    # The 3.14 leg reports as bare "validate". Branch protection requires validate-gates instead.
+    name: validate${{ matrix.python != '3.14' && format(' ({0})', matrix.python) || '' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.11', '3.14']
+        python: ["3.14"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.11'
+          python-version: '3.14'
       - name: Exercise NTFS junction safety
         run: python -m unittest tests.test_sync_skills.SyncSkillsTests -v
 
@@ -60,6 +60,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

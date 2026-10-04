@@ -17,7 +17,7 @@ generated copy in `.agents/skills/` serves Codex.
 
 ## Requirements
 
-Python 3.11+ is required. The repository uses the Python standard library; no
+Python 3.14+ is required. The repository uses the Python standard library; no
 package installation is needed.
 
 ## Quick start
