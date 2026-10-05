@@ -1,6 +1,6 @@
 # Local gates
 
-Prerequisite: Python 3.11+.
+Prerequisite: Python 3.14+.
 
 Run the incremental checks while authoring a skill:
 
