@@ -1,6 +1,7 @@
 # Portable GitHub skills
 
 [![validate](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml)
+[![CodeQL](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENSE)
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
