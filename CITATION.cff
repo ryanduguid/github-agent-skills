@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this work, cite it with this metadata and the release tag or commit you used."
+title: "Portable GitHub skills"
+type: software
+authors:
+  - family-names: Duguid
+    given-names: Ryan
+abstract: "GitHub workflow skills for Codex and Claude Code that require inspected evidence."
+repository-code: "https://github.com/ryanduguid/github-agent-skills"
+url: "https://duguid.com.au/#adopt"
+license: MIT
+keywords:
+  - agent-skills
+  - claude-code
+  - codex
+  - developer-tools
+  - github
+  - workflow-automation
