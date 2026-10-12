@@ -4,6 +4,7 @@
 [![CodeQL](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENSE)
 [![Codacy code quality](https://app.codacy.com/project/badge/Grade/d1745a44b9934138ab60eb717cb99281?branch=main)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)
+[![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_github-agent-skills?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000)](https://sonarcloud.io/summary/new_code?id=ryanduguid_github-agent-skills)
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
 canonical source is `.claude/skills/`, which Claude Code reads in place; a
