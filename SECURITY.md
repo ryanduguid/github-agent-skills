@@ -1,5 +1,7 @@
 # Security policy
 
+Report privately at <https://github.com/ryanduguid/github-agent-skills/security/advisories/new>.
+
 Please use GitHub's private vulnerability reporting for this repository when
 it is available. If it is not available, open a minimal public issue asking
 for a private reporting channel; do not include vulnerability details there.
