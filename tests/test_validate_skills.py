@@ -122,14 +122,16 @@ class ValidateSkillsTests(unittest.TestCase):
         (self.root / ".claude").mkdir()
         link = self.root / ".claude/skills"
         self.link_directory(link, outside)
-        self.addCleanup(self.unlink_directory, link)
-
-        for strict in (False, True):
-            with self.subTest(strict=strict):
-                self.assertEqual(
-                    validate(self.root, strict=strict),
-                    [".claude/skills: is a link, not an ordinary file or directory"],
-                )
+        try:
+            for strict in (False, True):
+                with self.subTest(strict=strict):
+                    self.assertEqual(
+                        validate(self.root, strict=strict),
+                        [".claude/skills: is a link, not an ordinary file or directory"],
+                    )
+        finally:
+            # Before tearDown removes the temporary root, as the other link tests do.
+            self.unlink_directory(link)
 
     def test_main_validates_and_reports_failures(self):
         from scripts import validate_skills
