@@ -191,6 +191,19 @@ class PublicFileScannerTests(unittest.TestCase):
                 path = self.write("notes.md", (name + "=" + "do-not-echo\n").encode())
                 self.assertEqual(public_files.scan_paths(self.root, [path]), ["notes.md: credential-assignment"])
 
+    def test_workflow_id_token_permission_is_not_a_credential(self):
+        permission = ("      id-to" + "ken" + ": write # Publish results.\n").encode()
+        cases = (
+            (".github/workflows/policy.yml", permission, []),
+            ("notes.md", permission, ["notes.md: credential-assignment"]),
+            (".github/workflows/policy.yml", ("      id-to" + "ken" + ": do-not-echo\n").encode(),
+             [".github/workflows/policy.yml: credential-assignment"]),
+        )
+        for relative, content, expected in cases:
+            with self.subTest(relative=relative, expected=expected):
+                path = self.write(relative, content)
+                self.assertEqual(public_files.scan_paths(self.root, [path]), expected)
+
     def test_prefixed_workflow_secret_reference_is_not_a_credential(self):
         content = ("      OPENAI" + "_API" + "_KEY" + ": " + "${{ secrets.OPENAI_API_KEY }}\n").encode()
         path = self.write(".github/workflows/policy.yml", content)
