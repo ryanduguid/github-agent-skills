@@ -79,7 +79,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     # reported success from the documented incremental command as long as its text
     # matched. Stop at the first linked tree: nothing below it can be trusted.
     for tree in (canonical, root / RUNTIME):
-        for path in (tree, *tree.parents):
+        for path in (tree, *tree.parents):  # pragma: no branch - the walk always stops at root
             if _is_link(path):
                 failures.append(
                     f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory"
@@ -161,9 +161,8 @@ def validate(root: Path, strict: bool = False) -> list[str]:
         trees = {tree: [] for tree in (canonical, destination)}
         failures_before_traversal = len(failures)
         for tree in trees:
-            if _is_link(tree):
-                failures.append(f"{tree.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
-            elif tree.is_dir():
+            # A linked tree was already rejected before any skill was read.
+            if tree.is_dir():
                 trees[tree] = _ordinary_entries(tree, root, failures)
         if len(failures) != failures_before_traversal:
             return list(dict.fromkeys(failures))
@@ -196,7 +195,7 @@ def sync(root: Path) -> list[str]:
     failures: list[str] = []
     trees: dict[Path, list[Path]] = {}
     for tree in (canonical, destination):
-        for path in (tree, *tree.parents):
+        for path in (tree, *tree.parents):  # pragma: no branch - the walk always stops at root
             if _is_link(path):
                 failures.append(f"{path.relative_to(root).as_posix()}: is a link, not an ordinary file or directory")
                 break
