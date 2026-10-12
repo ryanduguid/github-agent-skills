@@ -6,7 +6,7 @@
 [![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_github-agent-skills?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat-square)](https://sonarcloud.io/summary/new_code?id=ryanduguid_github-agent-skills)
 [![Codacy code quality](https://img.shields.io/codacy/grade/d1745a44b9934138ab60eb717cb99281?label=Codacy&labelColor=000000&style=flat-square)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)<br>
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/github-agent-skills?label=Scorecard&labelColor=000000&style=flat-square)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/github-agent-skills)<br>
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-66023C?labelColor=000000&style=flat-square)](LICENSE)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat-square)](LICENSE)
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
 canonical source is `.claude/skills/`, which Claude Code reads in place; a
@@ -83,4 +83,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](LICENSE). If you redistribute this work or build on it, keep the attribution in [NOTICE](NOTICE).
