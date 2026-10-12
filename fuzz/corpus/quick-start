@@ -1,0 +1,7 @@
+## Quick start
+
+```shell
+git clone https://github.com/ryanduguid/github-agent-skills.git
+cd github-agent-skills
+python -m unittest discover -s tests -v
+```

@@ -121,6 +121,9 @@ def scan_paths(root: Path, paths: list[Path]) -> list[str]:
             if rule == "credential-assignment" and path.parent.as_posix() == ".github/workflows" and path.suffix in (".yml", ".yaml"):
                 # These Actions expressions reference the runtime token or a named secret; neither contains a credential value.
                 candidate = re.sub(r"(?m)^[ \t]+[A-Za-z_][A-Za-z0-9_]*:[ \t]*\$\{\{[ \t]*(?:github\.token|secrets\.[A-Z][A-Z0-9_]*)[ \t]*\}\}[ \t]*\r?$", "", text)
+                # The id-token permission names an access level, not a credential value.
+                # The pattern is split so this line does not match the rule it relaxes.
+                candidate = re.sub(r"(?m)^[ \t]+id-to" r"ken:[ \t]*(?:read|write|none)[ \t]*(?:#.*)?\r?$", "", candidate)
             if pattern.search(candidate):
                 failures.append(f"{relative}: {rule}")
                 break

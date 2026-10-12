@@ -1,7 +1,10 @@
+import io
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import check_public_files as public_files
 
@@ -191,6 +194,19 @@ class PublicFileScannerTests(unittest.TestCase):
                 path = self.write("notes.md", (name + "=" + "do-not-echo\n").encode())
                 self.assertEqual(public_files.scan_paths(self.root, [path]), ["notes.md: credential-assignment"])
 
+    def test_workflow_id_token_permission_is_not_a_credential(self):
+        permission = ("      id-to" + "ken" + ": write # Publish results.\n").encode()
+        cases = (
+            (".github/workflows/policy.yml", permission, []),
+            ("notes.md", permission, ["notes.md: credential-assignment"]),
+            (".github/workflows/policy.yml", ("      id-to" + "ken" + ": do-not-echo\n").encode(),
+             [".github/workflows/policy.yml: credential-assignment"]),
+        )
+        for relative, content, expected in cases:
+            with self.subTest(relative=relative, expected=expected):
+                path = self.write(relative, content)
+                self.assertEqual(public_files.scan_paths(self.root, [path]), expected)
+
     def test_prefixed_workflow_secret_reference_is_not_a_credential(self):
         content = ("      OPENAI" + "_API" + "_KEY" + ": " + "${{ secrets.OPENAI_API_KEY }}\n").encode()
         path = self.write(".github/workflows/policy.yml", content)
@@ -237,6 +253,58 @@ class PublicFileScannerTests(unittest.TestCase):
 
         self.assertEqual(public_files.scan_paths(self.root, [utf16]), ["utf16.txt: credential-assignment"])
         self.assertEqual(public_files.scan_paths(self.root, [nul_text]), ["embedded-null.txt: unclassifiable-text"])
+
+    def test_flags_bom_marked_text_that_does_not_decode(self):
+        utf32 = self.write("bad32.txt", b"\xff\xfe\0\0" + b"\xff\xff\xff\xff")
+        utf16 = self.write("bad16.txt", b"\xff\xfe" + b"\x00\xd8")
+
+        self.assertEqual(public_files.scan_paths(self.root, [utf32]), ["bad32.txt: unclassifiable-text"])
+        self.assertEqual(public_files.scan_paths(self.root, [utf16]), ["bad16.txt: unclassifiable-text"])
+
+    def test_skips_binary_content_and_empty_files(self):
+        binary = self.write("image.bin", b"\0\x01\x02\x03\0\xfe")
+        only_nul = self.write("nul.bin", b"\0\0")
+        empty = self.write("empty.txt", b"")
+
+        self.assertEqual(public_files.scan_paths(self.root, [binary, only_nul, empty]), [])
+
+    def test_reports_an_unreadable_tracked_path_and_keeps_scanning(self):
+        (self.root / "gitlink").mkdir()
+        unsafe = self.write("notes.md", ("api" + "_key" + " = " + "do-not-echo\n").encode())
+
+        failures = public_files.scan_paths(self.root, [Path("gitlink"), unsafe])
+
+        self.assertEqual(len(failures), 2)
+        self.assertRegex(failures[0], r"^gitlink: unreadable \(\w+Error\)$")
+        self.assertEqual(failures[1], "notes.md: credential-assignment")
+
+
+class QuickStartTests(unittest.TestCase):
+    def test_readme_without_a_quick_start_has_no_commands(self):
+        self.assertEqual(public_files.quick_start_commands("# Title\n\nNo quick start here.\n"), [])
+
+
+class MainTests(unittest.TestCase):
+    def test_passes_when_the_repository_is_clean(self):
+        with patch.object(public_files, "tracked_failures", return_value=[]):
+            self.assertEqual(public_files.main(), 0)
+
+    def test_reports_every_failure_and_exits_non_zero(self):
+        stderr = io.StringIO()
+        with (
+            patch.object(public_files, "tracked_failures", return_value=["notes.md: credential-assignment"]),
+            patch.object(public_files, "permissions_block", return_value=["  contents: write"]),
+            redirect_stderr(stderr),
+        ):
+            self.assertEqual(public_files.main(), 1)
+
+        self.assertEqual(
+            stderr.getvalue().splitlines(),
+            [
+                "notes.md: credential-assignment",
+                ".github/workflows/validate.yml: workflow permissions are not read-only contents",
+            ],
+        )
 
 
 class WorkflowTests(unittest.TestCase):

@@ -1,8 +1,11 @@
+import io
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -73,6 +76,93 @@ class ValidateSkillsTests(unittest.TestCase):
             validate(self.root),
             [".claude/skills/github-repository-audit/SKILL.md: missing YAML frontmatter delimiters"],
         )
+
+    def test_reports_frontmatter_without_a_closing_delimiter(self):
+        self.write(
+            ".claude/skills/github-repository-audit/SKILL.md",
+            "---\nname: github-repository-audit\ndescription: Use when auditing.\n",
+        )
+
+        self.assertEqual(
+            validate(self.root),
+            [".claude/skills/github-repository-audit/SKILL.md: missing YAML frontmatter delimiters"],
+        )
+
+    def test_ignores_other_frontmatter_lines(self):
+        text = SKILL.format(name="github-repository-audit", description="assessing a repository")
+        text = text.replace("---\nname:", "---\nlicence: MIT\nno separator here\nname:", 1)
+        self.write(".claude/skills/github-repository-audit/SKILL.md", text)
+        self.copies("github-repository-audit", text)
+
+        self.assertEqual(validate(self.root), [])
+
+    def test_reports_a_skill_directory_without_skill_md(self):
+        (self.root / ".claude/skills/github-repository-audit").mkdir(parents=True)
+
+        self.assertEqual(validate(self.root), [".claude/skills/github-repository-audit: missing SKILL.md"])
+
+    def test_rejects_a_skill_md_that_is_a_link(self):
+        target = self.root / "outside.md"
+        target.write_text(SKILL.format(name="github-repository-audit", description="x"), encoding="utf-8")
+        link = self.root / ".claude/skills/github-repository-audit/SKILL.md"
+        link.parent.mkdir(parents=True)
+        try:
+            os.symlink(target, link)
+        except OSError as error:
+            self.skipTest(f"file links are unavailable: {error}")
+
+        self.assertEqual(
+            validate(self.root),
+            [".claude/skills/github-repository-audit/SKILL.md: is a link, not an ordinary file or directory"],
+        )
+
+    def test_rejects_a_linked_canonical_tree_before_reading_it(self):
+        outside = self.root / "outside"
+        (outside / "github-repository-audit").mkdir(parents=True)
+        (self.root / ".claude").mkdir()
+        link = self.root / ".claude/skills"
+        self.link_directory(link, outside)
+        try:
+            for strict in (False, True):
+                with self.subTest(strict=strict):
+                    self.assertEqual(
+                        validate(self.root, strict=strict),
+                        [".claude/skills: is a link, not an ordinary file or directory"],
+                    )
+        finally:
+            # Before tearDown removes the temporary root, as the other link tests do.
+            self.unlink_directory(link)
+
+    def test_main_validates_and_reports_failures(self):
+        from scripts import validate_skills
+
+        stderr = io.StringIO()
+        with (
+            patch.object(sys, "argv", ["validate_skills.py", "--strict"]),
+            patch.object(validate_skills, "validate", return_value=["x: failure"]) as check,
+            redirect_stderr(stderr),
+        ):
+            self.assertEqual(validate_skills.main(), 1)
+        check.assert_called_once()
+        self.assertTrue(check.call_args.kwargs["strict"])
+        self.assertEqual(stderr.getvalue(), "x: failure\n")
+
+        with (
+            patch.object(sys, "argv", ["validate_skills.py", "--sync"]),
+            patch.object(validate_skills, "sync", return_value=[]) as regenerate,
+            patch.object(validate_skills, "validate", return_value=[]),
+        ):
+            self.assertEqual(validate_skills.main(), 0)
+        regenerate.assert_called_once()
+
+        with (
+            patch.object(sys, "argv", ["validate_skills.py", "--sync"]),
+            patch.object(validate_skills, "sync", return_value=["y: refused"]),
+            patch.object(validate_skills, "validate") as not_run,
+            redirect_stderr(io.StringIO()),
+        ):
+            self.assertEqual(validate_skills.main(), 1)
+        not_run.assert_not_called()
 
     def test_reports_a_skill_file_that_is_not_utf8(self):
         path = self.root / ".claude/skills/github-repository-audit/SKILL.md"

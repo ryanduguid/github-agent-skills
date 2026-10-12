@@ -1,9 +1,12 @@
 # Portable GitHub skills
 
-[![validate](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml)
-[![CodeQL](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql)
-[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-5C2D91.svg?labelColor=04001F)](LICENSE)
-[![Codacy code quality](https://app.codacy.com/project/badge/Grade/d1745a44b9934138ab60eb717cb99281?branch=main)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)
+[![validate](https://img.shields.io/github/actions/workflow/status/ryanduguid/github-agent-skills/validate.yml?branch=main&label=validate&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ryanduguid/github-agent-skills?label=coverage&labelColor=000000&style=flat-square)](https://codecov.io/gh/ryanduguid/github-agent-skills)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/ryanduguid/github-agent-skills/github-code-scanning%2Fcodeql?branch=main&label=CodeQL&labelColor=000000&style=flat-square)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql)
+[![SonarCloud](https://img.shields.io/sonar/quality_gate/ryanduguid_github-agent-skills?server=https%3A%2F%2Fsonarcloud.io&label=SonarCloud&labelColor=000000&style=flat-square)](https://sonarcloud.io/summary/new_code?id=ryanduguid_github-agent-skills)
+[![Codacy code quality](https://img.shields.io/codacy/grade/d1745a44b9934138ab60eb717cb99281?label=Codacy&labelColor=000000&style=flat-square)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)<br>
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/ryanduguid/github-agent-skills?label=Scorecard&labelColor=000000&style=flat-square)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/github-agent-skills)<br>
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-66023C?labelColor=000000&style=flat-square)](LICENSE)
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
 canonical source is `.claude/skills/`, which Claude Code reads in place; a
