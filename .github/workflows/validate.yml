@@ -17,6 +17,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          allow-prereleases: true
+      - name: Install the hash-pinned linter
+        run: python -m pip install --disable-pip-version-check --require-hashes --no-deps --only-binary=ruff --requirement requirements-lint.txt
+      - name: Ruff
+        run: python -m ruff check .
+
   validate:
     # The 3.14 leg reports as bare "validate". Branch protection requires validate-gates instead.
     name: validate${{ matrix.python != '3.14' && format(' ({0})', matrix.python) || '' }}
@@ -142,7 +160,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [validate, windows-sync-safety, coverage]
+    needs: [lint, validate, windows-sync-safety, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

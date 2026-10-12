@@ -7,7 +7,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 CLONE_URL = "https://github.com/ryanduguid/github-agent-skills.git"
 REPOSITORY_NAME = "github-agent-skills"
 QUICK_START = re.compile(r"^## Quick start\s*$([\s\S]*?)(?=(?:^## )|\Z)", re.MULTILINE)

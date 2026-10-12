@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from scripts import check_public_files as public_files
 
-
 ROOT = Path(__file__).parents[1]
 WORKFLOW = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
 
@@ -328,6 +327,18 @@ class WorkflowTests(unittest.TestCase):
             "python scripts/check_public_files.py",
         ):
             self.assertIn(command, workflow)
+
+    def test_workflow_lints_with_the_hash_pinned_ruff_the_guide_names(self):
+        workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+        lint_job = workflow.split("  lint:", 1)[1].split("\n\n", 1)[0]
+        guide = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+        self.assertIn("--require-hashes", lint_job)
+        self.assertIn("--requirement requirements-lint.txt", lint_job)
+        self.assertIn("run: python -m ruff check .", lint_job)
+        self.assertIn("python -m ruff check .", guide)
+        self.assertIn("--require-hashes --requirement requirements-lint.txt", guide)
+        self.assertRegex(workflow, r"(?m)^    needs: \[lint, ")
 
     def test_workflow_runs_junction_safety_tests_on_windows(self):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
