@@ -79,6 +79,10 @@ to push, create pull requests or releases, alter GitHub settings, or make any
 other remote mutation. Those actions require explicit confirmation at the
 action boundary.
 
+## Releases
+
+[RELEASE_NOTES.md](RELEASE_NOTES.md) summarises each tagged release. Versions follow [Semantic Versioning](https://semver.org/).
+
 ## Contributing and security
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
