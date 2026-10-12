@@ -1,6 +1,7 @@
 # Portable GitHub skills
 
 [![validate](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml)
+[![Codecov](https://codecov.io/gh/ryanduguid/github-agent-skills/graph/badge.svg)](https://codecov.io/gh/ryanduguid/github-agent-skills)
 [![CodeQL](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-5C2D91.svg?labelColor=04001F)](LICENSE)
 [![Codacy code quality](https://app.codacy.com/project/badge/Grade/d1745a44b9934138ab60eb717cb99281?branch=main)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)
