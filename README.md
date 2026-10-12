@@ -54,7 +54,9 @@ runtime directory again. Use only the runtime you need.
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
 change, run the Quick start checks: the unit suite, the strict validator and
-the public-file check. `GATES.md` lists the same repository gate.
+the public-file check. `GATES.md` lists the same repository gate. CI also
+lints the Python files with a hash-pinned Ruff; [CONTRIBUTING.md](CONTRIBUTING.md)
+shows how to run it locally.
 
 ## Recorded runs
 

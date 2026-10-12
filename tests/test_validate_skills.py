@@ -11,7 +11,6 @@ from unittest.mock import patch
 
 from scripts.validate_skills import APPROVED_NAMES, validate
 
-
 ROOT = Path(__file__).parents[1]
 
 SKILL = """---

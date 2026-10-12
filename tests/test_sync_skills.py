@@ -7,7 +7,6 @@ from pathlib import Path
 
 from scripts.validate_skills import APPROVED_NAMES, sync, validate
 
-
 ROOT = Path(__file__).parents[1]
 NAME = "github-repository-audit"
 

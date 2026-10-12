@@ -15,3 +15,6 @@ The final repository gate additionally requires:
 python scripts/validate_skills.py --strict
 python scripts/check_public_files.py
 ```
+
+CI also runs `python -m ruff check .` with the linter pinned in
+`requirements-lint.txt`.

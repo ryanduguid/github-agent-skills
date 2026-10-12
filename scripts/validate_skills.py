@@ -10,7 +10,6 @@ import stat
 import sys
 from pathlib import Path
 
-
 APPROVED_NAMES = (
     "github-issue-to-pr",
     "github-profile-curator",
