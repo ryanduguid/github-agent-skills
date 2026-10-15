@@ -24,20 +24,21 @@ BASE = (
 )
 
 
-class GatePredecessorTests(unittest.TestCase):
-    def head_workflow(self, gate, name, declaration=""):
-        head = (f"name: Validate\n\non: pull_request\n\njobs:\n  {gate}:\n"
-                f"    name: {name}\n    runs-on: ubuntu-latest\n"
-                "    steps: [{run: 'true'}]\n")
-        if declaration:
-            head = f"# removed-jobs: {declaration}\n" + head
-        return head
+def head_workflow(gate, name, declaration=""):
+    head = (f"name: Validate\n\non: pull_request\n\njobs:\n  {gate}:\n"
+            f"    name: {name}\n    runs-on: ubuntu-latest\n"
+            "    steps: [{run: 'true'}]\n")
+    if declaration:
+        head = f"# removed-jobs: {declaration}\n" + head
+    return head
 
+
+class GatePredecessorTests(unittest.TestCase):
     def run_gate(self, gate, name, declaration="", *, sources=None, head=None):
         if sources is None:
             sources = {".github/workflows/validate.yml": BASE}
         if head is None:
-            head = self.head_workflow(gate, name, declaration)
+            head = head_workflow(gate, name, declaration)
 
         def git(*args):
             if args == ("ls-tree", "--name-only", "HEAD^1", "--", ".github/workflows/renamed.yml"):
@@ -184,100 +185,103 @@ class GatePredecessorTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, "Cannot determine the gate context"):
                     self.run_gate("replacement", "validate-gates", head=head)
 
+
+
+class GateCliTests(unittest.TestCase):
+    IDENTITY = ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                "-c", "commit.gpgsign=false")
+
+    def setUp(self):
+        git_executable = shutil.which("git")
+        self.assertIsNotNone(git_executable, "Git is required for the gate CLI regression")
+        temporary = tempfile.TemporaryDirectory(prefix="gate-predecessor-")
+        self.addCleanup(temporary.cleanup)
+        outer = Path(temporary.name).resolve()
+        self.assertEqual(outer.parent, Path(tempfile.gettempdir()).resolve())
+        self.repo, home = outer / "repo", outer / "home"
+        self.repo.mkdir()
+        home.mkdir()
+        self.env = {key: os.environ[key] for key in ("PATH", "SystemRoot", "TEMP", "TMP")
+                    if key in os.environ}
+        self.env.update(HOME=str(home), USERPROFILE=str(home), GIT_CONFIG_NOSYSTEM="1",
+                        GIT_CONFIG_GLOBAL=os.devnull, GITHUB_EVENT_NAME="pull_request", RESULTS="{}")
+        self.git_prefix = [rtk, "proxy", "git"] if (rtk := shutil.which("rtk")) else [git_executable]
+        self.workflows = self.repo / ".github/workflows"
+        self.workflows.mkdir(parents=True)
+        source_workflows = ROOT / ".github/workflows"
+        for source in sorted([*source_workflows.glob("*.yml"), *source_workflows.glob("*.yaml")]):
+            (self.workflows / source.name).write_bytes(source.read_bytes())
+        self.git_command("init", "--quiet", "--initial-branch=main")
+        self.git_command("config", "core.quotePath", "true")
+
+    def git_command(self, *args, raw=False):
+        return subprocess.run([*self.git_prefix, *args], cwd=self.repo, env=self.env,
+                              capture_output=True, text=not raw,
+                              encoding=None if raw else "utf-8", check=True, timeout=10)
+
+    def merge_change(self, base_name, base, filename, head):
+        self.assertIn(f".github/workflows/{filename} replacement", head)
+        self.git_command("add", "--all", "--", ".github/workflows")
+        self.git_command(*self.IDENTITY, "commit", "--quiet", "-m", "Rename fixture")
+        self.git_command("checkout", "--quiet", "main")
+        (self.repo / ".github/first-parent-control.txt").write_text("base advances\n", encoding="utf-8")
+        self.git_command("add", "--", ".github/first-parent-control.txt")
+        self.git_command(*self.IDENTITY, "commit", "--quiet", "-m", "Advance base fixture")
+        self.git_command(*self.IDENTITY, "merge", "--quiet", "--no-ff", "change", "-m", "Merge fixture")
+        self.assertEqual(len(self.git_command("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()), 3)
+        self.assertEqual(self.git_command("show", f"HEAD^1:.github/workflows/{base_name}").stdout, base)
+        self.assertEqual(self.git_command("show", f"HEAD^2:.github/workflows/{filename}").stdout, head)
+
     def run_cli_fixture(self, *, occupied=False, quoted_path=False, control_paths=False,
                         tab_comment=False, context="validate-gates", declaration="",
                         filename="renamed.yml"):
-        git_executable = shutil.which("git")
-        self.assertIsNotNone(git_executable, "Git is required for the gate CLI regression")
-        with tempfile.TemporaryDirectory(prefix="gate-predecessor-") as directory:
-            outer = Path(directory).resolve()
-            self.assertEqual(outer.parent, Path(tempfile.gettempdir()).resolve())
-            repo, home = outer / "repo", outer / "home"
-            repo.mkdir()
-            home.mkdir()
-            env = {key: os.environ[key] for key in ("PATH", "SystemRoot", "TEMP", "TMP")
-                   if key in os.environ}
-            env.update(HOME=str(home), USERPROFILE=str(home), GIT_CONFIG_NOSYSTEM="1",
-                       GIT_CONFIG_GLOBAL=os.devnull, GITHUB_EVENT_NAME="pull_request", RESULTS="{}")
-
-            git_prefix = [rtk, "proxy", "git"] if (rtk := shutil.which("rtk")) else [git_executable]
-
-            def git_command(*args, raw=False):
-                return subprocess.run([*git_prefix, *args], cwd=repo, env=env,
-                                      capture_output=True, text=not raw,
-                                      encoding=None if raw else "utf-8", check=True, timeout=10)
-
-            workflows = repo / ".github/workflows"
-            workflows.mkdir(parents=True)
-            source_workflows = ROOT / ".github/workflows"
-            for source in sorted([*source_workflows.glob("*.yml"), *source_workflows.glob("*.yaml")]):
-                (workflows / source.name).write_bytes(source.read_bytes())
-            base_name = "validate\r.yml" if control_paths else "v\u00e1lidate.yml" if quoted_path else "validate.yml"
-            base = (source_workflows / "validate.yml").read_text(encoding="utf-8")
-            source_argument = ("$'.github/workflows/validate\\r.yml'" if control_paths
-                               else f".github/workflows/{base_name}")
-            if quoted_path or control_paths:
-                base = base.replace(".github/workflows/validate.yml", source_argument)
-            if quoted_path or control_paths:
-                (workflows / "validate.yml").unlink()
-                (workflows / base_name).write_text(base, encoding="utf-8")
-            if control_paths:
-                (workflows / "validate\n.yml").write_text(
-                    self.head_workflow("unrelated", "unrelated"), encoding="utf-8")
-            if occupied:
-                filename = "occupied.yml"
-                (workflows / filename).write_text(
-                    self.head_workflow("replacement", "unrelated"), encoding="utf-8")
-            git_command("init", "--quiet", "--initial-branch=main")
-            git_command("config", "core.quotePath", "true")
-            git_command("add", "--", ".github/workflows")
-            identity = ("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
-                        "-c", "commit.gpgsign=false")
-            git_command(*identity, "commit", "--quiet", "-m", "Base fixture")
-            git_command("checkout", "--quiet", "-b", "change")
-            (workflows / base_name).unlink()
-            aggregate = base.split("\n  validate-gates:\n", 1)[1]
-            self.assertIn(NEEDS, aggregate)
-            aggregate = aggregate.replace(NEEDS, "", 1).replace(
-                f"{source_argument} validate-gates",
-                f".github/workflows/{filename} replacement")
-            head = ("name: Validate\n\non: pull_request\n\njobs:\n  replacement:\n"
-                    f"    name: {context}\n" + aggregate)
-            self.assertIn(f".github/workflows/{filename} replacement", head)
-            if tab_comment:
-                head = head.replace("  replacement:\n", "  replacement:\n\t# separator\n", 1)
-            if declaration:
-                head = f"# removed-jobs: {declaration}\n" + head
-            (workflows / filename).write_text(head, encoding="utf-8")
-            git_command("add", "--all", "--", ".github/workflows")
-            git_command(*identity, "commit", "--quiet", "-m", "Rename fixture")
-            git_command("checkout", "--quiet", "main")
-            (repo / ".github/first-parent-control.txt").write_text("base advances\n", encoding="utf-8")
-            git_command("add", "--", ".github/first-parent-control.txt")
-            git_command(*identity, "commit", "--quiet", "-m", "Advance base fixture")
-            git_command(*identity, "merge", "--quiet", "--no-ff", "change", "-m", "Merge fixture")
-            self.assertEqual(len(git_command("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()), 3)
-            self.assertEqual(git_command("show", f"HEAD^1:.github/workflows/{base_name}").stdout, base)
-            self.assertEqual(git_command("show", f"HEAD^2:.github/workflows/{filename}").stdout, head)
-            changes = git_command("diff", "--no-renames", "--name-status", "-z", "HEAD^1", "HEAD", raw=True).stdout.decode("utf-8").split("\0")[:-1]
-            expected = {("M", f".github/workflows/{filename}")} if filename == base_name else {
-                ("D", f".github/workflows/{base_name}"),
-                ("M" if occupied else "A", f".github/workflows/{filename}"),
-            }
-            self.assertEqual(set(zip(changes[::2], changes[1::2])), expected)
-            if quoted_path:
-                self.assertIn('".github/workflows/v\\303\\241lidate.yml"', git_command(
-                    "ls-tree", "-r", "--name-only", "HEAD^1", "--", ".github/workflows/").stdout)
-            if control_paths:
-                paths = git_command("ls-tree", "-r", "--name-only", "-z", "HEAD^1", "--", ".github/workflows/", raw=True).stdout.decode("utf-8").split("\0")
-                self.assertIn(".github/workflows/validate\r.yml", paths)
-                self.assertIn(".github/workflows/validate\n.yml", paths)
-            result = subprocess.run([
-                sys.executable, "-I", str(ROOT / ".github/ci/check_gates.py"),
-                f".github/workflows/{filename}", "replacement",
-                "--exempt", "codecov", "--exempt", "fuzzing",
-            ], cwd=repo, env=env, capture_output=True, text=True, timeout=10)
-            return result
+        base_name = "validate\r.yml" if control_paths else "v\u00e1lidate.yml" if quoted_path else "validate.yml"
+        base = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+        source_argument = ("$'.github/workflows/validate\\r.yml'" if control_paths
+                           else f".github/workflows/{base_name}")
+        if quoted_path or control_paths:
+            base = base.replace(".github/workflows/validate.yml", source_argument)
+            (self.workflows / "validate.yml").unlink()
+            (self.workflows / base_name).write_text(base, encoding="utf-8")
+        if control_paths:
+            (self.workflows / "validate\n.yml").write_text(head_workflow("unrelated", "unrelated"), encoding="utf-8")
+        if occupied:
+            filename = "occupied.yml"
+            (self.workflows / filename).write_text(head_workflow("replacement", "unrelated"), encoding="utf-8")
+        self.git_command("add", "--", ".github/workflows")
+        self.git_command(*self.IDENTITY, "commit", "--quiet", "-m", "Base fixture")
+        self.git_command("checkout", "--quiet", "-b", "change")
+        (self.workflows / base_name).unlink()
+        aggregate = base.split("\n  validate-gates:\n", 1)[1]
+        self.assertIn(NEEDS, aggregate)
+        aggregate = aggregate.replace(NEEDS, "", 1).replace(
+            f"{source_argument} validate-gates", f".github/workflows/{filename} replacement")
+        head = ("name: Validate\n\non: pull_request\n\njobs:\n  replacement:\n"
+                f"    name: {context}\n" + aggregate)
+        if tab_comment:
+            head = head.replace("  replacement:\n", "  replacement:\n\t# separator\n", 1)
+        if declaration:
+            head = f"# removed-jobs: {declaration}\n" + head
+        (self.workflows / filename).write_text(head, encoding="utf-8")
+        self.merge_change(base_name, base, filename, head)
+        changes = self.git_command("diff", "--no-renames", "--name-status", "-z", "HEAD^1", "HEAD", raw=True).stdout.decode("utf-8").split("\0")[:-1]
+        expected = {("M", f".github/workflows/{filename}")} if filename == base_name else {
+            ("D", f".github/workflows/{base_name}"),
+            ("M" if occupied else "A", f".github/workflows/{filename}"),
+        }
+        self.assertEqual(set(zip(changes[::2], changes[1::2])), expected)
+        if quoted_path:
+            self.assertIn('".github/workflows/v\\303\\241lidate.yml"', self.git_command(
+                "ls-tree", "-r", "--name-only", "HEAD^1", "--", ".github/workflows/").stdout)
+        if control_paths:
+            paths = self.git_command("ls-tree", "-r", "--name-only", "-z", "HEAD^1", "--", ".github/workflows/", raw=True).stdout.decode("utf-8").split("\0")
+            self.assertIn(".github/workflows/validate\r.yml", paths)
+            self.assertIn(".github/workflows/validate\n.yml", paths)
+        return subprocess.run([
+            sys.executable, "-I", str(ROOT / ".github/ci/check_gates.py"),
+            f".github/workflows/{filename}", "replacement",
+            "--exempt", "codecov", "--exempt", "fuzzing",
+        ], cwd=self.repo, env=self.env, capture_output=True, text=True, timeout=10)
 
     def test_cli_rejects_the_rename_in_a_real_git_parent(self):
         result = self.run_cli_fixture()
