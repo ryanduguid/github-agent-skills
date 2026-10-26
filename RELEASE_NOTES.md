@@ -1,5 +1,12 @@
 # Release notes
 
+## Unreleased
+
+### Licence
+
+Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
+Apache-2.0 as the future licence). Released versions keep their licence.
+
 ## v0.1.0
 
 The first tagged release. It packages five Agent Skills for evidence-based
