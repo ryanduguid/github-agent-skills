@@ -37,7 +37,10 @@ rubric criterion, the SHA-256 digest of the retained raw output, and the exit
 status. The controls fail 4 criteria in total and the named-skill runs pass
 every criterion, though the release-prep pair is non-discriminating because both
 of its runs pass. The files record those runs; they do not promise that a rerun
-reproduces them.
+reproduces them. Results apply only to the skill files a run used: new run
+files record a skill digest covering every file in the skill directory, and
+`python scripts/validate_skills.py --strict` fails when that digest no longer
+matches. The current files predate the digest and are listed as having none.
 
 ## Optional
 

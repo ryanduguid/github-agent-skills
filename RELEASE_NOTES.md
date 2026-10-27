@@ -7,6 +7,14 @@
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
 Apache-2.0 as the future licence). Released versions keep their licence.
 
+### Recorded runs
+
+Run files can record a skill digest covering every file in the skill
+directory. `python scripts/validate_skills.py --skill-digest <skill>` prints
+the line to record, and `--strict` fails on a run whose digest no longer
+matches the skill files. Runs without a digest, which today is all of them, are
+listed rather than failed.
+
 ## v0.1.0
 
 The first tagged release. It packages five Agent Skills for evidence-based

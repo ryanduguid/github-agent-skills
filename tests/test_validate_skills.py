@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import shutil
@@ -5,11 +6,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.validate_skills import APPROVED_NAMES, validate
+from scripts.validate_skills import APPROVED_NAMES, check_runs, skill_digest, validate
 
 ROOT = Path(__file__).parents[1]
 
@@ -487,6 +488,152 @@ class ValidateSkillsTests(unittest.TestCase):
                 ".agents/skills/not-approved: unexpected generated directory",
             ],
         )
+
+
+class RecordedRunDigestTests(unittest.TestCase):
+    SKILL_NAME = "github-repository-audit"
+    RUN = "validation/forward/github-repository-audit.txt"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.skill = self.root / ".claude/skills" / self.SKILL_NAME
+        self.write(self.skill / "SKILL.md", b"---\nname: x\n---\n")
+        self.write(self.skill / "references/checklist.md", b"check\n")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    @staticmethod
+    def write(path, data):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+
+    def record(self, digest_lines, relative=RUN):
+        self.write(self.root / relative, f"Scenario: x\n\nAudit metadata:\n{digest_lines}- Run exit status: 0.\n".encode())
+
+    def record_current(self, relative=RUN):
+        self.record(f"- Skill digest v1:\n  `{skill_digest(self.skill)}`.\n", relative)
+
+    def test_digest_hashes_a_sorted_manifest_of_every_file_in_the_skill(self):
+        def sha(data):
+            return hashlib.sha256(data).hexdigest()
+
+        self.write(self.skill / "scripts/run.py", b"print(1)\r\n")
+        manifest = (
+            f"{sha(b'---\nname: x\n---\n')}  SKILL.md\n"
+            f"{sha(b'check\n')}  references/checklist.md\n"
+            f"{sha(b'print(1)\r\n')}  scripts/run.py\n"
+        )
+
+        self.assertEqual(skill_digest(self.skill), sha(manifest.encode()))
+
+    def test_matching_digests_pass(self):
+        self.record_current()
+        self.record_current(f"validation/baselines/{self.SKILL_NAME}.txt")
+
+        self.assertEqual(check_runs(self.root), ([], []))
+
+    def test_a_digest_on_one_line_is_accepted(self):
+        self.record(f"- Skill digest v1: `{skill_digest(self.skill)}`.\n")
+
+        self.assertEqual(check_runs(self.root), ([], []))
+
+    def test_a_changed_skill_md_makes_the_run_stale(self):
+        self.record_current()
+        recorded = skill_digest(self.skill)
+        self.write(self.skill / "SKILL.md", b"---\nname: y\n---\n")
+
+        self.assertEqual(
+            check_runs(self.root),
+            (
+                [
+                    f"{self.RUN}: stale; recorded skill digest {recorded} differs from "
+                    f".claude/skills/{self.SKILL_NAME} digest {skill_digest(self.skill)}"
+                ],
+                [],
+            ),
+        )
+
+    def test_a_changed_or_added_asset_makes_the_run_stale(self):
+        for change in ("references/checklist.md", "scripts/new.py"):
+            with self.subTest(change=change):
+                self.record_current()
+                self.write(self.skill / change, b"changed\n")
+
+                failures, notices = check_runs(self.root)
+
+                self.assertEqual(len(failures), 1)
+                self.assertIn(f"{self.RUN}: stale;", failures[0])
+                self.assertEqual(notices, [])
+
+    def test_a_crlf_conversion_makes_the_run_stale(self):
+        self.record_current()
+        self.write(self.skill / "references/checklist.md", b"check\r\n")
+
+        self.assertEqual(len(check_runs(self.root)[0]), 1)
+
+    def test_a_run_without_a_digest_is_a_notice_not_a_failure(self):
+        self.record("")
+
+        self.assertEqual(
+            check_runs(self.root),
+            ([], [f"{self.RUN}: no skill digest recorded; its results are not tied to a skill revision"]),
+        )
+
+    def test_a_malformed_or_repeated_digest_fails(self):
+        digest = skill_digest(self.skill)
+        for lines in (
+            f"- Skill digest v2:\n  `{digest}`.\n",
+            f"- Skill digest v1:\n  `{digest[:-1]}`.\n",
+            f"- Skill digest v1: `{digest}`.\n- Skill digest v1: `{digest}`.\n",
+        ):
+            with self.subTest(lines=lines):
+                self.record(lines)
+
+                self.assertEqual(
+                    check_runs(self.root),
+                    ([f"{self.RUN}: malformed skill digest; record exactly one '- Skill digest v1:' line"], []),
+                )
+
+    def test_a_run_named_after_no_approved_skill_fails(self):
+        self.record("", "validation/baselines/unknown-skill.txt")
+
+        self.assertEqual(check_runs(self.root), (["validation/baselines/unknown-skill.txt: names no approved skill"], []))
+
+    def test_main_strict_prints_notices_and_fails_on_stale_runs(self):
+        from scripts import validate_skills
+
+        for result, code in (([], ["r: no skill digest recorded"]), 0), ((["r: stale"], []), 1):
+            with self.subTest(result=result):
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with (
+                    patch.object(sys, "argv", ["validate_skills.py", "--strict"]),
+                    patch.object(validate_skills, "validate", return_value=[]),
+                    patch.object(validate_skills, "check_runs", return_value=result),
+                    redirect_stdout(stdout),
+                    redirect_stderr(stderr),
+                ):
+                    self.assertEqual(validate_skills.main(), code)
+                self.assertEqual(stdout.getvalue(), "".join(f"{line}\n" for line in result[1]))
+                self.assertEqual(stderr.getvalue(), "".join(f"{line}\n" for line in result[0]))
+
+    def test_main_prints_the_digest_line_after_strict_validation(self):
+        from scripts import validate_skills
+
+        stdout = io.StringIO()
+        with (
+            patch.object(sys, "argv", ["validate_skills.py", "--skill-digest", self.SKILL_NAME]),
+            patch.object(validate_skills, "validate", return_value=[]) as check,
+            patch.object(validate_skills, "check_runs") as runs_not_checked,
+            patch.object(validate_skills, "skill_digest", return_value="0" * 64) as digest,
+            redirect_stdout(stdout),
+        ):
+            self.assertEqual(validate_skills.main(), 0)
+        self.assertTrue(check.call_args.kwargs["strict"])
+        runs_not_checked.assert_not_called()
+        self.assertEqual(digest.call_args.args[0].as_posix().split("/")[-3:], [".claude", "skills", self.SKILL_NAME])
+        self.assertEqual(stdout.getvalue(), f"- Skill digest v1:\n  `{'0' * 64}`.\n")
 
 
 class ScenarioCoverageTests(unittest.TestCase):
