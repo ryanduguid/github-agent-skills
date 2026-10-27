@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
 import re
 import shutil
 import stat
@@ -19,6 +20,12 @@ APPROVED_NAMES = (
 )
 CANONICAL = ".claude/skills"
 RUNTIME = ".agents/skills"
+RUN_DIRECTORIES = ("validation/baselines", "validation/forward")
+# A recorded run names its skill by file stem and records the skill digest as
+# "- Skill digest v1:" followed by the backquoted digest, on the same line or
+# the next.
+RUN_DIGEST = re.compile(r"^- Skill digest v1:\s+`([0-9a-f]{64})`\.$", re.MULTILINE)
+RUN_DIGEST_LABEL = re.compile(r"^- Skill digest\b", re.MULTILINE)
 
 
 def _is_link(path: Path) -> bool:
@@ -186,6 +193,59 @@ def validate(root: Path, strict: bool = False) -> list[str]:
     return failures
 
 
+def skill_digest(directory: Path) -> str:
+    """Skill digest v1 of a canonical skill directory, as recorded in run files.
+
+    The manifest has one line per regular file under the directory, at any
+    depth: the lowercase hex SHA-256 of the file's bytes, 2 spaces, the path
+    relative to the directory with '/' separators, then a line feed. Lines are
+    sorted by that path in code point order, which is UTF-8 byte order. The
+    digest is the lowercase hex SHA-256 of the UTF-8 manifest. Bytes are hashed
+    as stored, with no line-ending conversion. Directories add nothing of their
+    own. Callers validate the tree first, because links are skipped here.
+    """
+    files = sorted(
+        (path for path in _ordinary_entries(directory, directory, []) if path.is_file()),
+        key=lambda path: path.relative_to(directory).as_posix(),
+    )
+    manifest = "".join(
+        f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(directory).as_posix()}\n"
+        for path in files
+    )
+    return hashlib.sha256(manifest.encode("utf-8")).hexdigest()
+
+
+def check_runs(root: Path) -> tuple[list[str], list[str]]:
+    """Return failures for stale or malformed recorded runs, and notices for runs without a skill digest."""
+    root = Path(root)
+    failures: list[str] = []
+    notices: list[str] = []
+    current: dict[str, str] = {}
+    for directory in RUN_DIRECTORIES:
+        for run in sorted((root / directory).glob("*.txt")):
+            name = run.relative_to(root).as_posix()
+            if run.stem not in APPROVED_NAMES:
+                failures.append(f"{name}: names no approved skill")
+                continue
+            text = run.read_text(encoding="utf-8")
+            labels = RUN_DIGEST_LABEL.findall(text)
+            if not labels:
+                notices.append(f"{name}: no skill digest recorded; its results are not tied to a skill revision")
+                continue
+            recorded = RUN_DIGEST.findall(text)
+            if len(labels) != 1 or len(recorded) != 1:
+                failures.append(f"{name}: malformed skill digest; record exactly one '- Skill digest v1:' line")
+                continue
+            if run.stem not in current:
+                current[run.stem] = skill_digest(root / CANONICAL / run.stem)
+            if recorded[0] != current[run.stem]:
+                failures.append(
+                    f"{name}: stale; recorded skill digest {recorded[0]} differs from "
+                    f"{CANONICAL}/{run.stem} digest {current[run.stem]}"
+                )
+    return failures, notices
+
+
 def sync(root: Path) -> list[str]:
     """Regenerate the Codex copy from .claude/skills/, refusing before any mutation if a link is found."""
     root = Path(root)
@@ -250,11 +310,23 @@ def main() -> int:
         action="store_true",
         help="regenerate the Codex copy from .claude/skills/ before validating",
     )
+    parser.add_argument(
+        "--skill-digest",
+        choices=APPROVED_NAMES,
+        metavar="NAME",
+        help="after strict validation, print the skill digest line to record in a new run file for skill NAME",
+    )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     failures = sync(root) if args.sync else []
     if not failures:
-        failures = validate(root, strict=args.strict)
+        failures = validate(root, strict=args.strict or args.skill_digest is not None)
+    if not failures and args.strict:
+        failures, notices = check_runs(root)
+        for notice in notices:
+            print(notice)
+    if not failures and args.skill_digest:
+        print(f"- Skill digest v1:\n  `{skill_digest(root / CANONICAL / args.skill_digest)}`.")
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1

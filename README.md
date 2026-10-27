@@ -77,6 +77,25 @@ named-skill runs pass every criterion, but the release-prep pair is
 non-discriminating because both of its runs pass. These files record what those
 runs produced; they are not a promise that a rerun reproduces them.
 
+A run's results apply only to the skill files it ran against. New run files
+record that version as a skill digest line, which
+`python scripts/validate_skills.py --skill-digest <skill>` prints; record it in
+the control run too, so both runs of a pair name the same skill version. The
+digest (v1) is the SHA-256 of a manifest of every file under
+`.claude/skills/<skill>/`, so it covers `SKILL.md` and any scripts, references
+or other assets. Each manifest line holds a file's SHA-256 and its path
+relative to the skill directory, separated by 2 spaces, and lines are sorted by
+path. Bytes are hashed as checked out; `.gitattributes` gives text files LF
+line endings on every platform. From the skill directory,
+`find . -type f | sed 's|^\./||' | LC_ALL=C sort | xargs sha256sum --text | sha256sum --text`
+gives the same value for ordinary file names.
+
+`--strict` fails when a run's recorded digest differs from the current skill
+files, so a changed skill or asset marks its runs stale until they are rerun.
+The current run files predate the digest, and every skill has changed since
+they were recorded, so none carries one: `--strict` lists each of them as 'no
+skill digest recorded' without failing.
+
 ## Boundary
 
 These skills help inspect and prepare local work. They do not grant authority
