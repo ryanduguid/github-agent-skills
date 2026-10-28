@@ -144,6 +144,7 @@ def validate(root: Path, strict: bool = False) -> list[str]:
             continue
         valid.append((directory.name, path))
 
+    # Strict is the max cape: every approved skill, not most of them.
     if strict:
         present = {directory.name for directory in skills}
         for name in APPROVED_NAMES:
