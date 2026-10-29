@@ -24,7 +24,11 @@ fn run() -> Result<u8, String> {
     while let Some(arg) = args.next() {
         match arg.to_str() {
             Some("--root") => {
-                root = PathBuf::from(args.next().ok_or("--root requires a path")?);
+                let path = args
+                    .next()
+                    .filter(|path| !path.as_encoded_bytes().starts_with(b"-"))
+                    .ok_or("--root requires a path")?;
+                root = PathBuf::from(path);
             }
             Some("--strict") if command == "validate-skills" => {
                 strict = true;

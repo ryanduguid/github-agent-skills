@@ -37,6 +37,9 @@ explicit root replaces the Python scripts' location relative to `__file__` and
 lets the native executable run outside the checkout. Root selection does not
 resolve away a linked repository root.
 
+A root operand beginning with `-` needs an explicit relative or absolute path,
+such as `./--strict`, so a missing operand cannot consume a check option.
+
 Success exits 0 and contract failures exit 1. Invalid arguments and input or
 processing errors exit 2. The native command reports a generic processing error
 instead of a Python traceback. Help and version output use stdout; check failures
@@ -51,6 +54,11 @@ boundaries and the dotted and dotless Turkish letters in the fixed case-insensit
 patterns. Generated file comparisons use raw bytes. The scanner recognises BOM
 UTF-16 and UTF-32 in either byte order and preserves the original text-versus-binary
 classification.
+
+Strict tree comparisons retain native path identities, including malformed UTF-8
+filenames on POSIX. Diagnostic names use lossy display text, so distinct malformed
+names can look alike in an error message; they cannot collapse into one comparison
+entry. Recursive Windows traversal follows Python's case-insensitive path ordering.
 
 These are local repository tools. Like the original synchroniser, the native
 candidate assumes files do not change during preflight and copying. Copying is

@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import importlib
 import json
+import os
 import queue
 import shutil
 import subprocess
@@ -37,7 +38,7 @@ def main():
     names = ["test_validate_skills", "test_sync_skills", "test_public_repository", "test_fuzz_harness"]
     modules = [importlib.import_module("tests." + name) for name in names]
     originals = {name: getattr(public, name) for name in (
-        "scan_paths", "decoded_text", "looks_like_text", "quick_start_commands",
+        "scan_paths", "tracked_failures", "decoded_text", "looks_like_text", "quick_start_commands",
         "quick_start_failures", "supported_quick_start", "permissions_block")}
     original_validate = skills.validate
     child = subprocess.Popen([str(args.probe)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -94,6 +95,7 @@ def main():
         assert result.wasSuccessful(), "original assertions failed"
         for name, function in originals.items():
             setattr(public, name, function)
+        assert all(getattr(public, name) is function for name, function in originals.items())
 
         # Freeze independent original-Python expected classifications as byte arrays
         # so the public-file scanner never needs an exclusion for unsafe fixtures.
@@ -204,6 +206,50 @@ def main():
                 actual = subprocess.run([str(args.binary), "check-public-files", "--root", str(fixture)], cwd=root, capture_output=True, timeout=20)
                 assert (actual.returncode, actual.stdout, actual.stderr.replace(b"\r\n", b"\n")) == (expected.returncode, expected.stdout, expected.stderr.replace(b"\r\n", b"\n")), mutation
                 cli.append({"public_mutation": mutation, "exit": actual.returncode})
+        platform_checks = []
+        with tempfile.TemporaryDirectory(prefix="native-path-parity-") as directory:
+            fixture = Path(directory)
+            for name in skills.APPROVED_NAMES:
+                path = fixture / skills.CANONICAL / name / "SKILL.md"
+                path.parent.mkdir(parents=True)
+                path.write_text(f"---\nname: {name}\ndescription: Use when testing.\n---\n", encoding="utf-8")
+            references = fixture / skills.CANONICAL / name / "references"
+            references.mkdir()
+            assert rpc("sync", root=str(fixture)) == skills.sync(fixture) == []
+            if os.name == "nt":
+                outside = fixture / "outside"
+                outside.mkdir()
+                links = [references / name for name in ("Z-link", "a-link")]
+                try:
+                    for link in links:
+                        subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)],
+                                       check=True, capture_output=True, timeout=10)
+                    for operation in ("validate", "sync"):
+                        expected = original_validate(fixture, strict=True) if operation == "validate" else skills.sync(fixture)
+                        actual = rpc(operation, root=str(fixture), strict=True)
+                        assert actual == expected, (operation, actual, expected)
+                    platform_checks.append("Windows mixed-case junction diagnostic order matches Python for strict validation and sync")
+                finally:
+                    for link in links:
+                        if link.exists():
+                            link.rmdir()
+            else:
+                copy = fixture / skills.RUNTIME / name / "references"
+                (references / "\ufffd.txt").write_bytes(b"unicode")
+                (references / "\ufffd-dir").mkdir()
+                assert rpc("sync", root=str(fixture)) == skills.sync(fixture) == []
+                raw = os.fsdecode(b"\xff.txt")
+                raw_dir = os.fsdecode(b"\xff-dir")
+                (copy / raw).write_bytes(b"surplus")
+                (copy / raw_dir).mkdir()
+                expected = original_validate(fixture, strict=True)
+                actual = rpc("validate", root=str(fixture), strict=True)
+                assert len(expected) == len(actual) == 2, (actual, repr(expected))
+                assert sorted(line.rsplit(": ", 1)[1] for line in expected) == sorted(line.rsplit(": ", 1)[1] for line in actual)
+                (copy / raw).unlink()
+                (copy / raw_dir).rmdir()
+                assert rpc("validate", root=str(fixture), strict=True) == original_validate(fixture, strict=True) == []
+                platform_checks.append("POSIX malformed-byte file and directory cannot collide with replacement-character names")
         if args.freeze_corpus:
             args.freeze_corpus.parent.mkdir(parents=True, exist_ok=True)
             args.freeze_corpus.write_text(json.dumps(cases, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -213,6 +259,7 @@ def main():
         args.record.write_text(json.dumps({"tests": result.testsRun, "skips": result.skipped,
             "operations": operations, "test_records": records, "extra_public_cases": len(cases),
             "extra_validation_cases": len(boundaries) ** 2 * 4 + 11, "cli": cli,
+            "platform_checks": platform_checks, "original_helpers_restored": True,
             "original_sources": {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in (
                 "scripts/validate_skills.py", "scripts/check_public_files.py", *["tests/" + name + ".py" for name in names])}}, indent=2) + "\n")
     finally:

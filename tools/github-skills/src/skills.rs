@@ -60,15 +60,17 @@ fn link_failure(path: &Path, root: &Path) -> String {
 }
 
 fn entries(directory: &Path) -> io::Result<Vec<PathBuf>> {
-    let mut paths = fs::read_dir(directory)?
+    fs::read_dir(directory)?
         .map(|entry| entry.map(|entry| entry.path()))
-        .collect::<io::Result<Vec<_>>>()?;
-    paths.sort_by(|a, b| {
-        a.as_os_str()
-            .to_string_lossy()
-            .cmp(&b.as_os_str().to_string_lossy())
-    });
-    Ok(paths)
+        .collect()
+}
+
+// Strict Python comparisons sort POSIX display strings, while path identity
+// must retain raw filesystem bytes. Never use a lossy display name as a key.
+fn display_order<'a>(paths: impl Iterator<Item = &'a PathBuf>) -> Vec<&'a PathBuf> {
+    let mut paths: Vec<_> = paths.collect();
+    paths.sort_by_key(|path| crate::posix(path));
+    paths
 }
 
 fn ordinary_entries(
@@ -79,7 +81,17 @@ fn ordinary_entries(
     let mut found = Vec::new();
     let mut pending = vec![tree.to_path_buf()];
     while let Some(directory) = pending.pop() {
-        for path in entries(&directory)? {
+        let mut children = entries(&directory)?;
+        children.sort_by_key(|path| {
+            let name = crate::posix(path);
+            // pathlib sorts Windows Path objects using their lowercase parts.
+            if cfg!(windows) {
+                name.to_lowercase()
+            } else {
+                name
+            }
+        });
+        for path in children {
             if is_link(&path)? {
                 failures.push(link_failure(&path, root));
                 continue;
@@ -153,7 +165,10 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
     }
     let mut skills = Vec::new();
     if canonical.is_dir() {
-        for path in entries(&canonical)? {
+        let mut children = entries(&canonical)?;
+        // Skill discovery explicitly sorts by name, even on Windows.
+        children.sort_by_key(|path| path.file_name().unwrap().to_os_string());
+        for path in children {
             if is_link(&path)? || path.is_dir() {
                 skills.push(path);
             }
@@ -270,34 +285,44 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.retain(|failure| seen.insert(failure.clone()));
             return Ok(failures);
         }
-        let sets = |paths: &[PathBuf], base: &Path, directories: bool| -> BTreeSet<String> {
+        let sets = |paths: &[PathBuf], base: &Path, directories: bool| -> BTreeSet<PathBuf> {
             paths
                 .iter()
                 .filter(|p| if directories { p.is_dir() } else { p.is_file() })
-                .map(|p| relative(p, base))
+                .map(|p| p.strip_prefix(base).unwrap().to_path_buf())
                 .collect()
         };
         let expected_directories = sets(&expected, &canonical, true);
         let expected_files = sets(&expected, &canonical, false);
         let actual_directories = sets(&actual, &destination, true);
         let actual_files = sets(&actual, &destination, false);
-        for name in expected_directories.difference(&actual_directories) {
-            failures.push(format!("{RUNTIME}/{name}: missing generated directory"));
+        for name in display_order(expected_directories.difference(&actual_directories)) {
+            failures.push(format!(
+                "{RUNTIME}/{}: missing generated directory",
+                crate::posix(name)
+            ));
         }
-        for name in &expected_files {
+        for name in display_order(expected_files.iter()) {
             let source = canonical.join(name);
             let copy = destination.join(name);
+            let name = crate::posix(name);
             if !copy.is_file() {
                 failures.push(format!("{RUNTIME}/{name}: missing generated copy"));
             } else if fs::read(source)? != fs::read(copy)? {
                 failures.push(format!("{RUNTIME}/{name}: differs from {CANONICAL}/{name}"));
             }
         }
-        for name in actual_files.difference(&expected_files) {
-            failures.push(format!("{RUNTIME}/{name}: unexpected generated file"));
+        for name in display_order(actual_files.difference(&expected_files)) {
+            failures.push(format!(
+                "{RUNTIME}/{}: unexpected generated file",
+                crate::posix(name)
+            ));
         }
-        for name in actual_directories.difference(&expected_directories) {
-            failures.push(format!("{RUNTIME}/{name}: unexpected generated directory"));
+        for name in display_order(actual_directories.difference(&expected_directories)) {
+            failures.push(format!(
+                "{RUNTIME}/{}: unexpected generated directory",
+                crate::posix(name)
+            ));
         }
     }
     Ok(failures)

@@ -330,3 +330,106 @@ fn cli_uses_explicit_root_and_reports_failures_without_stdout() {
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());
 }
+
+#[test]
+fn root_operand_cannot_consume_an_option() {
+    let root = tempfile::tempdir().unwrap();
+    for option in [
+        "--strict",
+        "--sync",
+        "--help",
+        "--version",
+        "--root",
+        "--unknown",
+        "-h",
+        "-",
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_github-skills"))
+            .args(["validate-skills", "--root", option])
+            .current_dir(root.path())
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2), "{option}");
+        assert!(output.stdout.is_empty());
+    }
+    fs::create_dir(root.path().join("--strict")).unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_github-skills"))
+        .args(["validate-skills", "--root", "./--strict"])
+        .current_dir(root.path())
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    assert!(output.stdout.is_empty() && output.stderr.is_empty());
+}
+
+#[test]
+fn strict_diagnostics_keep_posix_string_order() {
+    let root = tempfile::tempdir().unwrap();
+    let name = s::APPROVED_NAMES[0];
+    write(
+        root.path(),
+        &format!("{}/{name}/a/note", s::CANONICAL),
+        b"safe",
+    );
+    write(
+        root.path(),
+        &format!("{}/{name}/a.txt", s::CANONICAL),
+        b"safe",
+    );
+    let failures = s::validate(root.path(), true).unwrap();
+    let files: Vec<_> = failures
+        .iter()
+        .filter(|line| line.contains("missing generated copy"))
+        .collect();
+    assert_eq!(
+        files,
+        vec![
+            &format!("{}/{name}/a.txt: missing generated copy", s::RUNTIME),
+            &format!("{}/{name}/a/note: missing generated copy", s::RUNTIME),
+        ]
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn strict_identity_keeps_raw_filename_bytes() {
+    use std::{ffi::OsString, os::unix::ffi::OsStringExt};
+    let root = tempfile::tempdir().unwrap();
+    for name in s::APPROVED_NAMES {
+        write(
+            root.path(),
+            &format!("{}/{name}/SKILL.md", s::CANONICAL),
+            &skill(name),
+        );
+    }
+    let name = s::APPROVED_NAMES[0];
+    let source = root.path().join(s::CANONICAL).join(name).join("references");
+    let copy = root.path().join(s::RUNTIME).join(name).join("references");
+    fs::create_dir(&source).unwrap();
+    fs::write(source.join("\u{fffd}.txt"), b"unicode").unwrap();
+    fs::create_dir(source.join("\u{fffd}-dir")).unwrap();
+    assert!(s::sync(root.path()).unwrap().is_empty());
+    assert!(s::validate(root.path(), true).unwrap().is_empty());
+    let raw = OsString::from_vec(b"\xff.txt".to_vec());
+    let raw_dir = OsString::from_vec(b"\xff-dir".to_vec());
+    fs::write(copy.join(&raw), b"surplus").unwrap();
+    fs::create_dir(copy.join(&raw_dir)).unwrap();
+    let failures = s::validate(root.path(), true).unwrap();
+    assert_eq!(failures.len(), 2);
+    assert!(
+        failures
+            .iter()
+            .any(|line| line.ends_with(": unexpected generated file"))
+    );
+    assert!(
+        failures
+            .iter()
+            .any(|line| line.ends_with(": unexpected generated directory"))
+    );
+    fs::write(source.join(&raw), b"raw bytes").unwrap();
+    fs::create_dir(source.join(&raw_dir)).unwrap();
+    assert!(s::sync(root.path()).unwrap().is_empty());
+    assert!(s::validate(root.path(), true).unwrap().is_empty());
+    assert_eq!(fs::read(copy.join(&raw)).unwrap(), b"raw bytes");
+    assert_eq!(fs::read(copy.join("\u{fffd}.txt")).unwrap(), b"unicode");
+}
