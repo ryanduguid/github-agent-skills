@@ -45,8 +45,9 @@ A root operand beginning with `-` needs an explicit relative or absolute path,
 such as `./--strict`, so a missing operand cannot consume a check option.
 
 Success exits 0 and contract failures exit 1. Invalid arguments and input or
-processing errors exit 2. The native command reports a generic processing error
-instead of a Python traceback. Help and version output use stdout; check failures
+processing errors exit 2. Invalid arguments get the native command's own message
+rather than argparse usage text. The native command reports a generic processing
+error instead of a Python traceback. Help and version output use stdout; check failures
 use stderr.
 
 ## Compatibility and limits
