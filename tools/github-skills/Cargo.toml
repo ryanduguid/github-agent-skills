@@ -1,0 +1,19 @@
+[package]
+name = "github-skills"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+license = "Apache-2.0"
+description = "Native candidate for the portable GitHub skill repository checks"
+publish = false
+
+[dependencies]
+fancy-regex = "=0.19.2"
+
+[dev-dependencies]
+serde_json = "1"
+tempfile = "=3.27.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
