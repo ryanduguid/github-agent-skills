@@ -72,6 +72,45 @@ jobs:
       - name: Exercise NTFS junction safety
         run: python -m unittest tests.test_sync_skills.SyncSkillsTests -v
 
+  # The native Rust candidate in tools/github-skills. The Python scripts stay
+  # the live checks; this job keeps the candidate building and in parity.
+  native:
+    name: native (${{ matrix.os }})
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+        working-directory: tools/github-skills
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - run: cargo build --locked --release
+      - name: Build the contract probe
+        run: cargo build --locked --examples
+      - name: Replay the original Python assertions against the native candidate
+        working-directory: .
+        run: >-
+          python tools/github-skills/tests/original_contract.py --root .
+          --probe tools/github-skills/target/debug/examples/contract_probe
+          --binary tools/github-skills/target/debug/github-skills
+          --record "$RUNNER_TEMP/native-contract-results.json"
+
   # Measures the unit tests' branch coverage for the Codecov badge. It runs
   # apart from the other jobs so their commands stay unchanged.
   coverage:
@@ -160,7 +199,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, validate, windows-sync-safety, coverage]
+    needs: [lint, validate, windows-sync-safety, native, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
