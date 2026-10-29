@@ -15,12 +15,12 @@ ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location("check_gates", ROOT / ".github/ci/check_gates.py")
 CHECK_GATES = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECK_GATES)
-NEEDS = "    needs: [lint, validate, windows-sync-safety, coverage]\n"
+NEEDS = "    needs: [lint, validate, windows-sync-safety, native, coverage]\n"
 BASE = (
     "name: Validate\n\non: pull_request\n\njobs:\n  validate-gates:\n" + NEEDS
     + "    runs-on: ubuntu-latest\n    steps: [{run: 'true'}]\n"
     + "".join(f"  {job}:\n    runs-on: ubuntu-latest\n    steps: [{{run: 'true'}}]\n"
-              for job in ("lint", "validate", "windows-sync-safety", "coverage", "codecov", "fuzzing"))
+              for job in ("lint", "validate", "windows-sync-safety", "native", "coverage", "codecov", "fuzzing"))
 )
 
 
@@ -77,7 +77,7 @@ class GatePredecessorTests(unittest.TestCase):
 
     def test_renamed_file_with_original_id_still_rejects_undeclared_removals(self):
         with self.assertRaisesRegex(
-            SystemExit, "codecov, coverage, fuzzing, lint, validate, windows-sync-safety"
+            SystemExit, "codecov, coverage, fuzzing, lint, native, validate, windows-sync-safety"
         ):
             self.run_gate("validate-gates", "validate-gates")
 
@@ -98,7 +98,7 @@ class GatePredecessorTests(unittest.TestCase):
     def test_declared_removals_allow_the_same_reported_name(self):
         self.run_gate(
             "replacement", "validate-gates",
-            "codecov, coverage, fuzzing, lint, validate, validate-gates, windows-sync-safety",
+            "codecov, coverage, fuzzing, lint, native, validate, validate-gates, windows-sync-safety",
         )
 
     def test_explicit_base_context_survives_a_different_internal_id(self):
@@ -306,7 +306,7 @@ class GateCliTests(unittest.TestCase):
 
     def test_cli_accepts_declared_removals_from_a_git_quoted_path(self):
         result = self.run_cli_fixture(quoted_path=True,
-            declaration="codecov, coverage, fuzzing, lint, validate, validate-gates, windows-sync-safety")
+            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates, windows-sync-safety")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_cli_accepts_an_unrelated_new_context(self):
@@ -315,7 +315,7 @@ class GateCliTests(unittest.TestCase):
 
     def test_cli_deduplicates_an_existing_path(self):
         result = self.run_cli_fixture(filename="validate.yml",
-            declaration="codecov, coverage, fuzzing, lint, validate, validate-gates, windows-sync-safety")
+            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates, windows-sync-safety")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
@@ -327,7 +327,7 @@ class GateCliTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
     def test_distinct_cr_lf_paths_accept_declared_removals(self):
         result = self.run_cli_fixture(control_paths=True,
-            declaration="codecov, coverage, fuzzing, lint, validate, validate-gates, windows-sync-safety")
+            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates, windows-sync-safety")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
