@@ -23,6 +23,8 @@ fn probe(request: &Value) -> io::Result<Value> {
             request["strict"].as_bool().unwrap_or(false)
         )?),
         "sync" => json!(s::sync(root)?),
+        "skill_digest" => json!(s::skill_digest(Path::new(text("path")))?),
+        "check_runs" => json!(s::check_runs(root)?),
         "frontmatter" => match s::frontmatter(Path::new(text("path")))? {
             Ok(metadata) => json!([metadata, Value::Null]),
             Err(error) => json!([Value::Null, error]),

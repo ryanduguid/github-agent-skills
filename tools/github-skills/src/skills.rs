@@ -1,4 +1,5 @@
 use fancy_regex::Regex;
+use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs, io,
@@ -15,6 +16,15 @@ pub const APPROVED_NAMES: [&str; 5] = [
 ];
 pub const CANONICAL: &str = ".claude/skills";
 pub const RUNTIME: &str = ".agents/skills";
+pub const RUN_DIRECTORIES: [&str; 2] = ["validation/baselines", "validation/forward"];
+// A recorded run names its skill by file stem and records the skill digest as
+// "- Skill digest v1:" followed by the backquoted digest, on the same line or
+// the next.
+static RUN_DIGEST: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(r"^- Skill digest v1:\s+`([0-9a-f]{64})`\.$", false, true)
+});
+static RUN_DIGEST_LABEL: LazyLock<Regex> =
+    LazyLock::new(|| crate::public_files::python_regex(r"^- Skill digest\b", false, true));
 static PLACEHOLDER: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
         r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b",
@@ -73,6 +83,16 @@ fn display_order<'a>(paths: impl Iterator<Item = &'a PathBuf>) -> Vec<&'a PathBu
     paths
 }
 
+fn path_order(path: &Path) -> String {
+    let name = crate::posix(path);
+    // pathlib sorts Windows Path objects using their lowercase parts.
+    if cfg!(windows) {
+        name.to_lowercase()
+    } else {
+        name
+    }
+}
+
 fn ordinary_entries(
     tree: &Path,
     root: &Path,
@@ -82,15 +102,7 @@ fn ordinary_entries(
     let mut pending = vec![tree.to_path_buf()];
     while let Some(directory) = pending.pop() {
         let mut children = entries(&directory)?;
-        children.sort_by_key(|path| {
-            let name = crate::posix(path);
-            // pathlib sorts Windows Path objects using their lowercase parts.
-            if cfg!(windows) {
-                name.to_lowercase()
-            } else {
-                name
-            }
-        });
+        children.sort_by_key(|path| path_order(path));
         for path in children {
             if is_link(&path)? {
                 failures.push(link_failure(&path, root));
@@ -326,6 +338,128 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
         }
     }
     Ok(failures)
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+/// Skill digest v1 of a canonical skill directory, as recorded in run files.
+///
+/// The manifest has one line per regular file under the directory, at any
+/// depth: the lowercase hex SHA-256 of the file's bytes, 2 spaces, the path
+/// relative to the directory with '/' separators, then a line feed. Lines are
+/// sorted by that path in UTF-8 byte order. The digest is the lowercase hex
+/// SHA-256 of the manifest. Bytes are hashed as stored. Callers validate the
+/// tree first, because links are skipped here.
+pub fn skill_digest(directory: &Path) -> io::Result<String> {
+    let mut files = Vec::new();
+    for path in ordinary_entries(directory, directory, &mut Vec::new())? {
+        if !path.is_file() {
+            continue;
+        }
+        let name = path
+            .strip_prefix(directory)
+            .expect("all walked paths are beneath the skill directory");
+        // Python cannot encode a non-Unicode name into the UTF-8 manifest.
+        if name.to_str().is_none() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "skill file name is not valid Unicode",
+            ));
+        }
+        files.push((crate::posix(name), path));
+    }
+    files.sort_by(|left, right| left.0.cmp(&right.0));
+    let mut manifest = String::new();
+    for (name, path) in files {
+        manifest.push_str(&format!(
+            "{}  {name}\n",
+            hex(&Sha256::digest(fs::read(path)?))
+        ));
+    }
+    Ok(hex(&Sha256::digest(manifest)))
+}
+
+/// `Path.glob("*.txt")` within one directory, in `sorted()` order.
+fn recorded_runs(directory: &Path) -> Vec<PathBuf> {
+    // pathlib's glob yields nothing for a directory it cannot list.
+    let Ok(children) = entries(directory) else {
+        return vec![];
+    };
+    let mut runs: Vec<_> = children
+        .into_iter()
+        .filter(|path| {
+            let name = path.file_name().unwrap().to_string_lossy();
+            // pathlib matches case-insensitively on Windows.
+            if cfg!(windows) {
+                name.to_ascii_lowercase().ends_with(".txt")
+            } else {
+                name.ends_with(".txt")
+            }
+        })
+        .collect();
+    runs.sort_by_key(|path| path_order(path));
+    runs
+}
+
+fn collect_matches(
+    matches: impl Iterator<Item = fancy_regex::Result<String>>,
+) -> io::Result<Vec<String>> {
+    matches.collect::<Result<_, _>>().map_err(io::Error::other)
+}
+
+/// Failures for stale or malformed recorded runs, and notices for runs without
+/// a skill digest.
+pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
+    let mut failures = Vec::new();
+    let mut notices = Vec::new();
+    let mut current = BTreeMap::new();
+    for directory in RUN_DIRECTORIES {
+        for run in recorded_runs(&root.join(directory)) {
+            let name = relative(&run, root);
+            let stem = run.file_stem().unwrap().to_string_lossy().into_owned();
+            if !APPROVED_NAMES.contains(&stem.as_str()) {
+                failures.push(format!("{name}: names no approved skill"));
+                continue;
+            }
+            let text = crate::read_text(&run)?;
+            let labels = collect_matches(
+                RUN_DIGEST_LABEL
+                    .find_iter(text.as_str())
+                    .map(|found| found.map(|found| found.as_str().to_owned())),
+            )?;
+            if labels.is_empty() {
+                notices.push(format!(
+                    "{name}: no skill digest recorded; its results are not tied to a skill revision"
+                ));
+                continue;
+            }
+            let recorded = collect_matches(
+                RUN_DIGEST
+                    .captures_iter(text.as_str())
+                    .map(|found| found.map(|found| found[1].to_owned())),
+            )?;
+            let ([_], [recorded]) = (labels.as_slice(), recorded.as_slice()) else {
+                failures.push(format!(
+                    "{name}: malformed skill digest; record exactly one '- Skill digest v1:' line"
+                ));
+                continue;
+            };
+            if !current.contains_key(&stem) {
+                let digest = skill_digest(&root.join(CANONICAL).join(&stem))?;
+                current.insert(stem.clone(), digest);
+            }
+            let digest = &current[&stem];
+            if recorded != digest {
+                failures.push(format!(
+                    "{name}: stale; recorded skill digest {recorded} differs from \
+                     {CANONICAL}/{stem} digest {digest}"
+                ));
+            }
+        }
+    }
+    Ok((failures, notices))
 }
 
 pub fn sync(root: &Path) -> io::Result<Vec<String>> {

@@ -66,6 +66,12 @@ def main():
     def native_sync(root):
         return rpc("sync", root=str(root))
 
+    def native_skill_digest(directory):
+        return rpc("skill_digest", path=str(directory))
+
+    def native_check_runs(root):
+        return tuple(rpc("check_runs", root=str(root)))
+
     records = []
     class Result(unittest.TextTestResult):
         def startTest(self, test):
@@ -80,6 +86,8 @@ def main():
 
     try:
         modules[0].validate = native_validate
+        modules[0].skill_digest = native_skill_digest
+        modules[0].check_runs = native_check_runs
         modules[1].validate = native_validate
         modules[1].sync = native_sync
         public.scan_paths = lambda root, paths: rpc("scan_paths", root=str(root), paths=[str(path) for path in paths])
@@ -147,6 +155,58 @@ def main():
                 path.write_bytes(separator.join(["---", f"name: {name}", "description: Use when testing.", "---", "safe"]).encode())
                 assert rpc("validate", root=str(fixture)) == original_validate(fixture), repr(separator)
 
+        # Recorded-run digests: manifest ordering, label boundaries, whitespace,
+        # line ends and run-file selection, each against the original functions.
+        digest_cases = 0
+        with tempfile.TemporaryDirectory(prefix="native-skills-digest-") as directory:
+            fixture = Path(directory)
+            skill = fixture / skills.CANONICAL / "github-repository-audit"
+            for index, relative in enumerate(["SKILL.md", "Z.md", "a.md", "a b.md", "a-b.md", "a/z.md", "\u00e9.md", "\u4e2d/x.md",
+                                              "e\u0301.md", "\u0130.md", "\u0131.md", "empty.md", "deep/er/file.bin"]):
+                path = skill / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"" if relative == "empty.md" else bytes([index, 0, 255, 13, 10]))
+                assert rpc("skill_digest", path=str(skill)) == skills.skill_digest(skill), relative
+                digest_cases += 1
+            (skill / "empty-dir").mkdir()
+            digest = skills.skill_digest(skill)
+            assert rpc("skill_digest", path=str(skill)) == digest
+            run = fixture / "validation/forward/github-repository-audit.txt"
+            run.parent.mkdir(parents=True)
+            texts = [f"- Skill digest{right} v1: `{digest}`.\n" for right in boundaries]
+            texts += [f"- Skill digest v1:{gap}`{digest}`.{end}"
+                      for gap in ("", " ", "\n  ", "\r\n  ", "\r  ", "\t", "\v", "\f", "\x1c", "\x1f", "\x85", "\xa0", "\u2028", "\u3000")
+                      for end in ("", "\n", " \n", "\r\n", "\r", "\u2028", "\x85\n")]
+            texts += [f"{left}- Skill digest v1: `{digest}`.\n" for left in ("", "\n", "x", "\ufeff", " ", "\r", "\u2028", "\x85")]
+            texts += [f"- Skill digest v1: `{value}`.\n" for value in (digest.upper(), digest[1:], digest + "0", "0" * 64)]
+            texts += [f"- Skill digest v1: `{digest}`.\n" * 2, f"- Skill digest v1: `{digest}`.\n- Skill digest v2: x\n", ""]
+            for text in texts:
+                run.write_bytes(text.encode())
+                assert tuple(rpc("check_runs", root=str(fixture))) == skills.check_runs(fixture), repr(text)
+                digest_cases += 1
+            for relative in ("validation/forward/github-repository-audit.TXT", "validation/forward/.txt",
+                             "validation/forward/a.b.txt", "validation/baselines/github-readme-polish.md",
+                             "validation/baselines/dir.txt/github-readme-polish.txt", "validation/github-readme-polish.txt"):
+                path = fixture / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"no digest\n")
+                assert tuple(rpc("check_runs", root=str(fixture))) == skills.check_runs(fixture), relative
+                digest_cases += 1
+            # A digest for an absent skill directory is an error in both.
+            (fixture / "validation/baselines/github-profile-curator.txt").write_bytes(f"- Skill digest v1: `{digest}`.\n".encode())
+            try:
+                skills.check_runs(fixture)
+            except FileNotFoundError:
+                pass
+            else:
+                raise AssertionError("original check_runs accepted an absent skill")
+            try:
+                rpc("check_runs", root=str(fixture))
+            except RuntimeError:
+                digest_cases += 1
+            else:
+                raise AssertionError("native check_runs accepted an absent skill")
+
         # Real process checks, including a different working directory and explicit root.
         cli = []
         with tempfile.TemporaryDirectory(prefix="native-skills-cli-") as directory:
@@ -184,6 +244,25 @@ def main():
                 return {str(path.relative_to(tree)): path.read_bytes() for path in (tree / ".agents").rglob("*") if path.is_file()}
             assert generated(fixture) == generated(native_tree)
             cli.append({"flags": ["--sync", "--strict"], "exit": 0, "generated_files": len(generated(native_tree)), "bytes_equal": True})
+            # Recorded-run notices and the digest line use stdout; Python on Windows writes CRLF.
+            audit = "github-repository-audit"
+            current = skills.skill_digest(fixture / skills.CANONICAL / audit)
+            for state, text in (("no digest", ""), ("current", f"- Skill digest v1:\n  `{current}`.\n"),
+                                ("stale", f"- Skill digest v1: `{'0' * 64}`.\n"), ("malformed", "- Skill digest v2: x\n")):
+                for tree in (fixture, native_tree):
+                    path = tree / "validation/forward" / f"{audit}.txt"
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(f"Audit metadata:\n{text}", encoding="utf-8")
+                for flags in (["--strict"], ["--skill-digest", audit], ["--strict", "--skill-digest", "github-issue-to-pr"],
+                              ["--skill-digest", "unknown"]):
+                    expected = subprocess.run([sys.executable, "-I", str(script), *flags], cwd=root, capture_output=True, timeout=20)
+                    actual = subprocess.run([str(args.binary), "validate-skills", "--root", str(native_tree), *flags], cwd=root, capture_output=True, timeout=20)
+                    if expected.returncode == 2:
+                        assert actual.returncode == 2 and not actual.stdout and not expected.stdout, flags
+                    else:
+                        assert (actual.returncode, actual.stdout.replace(b"\r\n", b"\n"), actual.stderr.replace(b"\r\n", b"\n")) == (
+                            expected.returncode, expected.stdout.replace(b"\r\n", b"\n"), expected.stderr.replace(b"\r\n", b"\n")), (state, flags)
+                    cli.append({"runs": state, "flags": flags, "exit": actual.returncode})
         with tempfile.TemporaryDirectory(prefix="native-public-cli-") as directory:
             fixture = Path(directory)
             for name in ("README.md", ".github/workflows/validate.yml", "scripts/check_public_files.py"):
@@ -258,7 +337,7 @@ def main():
             assert json.loads(frozen.read_text(encoding="utf-8")) == cases, "frozen oracle differs from the original Python results"
         args.record.write_text(json.dumps({"tests": result.testsRun, "skips": result.skipped,
             "operations": operations, "test_records": records, "extra_public_cases": len(cases),
-            "extra_validation_cases": len(boundaries) ** 2 * 4 + 11, "cli": cli,
+            "extra_validation_cases": len(boundaries) ** 2 * 4 + 11, "extra_digest_cases": digest_cases, "cli": cli,
             "platform_checks": platform_checks, "original_helpers_restored": True,
             "original_sources": {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in (
                 "scripts/validate_skills.py", "scripts/check_public_files.py", *["tests/" + name + ".py" for name in names])}}, indent=2) + "\n")

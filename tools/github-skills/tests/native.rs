@@ -433,3 +433,211 @@ fn strict_identity_keeps_raw_filename_bytes() {
     assert_eq!(fs::read(copy.join(&raw)).unwrap(), b"raw bytes");
     assert_eq!(fs::read(copy.join("\u{fffd}.txt")).unwrap(), b"unicode");
 }
+
+// Expected digests come from the original Python skill_digest.
+#[test]
+fn skill_digest_matches_the_original_manifest() {
+    let skill = tempfile::tempdir().unwrap();
+    write(skill.path(), "SKILL.md", b"---\nname: x\n---\n");
+    write(skill.path(), "references/checklist.md", b"check\n");
+    write(skill.path(), "scripts/run.py", b"print(1)\r\n");
+    fs::create_dir(skill.path().join("empty-dir")).unwrap();
+    assert_eq!(
+        s::skill_digest(skill.path()).unwrap(),
+        "4fef86bfbdb5b2ade8525c6aae3bedb4ab831b7055c24851177aa921e8363ac2"
+    );
+    // Whole relative paths sort by code point, so "a b.md" < "a-b.md" < "a.md" < "a/z.md".
+    let ordering = tempfile::tempdir().unwrap();
+    for (name, bytes) in [
+        ("SKILL.md", b"a".as_slice()),
+        ("Z.md", b"b"),
+        ("a.md", b"c"),
+        ("a b.md", b"d"),
+        ("\u{e9}.md", b"e"),
+        ("a/z.md", b"f"),
+        ("a-b.md", b"g"),
+        ("empty.md", b""),
+    ] {
+        write(ordering.path(), name, bytes);
+    }
+    fs::create_dir(ordering.path().join("empty-dir")).unwrap();
+    assert_eq!(
+        s::skill_digest(ordering.path()).unwrap(),
+        "fbae6503941b82904273110f8052214c41c96d7468c19a5d159a56580b192e70"
+    );
+}
+
+fn record(root: &Path, name: &str, digest_lines: &str) {
+    write(
+        root,
+        name,
+        format!("Scenario: x\n\nAudit metadata:\n{digest_lines}- Run exit status: 0.\n").as_bytes(),
+    );
+}
+
+#[test]
+fn recorded_runs_are_checked_against_the_current_skill() {
+    let root = tempfile::tempdir().unwrap();
+    let name = "github-repository-audit";
+    let run = format!("validation/forward/{name}.txt");
+    let skill = root.path().join(s::CANONICAL).join(name);
+    write(&skill, "SKILL.md", b"---\nname: x\n---\n");
+    assert_eq!(s::check_runs(root.path()).unwrap(), (vec![], vec![]));
+    let digest = s::skill_digest(&skill).unwrap();
+    record(
+        root.path(),
+        &run,
+        &format!("- Skill digest v1:\n  `{digest}`.\n"),
+    );
+    record(
+        root.path(),
+        &format!("validation/baselines/{name}.txt"),
+        &format!("- Skill digest v1: `{digest}`.\n"),
+    );
+    write(root.path(), "validation/forward/unknown.md", b"ignored");
+    assert_eq!(s::check_runs(root.path()).unwrap(), (vec![], vec![]));
+    for lines in [
+        format!("- Skill digest v2:\n  `{digest}`.\n"),
+        format!("- Skill digest v1:\n  `{}`.\n", &digest[1..]),
+        format!("- Skill digest v1: `{}`.\n", digest.to_uppercase()),
+        format!("- Skill digest v1: `{digest}`.\n- Skill digest v1: `{digest}`.\n"),
+        format!("- Skill digest v1: `{digest}`. \n"),
+    ] {
+        record(root.path(), &run, &lines);
+        assert_eq!(
+            s::check_runs(root.path()).unwrap(),
+            (
+                vec![format!(
+                    "{run}: malformed skill digest; record exactly one '- Skill digest v1:' line"
+                )],
+                vec![]
+            ),
+            "{lines:?}"
+        );
+    }
+    // "\b" needs a non-word character after the label for it to count.
+    record(
+        root.path(),
+        &run,
+        &format!("- Skill digests: `{digest}`.\n"),
+    );
+    let notice =
+        format!("{run}: no skill digest recorded; its results are not tied to a skill revision");
+    assert_eq!(s::check_runs(root.path()).unwrap(), (vec![], vec![notice]));
+    record(
+        root.path(),
+        &run,
+        &format!("- Skill digest v1:\r\n  `{digest}`.\r\n"),
+    );
+    write(&skill, "references/new.md", b"asset");
+    let changed = s::skill_digest(&skill).unwrap();
+    let stale = |run: &str| {
+        format!(
+            "{run}: stale; recorded skill digest {digest} differs from {}/{name} digest {changed}",
+            s::CANONICAL
+        )
+    };
+    assert_eq!(
+        s::check_runs(root.path()).unwrap(),
+        (
+            vec![
+                stale(&format!("validation/baselines/{name}.txt")),
+                stale(&run)
+            ],
+            vec![]
+        )
+    );
+    write(root.path(), "validation/baselines/unknown-skill.txt", b"");
+    assert_eq!(
+        s::check_runs(root.path()).unwrap(),
+        (
+            vec![
+                stale(&format!("validation/baselines/{name}.txt")),
+                "validation/baselines/unknown-skill.txt: names no approved skill".into(),
+                stale(&run)
+            ],
+            vec![]
+        )
+    );
+}
+
+#[test]
+fn recorded_run_suffix_follows_the_platform_glob() {
+    let root = tempfile::tempdir().unwrap();
+    record(
+        root.path(),
+        "validation/forward/github-readme-polish.TXT",
+        "",
+    );
+    let found = s::check_runs(root.path()).unwrap().1.len();
+    assert_eq!(found, usize::from(cfg!(windows)));
+}
+
+fn cli(root: &Path, args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_github-skills"))
+        .args(args)
+        .arg("--root")
+        .arg(root)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn cli_strict_checks_runs_and_prints_the_digest_line() {
+    let root = tempfile::tempdir().unwrap();
+    let name = "github-release-prep";
+    let output = cli(root.path(), &["validate-skills", "--skill-digest", name]);
+    assert_eq!(
+        output.status.code(),
+        Some(1),
+        "digest requires strict validation"
+    );
+    assert!(output.stdout.is_empty());
+    for skill_name in s::APPROVED_NAMES {
+        write(
+            root.path(),
+            &format!("{}/{skill_name}/SKILL.md", s::CANONICAL),
+            &skill(skill_name),
+        );
+    }
+    assert!(s::sync(root.path()).unwrap().is_empty());
+    let run = format!("validation/baselines/{name}.txt");
+    record(root.path(), &run, "");
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        format!("{run}: no skill digest recorded; its results are not tied to a skill revision\n")
+    );
+    assert!(output.stderr.is_empty());
+    let digest = s::skill_digest(&root.path().join(s::CANONICAL).join(name)).unwrap();
+    let output = cli(root.path(), &["validate-skills", "--skill-digest", name]);
+    assert_eq!(output.status.code(), Some(0));
+    let line = format!("- Skill digest v1:\n  `{digest}`.\n");
+    assert_eq!(String::from_utf8(output.stdout).unwrap(), line);
+    record(root.path(), &run, &line);
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(0));
+    assert!(output.stdout.is_empty() && output.stderr.is_empty());
+    record(root.path(), &run, &line.replace(&digest[..8], "00000000"));
+    let output = cli(
+        root.path(),
+        &["validate-skills", "--strict", "--skill-digest", name],
+    );
+    assert_eq!(output.status.code(), Some(1));
+    assert!(output.stdout.is_empty(), "no digest line after a stale run");
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .starts_with(&format!("{run}: stale;"))
+    );
+    for args in [
+        ["validate-skills", "--skill-digest", "unknown"].as_slice(),
+        &["validate-skills", "--skill-digest", "--strict"],
+        &["check-public-files", "--skill-digest", name],
+    ] {
+        let output = cli(root.path(), args);
+        assert_eq!(output.status.code(), Some(2), "{args:?}");
+        assert!(output.stdout.is_empty());
+    }
+}

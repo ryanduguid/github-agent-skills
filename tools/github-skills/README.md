@@ -21,7 +21,11 @@ require all 5 canonical skills and exact generated-tree parity. Add `--sync` to
 replace the contents of `.agents/skills` from approved canonical skill trees
 before validation. Synchronisation copies complete file bytes and nested
 directories. It refuses missing or invalid roots and links throughout both trees
-before changing generated files.
+before changing generated files. With `--strict`, recorded runs under
+`validation/baselines` and `validation/forward` must name an approved skill, and
+a run that records a skill digest must match the current skill. Add
+`--skill-digest NAME` to print the digest line for a new run file after strict
+validation.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation. Python rejects a FIFO later during copying; the native preflight
@@ -96,6 +100,9 @@ during deliberate reference qualification; ordinary replays leave it unchanged.
 The repository's documented Python unit, strict-validation, public-file, lint,
 coverage and workflow checks remain separate obligations. The shared
 `.github/ci/check_gates.py` and the Python fuzz harness remain in place. This
-candidate neither publishes binaries nor changes skill installation or CI.
+candidate neither publishes binaries nor changes skill installation. The
+`native` job in `.github/workflows/validate.yml` runs its checks and the
+contract replay on Linux and Windows.
 
-Apache-2.0. Retain the repository's `LICENSE` and `NOTICE` when redistributing.
+FSL-1.1-ALv2, as the repository. Retain its `LICENSE` and `NOTICE` when
+redistributing.
