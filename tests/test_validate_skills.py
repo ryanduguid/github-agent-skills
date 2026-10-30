@@ -12,6 +12,8 @@ from unittest.mock import patch
 
 from scripts.validate_skills import APPROVED_NAMES, check_runs, skill_digest, validate
 
+SKILL_FILE = ".claude/skills/github-repository-audit/SKILL.md"
+
 ROOT = Path(__file__).parents[1]
 
 SKILL = """---
@@ -216,6 +218,98 @@ class ValidateSkillsTests(unittest.TestCase):
             validate(self.root),
             [".claude/skills/github-repository-audit/SKILL.md: description must start with 'Use when'"],
         )
+
+    def skill_with(self, *, description="Use when assessing a repository.", extra="", body="# Skill\n"):
+        self.write(
+            SKILL_FILE,
+            f"---\nname: github-repository-audit\ndescription: {description}\n{extra}---\n{body}",
+        )
+        return validate(self.root)
+
+    def test_approved_names_meet_the_specification(self):
+        for name in APPROVED_NAMES:
+            self.assertLessEqual(len(name), 64)
+            self.assertRegex(name, r"\A[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+
+    def test_description_length_follows_the_specification(self):
+        fits = "Use when " + "x" * (1024 - len("Use when "))
+        self.assertEqual(self.skill_with(description=fits), [])
+        self.assertEqual(
+            self.skill_with(description=fits + "x"),
+            [f"{SKILL_FILE}: description exceeds 1024 characters"],
+        )
+
+    def test_compatibility_length_follows_the_specification(self):
+        self.assertEqual(self.skill_with(extra=f"compatibility: {'x' * 500}\n"), [])
+        for value in ("", "x" * 501):
+            with self.subTest(length=len(value)):
+                self.assertEqual(
+                    self.skill_with(extra=f"compatibility: {value}\n"),
+                    [f"{SKILL_FILE}: compatibility must be 1 to 500 characters"],
+                )
+
+    def test_values_a_yaml_parser_would_read_differently_are_refused(self):
+        failure = "must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
+        for description in ("Use when a: b.", "Use when a #b.", "Use when a:"):
+            with self.subTest(description=description):
+                self.assertEqual(
+                    self.skill_with(description=description),
+                    [f"{SKILL_FILE}: description {failure}"],
+                )
+        for value in (
+            ">-", "|", '"quoted"', "'quoted'", "[a]", "{a}", "*a", "&a", "!a", "a: b",
+            "true", "False", "null", "~", "yes", "Off", "123", "-1", "1.5", "1e3", "0x1F", ".inf",
+            "2026-10-30", "- Linux", "-", "? a",
+        ):
+            with self.subTest(compatibility=value):
+                self.assertEqual(
+                    self.skill_with(extra=f"compatibility: {value}\n"),
+                    [f"{SKILL_FILE}: compatibility {failure}"],
+                )
+        self.assertEqual(self.skill_with(description="Use when a:b or c#d."), [])
+        for value in (
+            "Requires git and Python 3.14+", "Linux", "3.14+", "-Linux", "2 cores", "true story", "no-network",
+        ):
+            with self.subTest(allowed=value):
+                self.assertEqual(self.skill_with(extra=f"compatibility: {value}\n"), [])
+
+    def test_referenced_files_must_be_in_the_skill_directory(self):
+        self.write(".claude/skills/github-repository-audit/references/guide.md", "guide\n")
+        self.write(".claude/skills/github-repository-audit/scripts/run.py", "pass\n")
+        self.write(".claude/skills/outside.md", "outside\n")
+        present = (
+            "[guide](references/guide.md)",
+            "[guide](references/guide.md#usage)",
+            '[guide](references/guide.md "Guide")',
+            "Run scripts/run.py first.",
+            "Run ./scripts/run.py first.",
+            "`./references/guide.md`",
+            "`references/guide.md`",
+            "[site](https://example.test/references/absent.md)",
+            "[mail](mailto:a@example.test)",
+            "[here](#usage)",
+            "https://example.test/scripts/absent.py",
+            "scripts/ and assets/ hold nothing else.",
+        )
+        for body in present:
+            with self.subTest(body=body):
+                self.assertEqual(self.skill_with(body=body + "\n"), [])
+        missing = {
+            "[guide](references/absent.md)": "references/absent.md",
+            "See\nscripts/absent.py": "scripts/absent.py",
+            "Run ./scripts/absent.py first.": "./scripts/absent.py",
+            "`./references/absent.md`": "./references/absent.md",
+            "Run ../scripts/run.py first.": "../scripts/run.py",
+            "[up](../outside.md)": "../outside.md",
+            "[root](/etc/hosts)": "/etc/hosts",
+            "[directory](references)": "references",
+        }
+        for body, target in missing.items():
+            with self.subTest(body=body):
+                self.assertEqual(
+                    self.skill_with(body=body + "\n"),
+                    [f"{SKILL_FILE}: referenced file '{target}' is not in the skill directory"],
+                )
 
     def test_reports_forbidden_placeholders(self):
         self.write(

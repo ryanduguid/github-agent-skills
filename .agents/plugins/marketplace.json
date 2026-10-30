@@ -1,0 +1,12 @@
+{
+  "name": "ryanduguid-github-skills",
+  "interface": { "displayName": "Ryan Duguid GitHub skills" },
+  "plugins": [
+    {
+      "name": "github-agent-skills",
+      "source": { "source": "local", "path": "./" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

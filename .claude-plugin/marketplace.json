@@ -1,0 +1,24 @@
+{
+  "name": "ryanduguid-github-skills",
+  "description": "Ryan Duguid's GitHub workflow skills.",
+  "owner": { "name": "Ryan Duguid" },
+  "plugins": [
+    {
+      "name": "github-agent-skills",
+      "description": "Five evidence-based GitHub inspection and preparation workflows.",
+      "author": { "name": "Ryan Duguid" },
+      "category": "productivity",
+      "tags": ["github", "agent-skills", "claude-code", "codex"],
+      "source": "./",
+      "strict": true,
+      "skills": [
+        "./.claude/skills/github-issue-to-pr",
+        "./.claude/skills/github-profile-curator",
+        "./.claude/skills/github-readme-polish",
+        "./.claude/skills/github-release-prep",
+        "./.claude/skills/github-repository-audit"
+      ],
+      "license": "FSL-1.1-ALv2"
+    }
+  ]
+}

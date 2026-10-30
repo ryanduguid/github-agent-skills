@@ -55,7 +55,37 @@ into that project's corresponding discovery path. To keep a local clone as the
 source of truth, update `.claude/skills/`, rerun the synchroniser, and copy the
 runtime directory again. Use only the runtime you need.
 
+### Local plugin package
+
+This checkout also contains Claude Code and Codex plugin manifests for the
+same 5 canonical skills, following the Australian accounting skills package.
+The manifests read version `0.1.1`; this does not publish or change the existing
+`v0.1.0` tagged release.
+
+After cloning and checking out the revision you reviewed, start Claude Code
+from the repository root with:
+
+```shell
+claude --plugin-dir .
+```
+
+The Claude marketplace file lists every canonical skill explicitly. The Codex
+marketplace at `.agents/plugins/marketplace.json` points to this local package,
+whose `.codex-plugin/plugin.json` also reads `.claude/skills/`. A host with local
+plugin support can register that marketplace; the project-local copy route
+above remains available. These manifests add no MCP server or credentials.
+Installation grants no authority for remote mutations. Run the repository's
+checks before using a changed checkout. No registry submission is made here.
+
 ## Validation
+
+The validator holds each skill to the
+[Agent Skills specification](https://agentskills.io/specification): description
+and `compatibility` lengths, plain YAML strings only, and relative references
+that resolve inside the skill directory. It splits frontmatter on colons rather
+than parsing YAML, so it refuses a value a parser could read differently, such
+as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
+indented continuation line.
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
 change, run the Quick start checks: the unit suite, the strict validator and

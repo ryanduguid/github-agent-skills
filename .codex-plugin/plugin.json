@@ -1,0 +1,19 @@
+{
+  "name": "github-agent-skills",
+  "version": "0.1.1",
+  "license": "FSL-1.1-ALv2",
+  "repository": "https://github.com/ryanduguid/github-agent-skills",
+  "author": { "name": "Ryan Duguid" },
+  "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
+  "skills": "./.claude/skills/",
+  "keywords": ["github", "agent-skills", "codex", "claude-code"],
+  "interface": {
+    "displayName": "GitHub agent skills",
+    "developerName": "Ryan Duguid",
+    "shortDescription": "Inspect GitHub evidence and prepare local changes",
+    "longDescription": "Five workflows for repository audits, README editing, profile curation, release preparation and issue implementation. Remote actions need explicit human authorisation.",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Inspect this repository and prepare an evidence-based local release handoff."]
+  }
+}
