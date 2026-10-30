@@ -81,10 +81,10 @@ checks before using a changed checkout. No registry submission is made here.
 
 The validator holds each skill to the
 [Agent Skills specification](https://agentskills.io/specification): description
-and `compatibility` lengths, plain YAML values only, and relative references
+and `compatibility` lengths, plain YAML strings only, and relative references
 that resolve inside the skill directory. It splits frontmatter on colons rather
 than parsing YAML, so it refuses a value a parser could read differently, such
-as a block scalar, a quoted value or one containing `: `. It does not follow an
+as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
 indented continuation line.
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a

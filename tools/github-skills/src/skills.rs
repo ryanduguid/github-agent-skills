@@ -30,9 +30,23 @@ static RUN_DIGEST_LABEL: LazyLock<Regex> =
 const MAX_DESCRIPTION: usize = 1024;
 const MAX_COMPATIBILITY: usize = 500;
 const UNSAFE_PLAIN_START: &str = "!\"#%&'*>?@[]`{|},";
+// A block sequence or mapping key, or a value YAML reads as a boolean, null, number
+// or date rather than the string the specification requires.
+static UNSAFE_PLAIN: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        concat!(
+            r"\A(?:[-?](?:\s|\Z)",
+            r"|(?i:true|false|null|yes|no|on|off|y|n|~|\.nan",
+            r"|[-+]?(?:[0-9][0-9_,]*(?:\.[0-9_]*)?(?:e[-+]?[0-9]+)?|\.[0-9]+|\.inf|0x[0-9a-f_]+|0o[0-7_]+|0b[01_]+)",
+            r"|[0-9]{4}-[0-9]{2}-[0-9]{2})\Z)",
+        ),
+        false,
+        false,
+    )
+});
 static REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
+        r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:\.{1,2}/)*(?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
         false,
         true,
     )
@@ -180,6 +194,7 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
 
 fn unsafe_plain_scalar(value: &str) -> bool {
     value.starts_with(|c| UNSAFE_PLAIN_START.contains(c))
+        || UNSAFE_PLAIN.is_match(value).unwrap_or(true)
         || value.contains(": ")
         || value.contains(" #")
         || value.ends_with(':')
@@ -203,7 +218,7 @@ fn specification_failure(description: &str, compatibility: Option<&str>) -> Opti
     ] {
         if unsafe_plain_scalar(value) {
             return Some(format!(
-                "{key} must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+                "{key} must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
             ));
         }
     }

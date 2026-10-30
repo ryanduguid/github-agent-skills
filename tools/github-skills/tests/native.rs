@@ -156,7 +156,7 @@ fn skills_are_held_to_the_agent_skills_specification() {
     assert_eq!(
         check("Use when a: b.", "", ""),
         [format!(
-            "{file}: description must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+            "{file}: description must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
         )]
     );
     assert_eq!(
@@ -165,10 +165,44 @@ fn skills_are_held_to_the_agent_skills_specification() {
             "{file}: referenced file 'references/absent.md' is not in the skill directory"
         )]
     );
+    for value in ["true", "null", "123", "2026-10-30", "- Linux"] {
+        assert_eq!(
+            check(
+                "Use when testing.",
+                &format!("compatibility: {value}\n"),
+                ""
+            ),
+            [format!(
+                "{file}: compatibility must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
+            )],
+            "{value}"
+        );
+    }
+    for value in ["Linux", "3.14+", "-Linux", "true story"] {
+        assert_eq!(
+            check(
+                "Use when testing.",
+                &format!("compatibility: {value}\n"),
+                ""
+            ),
+            Vec::<String>::new(),
+            "{value}"
+        );
+    }
+    assert_eq!(
+        check("Use when testing.", "", "Run ./scripts/absent.py now."),
+        [format!(
+            "{file}: referenced file './scripts/absent.py' is not in the skill directory"
+        )]
+    );
     write(
         root.path(),
         ".claude/skills/github-repository-audit/references/guide.md",
         b"guide",
+    );
+    assert_eq!(
+        check("Use when testing.", "", "See ./references/guide.md now."),
+        Vec::<String>::new()
     );
     assert_eq!(
         check(

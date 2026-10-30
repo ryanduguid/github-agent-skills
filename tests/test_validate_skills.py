@@ -249,21 +249,29 @@ class ValidateSkillsTests(unittest.TestCase):
                 )
 
     def test_values_a_yaml_parser_would_read_differently_are_refused(self):
-        failure = "must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+        failure = "must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
         for description in ("Use when a: b.", "Use when a #b.", "Use when a:"):
             with self.subTest(description=description):
                 self.assertEqual(
                     self.skill_with(description=description),
                     [f"{SKILL_FILE}: description {failure}"],
                 )
-        for value in (">-", "|", '"quoted"', "'quoted'", "[a]", "{a}", "*a", "&a", "!a", "a: b"):
+        for value in (
+            ">-", "|", '"quoted"', "'quoted'", "[a]", "{a}", "*a", "&a", "!a", "a: b",
+            "true", "False", "null", "~", "yes", "Off", "123", "-1", "1.5", "1e3", "0x1F", ".inf",
+            "2026-10-30", "- Linux", "-", "? a",
+        ):
             with self.subTest(compatibility=value):
                 self.assertEqual(
                     self.skill_with(extra=f"compatibility: {value}\n"),
                     [f"{SKILL_FILE}: compatibility {failure}"],
                 )
         self.assertEqual(self.skill_with(description="Use when a:b or c#d."), [])
-        self.assertEqual(self.skill_with(extra="compatibility: Requires git and Python 3.14+\n"), [])
+        for value in (
+            "Requires git and Python 3.14+", "Linux", "3.14+", "-Linux", "2 cores", "true story", "no-network",
+        ):
+            with self.subTest(allowed=value):
+                self.assertEqual(self.skill_with(extra=f"compatibility: {value}\n"), [])
 
     def test_referenced_files_must_be_in_the_skill_directory(self):
         self.write(".claude/skills/github-repository-audit/references/guide.md", "guide\n")
@@ -274,6 +282,8 @@ class ValidateSkillsTests(unittest.TestCase):
             "[guide](references/guide.md#usage)",
             '[guide](references/guide.md "Guide")',
             "Run scripts/run.py first.",
+            "Run ./scripts/run.py first.",
+            "`./references/guide.md`",
             "`references/guide.md`",
             "[site](https://example.test/references/absent.md)",
             "[mail](mailto:a@example.test)",
@@ -287,6 +297,9 @@ class ValidateSkillsTests(unittest.TestCase):
         missing = {
             "[guide](references/absent.md)": "references/absent.md",
             "See\nscripts/absent.py": "scripts/absent.py",
+            "Run ./scripts/absent.py first.": "./scripts/absent.py",
+            "`./references/absent.md`": "./references/absent.md",
+            "Run ../scripts/run.py first.": "../scripts/run.py",
             "[up](../outside.md)": "../outside.md",
             "[root](/etc/hosts)": "/etc/hosts",
             "[directory](references)": "references",

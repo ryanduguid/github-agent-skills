@@ -62,9 +62,17 @@ MAX_COMPATIBILITY = 500
 # Frontmatter is split on colons, not parsed, so a value a YAML parser would read
 # differently is refused rather than interpreted.
 UNSAFE_PLAIN_START = "!\"#%&'*>?@[]`{|},"
+# A block sequence or mapping key, or a value YAML reads as a boolean, null, number
+# or date rather than the string the specification requires.
+UNSAFE_PLAIN = re.compile(
+    r"\A(?:[-?](?:\s|\Z)"
+    r"|(?i:true|false|null|yes|no|on|off|y|n|~|\.nan"
+    r"|[-+]?(?:[0-9][0-9_,]*(?:\.[0-9_]*)?(?:e[-+]?[0-9]+)?|\.[0-9]+|\.inf|0x[0-9a-f_]+|0o[0-7_]+|0b[01_]+)"
+    r"|[0-9]{4}-[0-9]{2}-[0-9]{2})\Z)"
+)
 # A Markdown link target, or a bare path into a directory the specification names.
 REFERENCE = re.compile(
-    r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
+    r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:\.{1,2}/)*(?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
     re.MULTILINE,
 )
 EXTERNAL_REFERENCE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:|#")
@@ -92,6 +100,7 @@ def frontmatter(path: Path) -> tuple[dict[str, str] | None, str | None]:
 def _unsafe_plain_scalar(value: str) -> bool:
     return (
         value[:1] in tuple(UNSAFE_PLAIN_START)
+        or UNSAFE_PLAIN.match(value) is not None
         or ": " in value
         or " #" in value
         or value.endswith(":")
@@ -108,7 +117,7 @@ def _specification_failure(metadata: dict[str, str]) -> str | None:
         return f"compatibility must be 1 to {MAX_COMPATIBILITY} characters"
     for key, value in (("description", description), ("compatibility", compatibility or "")):
         if _unsafe_plain_scalar(value):
-            return f"{key} must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+            return f"{key} must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
     return None
 
 
