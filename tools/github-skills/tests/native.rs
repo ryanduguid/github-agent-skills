@@ -133,6 +133,54 @@ fn sync_refusal_preserves_generated_files() {
 }
 
 #[test]
+fn skills_are_held_to_the_agent_skills_specification() {
+    let root = tempfile::tempdir().unwrap();
+    let file = ".claude/skills/github-repository-audit/SKILL.md";
+    let check = |description: &str, extra: &str, body: &str| {
+        let text = format!(
+            "---\nname: github-repository-audit\ndescription: {description}\n{extra}---\n{body}\n"
+        );
+        write(root.path(), file, text.as_bytes());
+        s::validate(root.path(), false).unwrap()
+    };
+    let long = format!("Use when {}", "x".repeat(1015));
+    assert_eq!(check(&long, "", ""), Vec::<String>::new());
+    assert_eq!(
+        check(&format!("{long}x"), "", ""),
+        [format!("{file}: description exceeds 1024 characters")]
+    );
+    assert_eq!(
+        check("Use when testing.", "compatibility:\n", ""),
+        [format!("{file}: compatibility must be 1 to 500 characters")]
+    );
+    assert_eq!(
+        check("Use when a: b.", "", ""),
+        [format!(
+            "{file}: description must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+        )]
+    );
+    assert_eq!(
+        check("Use when testing.", "", "[guide](references/absent.md)"),
+        [format!(
+            "{file}: referenced file 'references/absent.md' is not in the skill directory"
+        )]
+    );
+    write(
+        root.path(),
+        ".claude/skills/github-repository-audit/references/guide.md",
+        b"guide",
+    );
+    assert_eq!(
+        check(
+            "Use when testing.",
+            "",
+            "[guide](references/guide.md#a) [x](https://a.test/b)"
+        ),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
 fn metadata_is_literal_and_uses_python_line_separators() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("SKILL.md");

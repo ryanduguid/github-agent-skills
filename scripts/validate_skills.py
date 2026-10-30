@@ -54,6 +54,20 @@ def _ordinary_entries(tree: Path, root: Path, failures: list[str]) -> list[Path]
 
 
 PLACEHOLDER = re.compile(r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b", re.IGNORECASE)
+# Limits from https://agentskills.io/specification. The name's limits need no
+# check of their own: it must equal its directory, an approved name that a test
+# holds to the specification.
+MAX_DESCRIPTION = 1024
+MAX_COMPATIBILITY = 500
+# Frontmatter is split on colons, not parsed, so a value a YAML parser would read
+# differently is refused rather than interpreted.
+UNSAFE_PLAIN_START = "!\"#%&'*>?@[]`{|},"
+# A Markdown link target, or a bare path into a directory the specification names.
+REFERENCE = re.compile(
+    r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
+    re.MULTILINE,
+)
+EXTERNAL_REFERENCE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:|#")
 
 
 def frontmatter(path: Path) -> tuple[dict[str, str] | None, str | None]:
@@ -70,9 +84,44 @@ def frontmatter(path: Path) -> tuple[dict[str, str] | None, str | None]:
     values = {}
     for line in lines[1:end]:
         key, separator, value = line.partition(":")
-        if separator and key in {"name", "description"}:
+        if separator and key in {"name", "description", "compatibility"}:
             values[key] = value.strip()
     return values, None
+
+
+def _unsafe_plain_scalar(value: str) -> bool:
+    return (
+        value[:1] in tuple(UNSAFE_PLAIN_START)
+        or ": " in value
+        or " #" in value
+        or value.endswith(":")
+    )
+
+
+def _specification_failure(metadata: dict[str, str]) -> str | None:
+    """The first way the frontmatter values break the Agent Skills specification."""
+    description = metadata["description"]
+    if len(description) > MAX_DESCRIPTION:
+        return f"description exceeds {MAX_DESCRIPTION} characters"
+    compatibility = metadata.get("compatibility")
+    if compatibility is not None and not 1 <= len(compatibility) <= MAX_COMPATIBILITY:
+        return f"compatibility must be 1 to {MAX_COMPATIBILITY} characters"
+    for key, value in (("description", description), ("compatibility", compatibility or "")):
+        if _unsafe_plain_scalar(value):
+            return f"{key} must be a plain YAML value: no ': ', ' #', trailing ':' or leading indicator"
+    return None
+
+
+def _missing_reference(directory: Path, text: str) -> str | None:
+    """The first relative reference in text that is not a file in the skill directory."""
+    for match in REFERENCE.finditer(text):
+        target = match[1] or match[2]
+        if EXTERNAL_REFERENCE.match(target):
+            continue
+        relative = target.split("#", 1)[0]
+        if relative.startswith("/") or ".." in relative.split("/") or not (directory / relative).is_file():
+            return target
+    return None
 
 
 def validate(root: Path, strict: bool = False) -> list[str]:
@@ -138,9 +187,18 @@ def validate(root: Path, strict: bool = False) -> list[str]:
         if not metadata["description"].startswith("Use when"):
             failures.append(f"{file_name}: description must start with 'Use when'")
             continue
-        match = PLACEHOLDER.search(path.read_text(encoding="utf-8"))
+        specification_failure = _specification_failure(metadata)
+        if specification_failure:
+            failures.append(f"{file_name}: {specification_failure}")
+            continue
+        text = path.read_text(encoding="utf-8")
+        match = PLACEHOLDER.search(text)
         if match:
             failures.append(f"{file_name}: forbidden placeholder '{match.group().upper()}'")
+            continue
+        missing = _missing_reference(directory, text)
+        if missing:
+            failures.append(f"{file_name}: referenced file '{missing}' is not in the skill directory")
             continue
         valid.append((directory.name, path))
 
