@@ -25,6 +25,35 @@ static RUN_DIGEST: LazyLock<Regex> = LazyLock::new(|| {
 });
 static RUN_DIGEST_LABEL: LazyLock<Regex> =
     LazyLock::new(|| crate::public_files::python_regex(r"^- Skill digest\b", false, true));
+// Limits from https://agentskills.io/specification, as scripts/validate_skills.py
+// applies them.
+const MAX_DESCRIPTION: usize = 1024;
+const MAX_COMPATIBILITY: usize = 500;
+const UNSAFE_PLAIN_START: &str = "!\"#%&'*>?@[]`{|},";
+// A block sequence or mapping key, or a value YAML reads as a boolean, null, number
+// or date rather than the string the specification requires.
+static UNSAFE_PLAIN: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        concat!(
+            r"\A(?:[-?](?:\s|\Z)",
+            r"|(?i:true|false|null|yes|no|on|off|y|n|~|\.nan",
+            r"|[-+]?(?:[0-9][0-9_,]*(?:\.[0-9_]*)?(?:e[-+]?[0-9]+)?|\.[0-9]+|\.inf|0x[0-9a-f_]+|0o[0-7_]+|0b[01_]+)",
+            r"|[0-9]{4}-[0-9]{2}-[0-9]{2})\Z)",
+        ),
+        false,
+        false,
+    )
+});
+static REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"\]\(([^)\s]+)|(?:^|[^A-Za-z0-9_./-])((?:\.{1,2}/)*(?:scripts|references|assets)/[A-Za-z0-9_./-]*[A-Za-z0-9_])",
+        false,
+        true,
+    )
+});
+static EXTERNAL_REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(r"\A(?:[A-Za-z][A-Za-z0-9+.-]*:|#)", false, false)
+});
 static PLACEHOLDER: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
         r"\b(TBD|TODO|FIXME|placeholder|scaffold(?:ing)?)\b",
@@ -152,7 +181,7 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
     let mut metadata = BTreeMap::new();
     for line in &lines[1..end] {
         if let Some((key, value)) = line.split_once(':')
-            && matches!(key, "name" | "description")
+            && matches!(key, "name" | "description" | "compatibility")
         {
             metadata.insert(
                 key.to_owned(),
@@ -161,6 +190,64 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
         }
     }
     Ok(Ok(metadata))
+}
+
+fn unsafe_plain_scalar(value: &str) -> bool {
+    value.starts_with(|c| UNSAFE_PLAIN_START.contains(c))
+        || UNSAFE_PLAIN.is_match(value).unwrap_or(true)
+        || value.contains(": ")
+        || value.contains(" #")
+        || value.ends_with(':')
+}
+
+/// The first way the frontmatter values break the Agent Skills specification.
+fn specification_failure(description: &str, compatibility: Option<&str>) -> Option<String> {
+    if description.chars().count() > MAX_DESCRIPTION {
+        return Some(format!("description exceeds {MAX_DESCRIPTION} characters"));
+    }
+    if let Some(value) = compatibility
+        && !(1..=MAX_COMPATIBILITY).contains(&value.chars().count())
+    {
+        return Some(format!(
+            "compatibility must be 1 to {MAX_COMPATIBILITY} characters"
+        ));
+    }
+    for (key, value) in [
+        ("description", description),
+        ("compatibility", compatibility.unwrap_or("")),
+    ] {
+        if unsafe_plain_scalar(value) {
+            return Some(format!(
+                "{key} must be a plain YAML string: no ': ', ' #', trailing ':', leading indicator or implicit type"
+            ));
+        }
+    }
+    None
+}
+
+/// The first relative reference in text that is not a file in the skill directory.
+fn missing_reference(directory: &Path, text: &str) -> io::Result<Option<String>> {
+    for captures in REFERENCE.captures_iter(text) {
+        let captures = captures.map_err(io::Error::other)?;
+        let target = captures
+            .get(1)
+            .or_else(|| captures.get(2))
+            .map_or("", |m| m.as_str());
+        if EXTERNAL_REFERENCE
+            .is_match(target)
+            .map_err(io::Error::other)?
+        {
+            continue;
+        }
+        let relative = target.split('#').next().unwrap_or("");
+        if relative.starts_with('/')
+            || relative.split('/').any(|part| part == "..")
+            || !directory.join(relative).is_file()
+        {
+            return Ok(Some(target.to_owned()));
+        }
+    }
+    Ok(None)
 }
 
 pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
@@ -235,13 +322,22 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.push(format!("{file_name}: {error}"));
             continue;
         }
-        if let Some(matched) = PLACEHOLDER
-            .find(&crate::read_text(&path)?)
-            .map_err(io::Error::other)?
-        {
+        let compatibility = metadata.get("compatibility").map(String::as_str);
+        if let Some(error) = specification_failure(description, compatibility) {
+            failures.push(format!("{file_name}: {error}"));
+            continue;
+        }
+        let text = crate::read_text(&path)?;
+        if let Some(matched) = PLACEHOLDER.find(&text).map_err(io::Error::other)? {
             failures.push(format!(
                 "{file_name}: forbidden placeholder '{}'",
                 matched.as_str().to_uppercase()
+            ));
+            continue;
+        }
+        if let Some(missing) = missing_reference(directory, &text)? {
+            failures.push(format!(
+                "{file_name}: referenced file '{missing}' is not in the skill directory"
             ));
             continue;
         }

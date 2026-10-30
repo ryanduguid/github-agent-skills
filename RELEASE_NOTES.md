@@ -7,6 +7,18 @@
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
 Apache-2.0 as the future licence). Released versions keep their licence.
 
+### Plugin manifests
+
+The repository now has Claude Code and Codex plugin manifests and marketplace
+files for its 5 skills, with no MCP server and no credentials.
+
+### Specification checks
+
+The validator now checks description and `compatibility` lengths from the
+Agent Skills specification, refuses frontmatter values a YAML parser could read
+differently, and fails on a relative reference that is not a file in the skill
+directory.
+
 ### Recorded runs
 
 Run files can record a skill digest covering every file in the skill

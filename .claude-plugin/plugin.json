@@ -1,0 +1,11 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "github-agent-skills",
+  "version": "0.1.1",
+  "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
+  "author": { "name": "Ryan Duguid" },
+  "repository": "https://github.com/ryanduguid/github-agent-skills",
+  "license": "FSL-1.1-ALv2",
+  "keywords": ["github", "agent-skills", "claude-code", "codex"],
+  "skills": "./.claude/skills"
+}
