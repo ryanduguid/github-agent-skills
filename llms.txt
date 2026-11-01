@@ -20,7 +20,7 @@ change GitHub settings, or make any other remote mutation.
 
 ## Install
 
-- [Quick start](https://github.com/ryanduguid/github-agent-skills#quick-start): clone the repository, run the unit suite, then run the strict validator.
+- [Repository checks](https://github.com/ryanduguid/github-agent-skills#repository-checks): clone the repository, run the unit suite, then run the strict validator.
 - Codex: copy `.agents/skills/<skill>` into the Codex skill discovery path of the project you are working in.
 - Claude Code: copy `.claude/skills/<skill>` into that project's Claude Code skill discovery path.
 - Install only the runtime you use, and keep `.claude/skills/` as the source of truth for any local edit.

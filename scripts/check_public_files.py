@@ -9,7 +9,7 @@ from pathlib import Path
 
 CLONE_URL = "https://github.com/ryanduguid/github-agent-skills.git"
 REPOSITORY_NAME = "github-agent-skills"
-QUICK_START = re.compile(r"^## Quick start\s*$([\s\S]*?)(?=(?:^## )|\Z)", re.MULTILINE)
+QUICK_START = re.compile(r"^## Repository checks\s*$([\s\S]*?)(?=(?:^## )|\Z)", re.MULTILINE)
 VALIDATE_JOB = re.compile(r"^  validate:\n((?:^(?:    .*)?$\n)+)", re.MULTILINE)
 WORKFLOW_CHECK = re.compile(r"^ {8}run: (python .+)$", re.MULTILINE)
 FENCED_COMMANDS = re.compile(r"```(?:powershell|shell)\n([\s\S]*?)```")
@@ -51,7 +51,7 @@ def supported_quick_start(workflow: str) -> tuple[str, ...]:
 
 
 def quick_start_failures(readme: str, workflow: str) -> list[str]:
-    return [] if tuple(quick_start_commands(readme)) == supported_quick_start(workflow) else ["README.md: Quick start commands differ from the checks the Validate workflow runs"]
+    return [] if tuple(quick_start_commands(readme)) == supported_quick_start(workflow) else ["README.md: Repository checks commands differ from the checks the Validate workflow runs"]
 
 
 def tracked_paths(root: Path) -> list[Path]:

@@ -603,8 +603,8 @@ class RecordedRunDigestTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
 
-    def record(self, digest_lines, relative=RUN):
-        self.write(self.root / relative, f"Scenario: x\n\nAudit metadata:\n{digest_lines}- Run exit status: 0.\n".encode())
+    def record(self, digest_lines, relative=RUN, assessor="- Assessed by: Ryan Duguid.\n"):
+        self.write(self.root / relative, f"Scenario: x\n\nAudit metadata:\n{digest_lines}{assessor}- Run exit status: 0.\n".encode())
 
     def record_current(self, relative=RUN):
         self.record(f"- Skill digest v1:\n  `{skill_digest(self.skill)}`.\n", relative)
@@ -689,6 +689,22 @@ class RecordedRunDigestTests(unittest.TestCase):
                     check_runs(self.root),
                     ([f"{self.RUN}: malformed skill digest; record exactly one '- Skill digest v1:' line"], []),
                 )
+
+    def test_a_run_with_a_digest_must_name_one_assessor(self):
+        line = f"- Skill digest v1:\n  `{skill_digest(self.skill)}`.\n"
+        for assessor in ("", "- Assessed by:\n", "- Assessed by: A.\n- Assessed by: B.\n", "- Assessed by A.\n"):
+            with self.subTest(assessor=assessor):
+                self.record(line, assessor=assessor)
+
+                self.assertEqual(
+                    check_runs(self.root),
+                    ([f"{self.RUN}: no assessor; record exactly one '- Assessed by:' line"], []),
+                )
+
+    def test_a_run_without_a_digest_needs_no_assessor(self):
+        self.record("", assessor="")
+
+        self.assertEqual(check_runs(self.root)[0], [])
 
     def test_a_run_named_after_no_approved_skill_fails(self):
         self.record("", "validation/baselines/unknown-skill.txt")

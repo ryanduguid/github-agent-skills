@@ -25,6 +25,11 @@ static RUN_DIGEST: LazyLock<Regex> = LazyLock::new(|| {
 });
 static RUN_DIGEST_LABEL: LazyLock<Regex> =
     LazyLock::new(|| crate::public_files::python_regex(r"^- Skill digest\b", false, true));
+// A run with a digest also names who assessed its PASS and FAIL lines.
+static RUN_ASSESSOR: LazyLock<Regex> =
+    LazyLock::new(|| crate::public_files::python_regex(r"^- Assessed by:[ \t]+\S.*$", false, true));
+static RUN_ASSESSOR_LABEL: LazyLock<Regex> =
+    LazyLock::new(|| crate::public_files::python_regex(r"^- Assessed by\b", false, true));
 // Limits from https://agentskills.io/specification, as scripts/validate_skills.py
 // applies them.
 const MAX_DESCRIPTION: usize = 1024;
@@ -542,6 +547,21 @@ pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
                 ));
                 continue;
             };
+            let assessors = collect_matches(
+                RUN_ASSESSOR
+                    .find_iter(text.as_str())
+                    .map(|found| found.map(|found| found.as_str().to_owned())),
+            )?;
+            let assessor_labels = collect_matches(
+                RUN_ASSESSOR_LABEL
+                    .find_iter(text.as_str())
+                    .map(|found| found.map(|found| found.as_str().to_owned())),
+            )?;
+            if assessors.len() != 1 || assessor_labels.len() != 1 {
+                failures.push(format!(
+                    "{name}: no assessor; record exactly one '- Assessed by:' line"
+                ));
+            }
             if !current.contains_key(&stem) {
                 let digest = skill_digest(&root.join(CANONICAL).join(&stem))?;
                 current.insert(stem.clone(), digest);
