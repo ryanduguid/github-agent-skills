@@ -26,6 +26,9 @@ RUN_DIRECTORIES = ("validation/baselines", "validation/forward")
 # the next.
 RUN_DIGEST = re.compile(r"^- Skill digest v1:\s+`([0-9a-f]{64})`\.$", re.MULTILINE)
 RUN_DIGEST_LABEL = re.compile(r"^- Skill digest\b", re.MULTILINE)
+# A run with a digest also names who assessed its PASS and FAIL lines.
+RUN_ASSESSOR = re.compile(r"^- Assessed by:[ \t]+\S.*$", re.MULTILINE)
+RUN_ASSESSOR_LABEL = re.compile(r"^- Assessed by\b", re.MULTILINE)
 
 
 def _is_link(path: Path) -> bool:
@@ -304,6 +307,8 @@ def check_runs(root: Path) -> tuple[list[str], list[str]]:
             if len(labels) != 1 or len(recorded) != 1:
                 failures.append(f"{name}: malformed skill digest; record exactly one '- Skill digest v1:' line")
                 continue
+            if len(RUN_ASSESSOR_LABEL.findall(text)) != 1 or len(RUN_ASSESSOR.findall(text)) != 1:
+                failures.append(f"{name}: no assessor; record exactly one '- Assessed by:' line")
             if run.stem not in current:
                 current[run.stem] = skill_digest(root / CANONICAL / run.stem)
             if recorded[0] != current[run.stem]:

@@ -370,7 +370,7 @@ fn fifo_sync_refuses_within_deadline_and_preserves_generated_bytes() {
 fn quick_start_and_permissions_contract() {
     let workflow = "permissions:\n  contents: read\njobs:\n  validate:\n    steps:\n      - name: Check\n        run: python check.py\n";
     let readme = format!(
-        "## Quick start\n```shell\ngit clone {}\ncd {}\npython check.py\n```\n## Other\n```shell\nignored\n```\n",
+        "## Repository checks\n```shell\ngit clone {}\ncd {}\npython check.py\n```\n## Other\n```shell\nignored\n```\n",
         p::CLONE_URL,
         p::REPOSITORY_NAME
     );
@@ -553,7 +553,10 @@ fn record(root: &Path, name: &str, digest_lines: &str) {
     write(
         root,
         name,
-        format!("Scenario: x\n\nAudit metadata:\n{digest_lines}- Run exit status: 0.\n").as_bytes(),
+        format!(
+            "Scenario: x\n\nAudit metadata:\n{digest_lines}- Assessed by: Ryan Duguid.\n- Run exit status: 0.\n"
+        )
+        .as_bytes(),
     );
 }
 
@@ -641,6 +644,44 @@ fn recorded_runs_are_checked_against_the_current_skill() {
             vec![]
         )
     );
+}
+
+#[test]
+fn a_recorded_run_with_a_digest_names_one_assessor() {
+    let root = tempfile::tempdir().unwrap();
+    let name = "github-readme-polish";
+    let run = format!("validation/forward/{name}.txt");
+    let skill = root.path().join(s::CANONICAL).join(name);
+    write(&skill, "SKILL.md", b"---\nname: x\n---\n");
+    let digest = s::skill_digest(&skill).unwrap();
+    for assessor in [
+        "",
+        "- Assessed by:\n",
+        "- Assessed by: A.\n- Assessed by: B.\n",
+        "- Assessed by A.\n",
+    ] {
+        write(
+            root.path(),
+            &run,
+            format!("Audit metadata:\n- Skill digest v1: `{digest}`.\n{assessor}").as_bytes(),
+        );
+        assert_eq!(
+            s::check_runs(root.path()).unwrap(),
+            (
+                vec![format!(
+                    "{run}: no assessor; record exactly one '- Assessed by:' line"
+                )],
+                vec![]
+            ),
+            "{assessor:?}"
+        );
+    }
+    write(
+        root.path(),
+        &run,
+        format!("- Skill digest v1: `{digest}`.\r\n- Assessed by: Ryan Duguid.\r\n").as_bytes(),
+    );
+    assert_eq!(s::check_runs(root.path()).unwrap(), (vec![], vec![]));
 }
 
 #[test]

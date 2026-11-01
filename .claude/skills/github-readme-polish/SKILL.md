@@ -1,6 +1,6 @@
 ---
 name: github-readme-polish
-description: Use when improving a GitHub README's clarity, quick start, credibility, badges, or project presentation without overstating repository evidence.
+description: Use when reviewing or improving a GitHub README, including its opening, quick start or getting-started steps, badges, readiness claims, or project presentation, without overstating repository evidence.
 ---
 
 # Truth-first README polishing

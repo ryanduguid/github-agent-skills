@@ -147,8 +147,13 @@ static PERMISSION_LINE: LazyLock<Regex> = LazyLock::new(|| {
         true,
     )
 });
-static QUICK_START: LazyLock<Regex> =
-    LazyLock::new(|| python_regex(r"^## Quick start\s*$([\s\S]*?)(?=(?:^## )|\Z)", false, true));
+static QUICK_START: LazyLock<Regex> = LazyLock::new(|| {
+    python_regex(
+        r"^## Repository checks\s*$([\s\S]*?)(?=(?:^## )|\Z)",
+        false,
+        true,
+    )
+});
 static FENCED_COMMANDS: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"```(?:powershell|shell)\n([\s\S]*?)```", false, false));
 static VALIDATE_JOB: LazyLock<Regex> =
@@ -218,7 +223,7 @@ pub fn quick_start_failures(readme: &str, workflow: &str) -> io::Result<Vec<Stri
             vec![]
         } else {
             vec![
-                "README.md: Quick start commands differ from the checks the Validate workflow runs"
+                "README.md: Repository checks commands differ from the checks the Validate workflow runs"
                     .into(),
             ]
         },

@@ -30,7 +30,24 @@ generated copy in `.agents/skills/` serves Codex.
 Python 3.14+ is required. The repository uses the Python standard library; no
 package installation is needed.
 
-## Quick start
+## First use
+
+From a clone, ask Claude Code to apply a skill to the sample README in
+`tests/fixtures/`:
+
+```shell
+claude --plugin-dir . -p "Use the github-readme-polish skill to review tests/fixtures/readme-polish-repository/README.md. Propose a diff only; change no files."
+```
+
+On 1 November 2026 (Claude Code 2.1.312, Sonnet 5.5, read-only tools) the
+skill read the README, `scripts/demo.ps1` and `LICENSE`, then reported that the
+opening line claims a Markdown summary the demo script never produces (it
+prints one fixed line), that the PowerShell 7 requirement is unverified, and
+that the demo command is listed twice. It returned a diff that corrects those
+claims, kept the legal boundary unchanged, added no badges or readiness claims
+and changed no files.
+
+## Repository checks
 
 ```shell
 git clone https://github.com/ryanduguid/github-agent-skills.git
@@ -88,7 +105,7 @@ as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does
 indented continuation line.
 
 During authoring, run `python scripts/validate_skills.py`. Before sharing a
-change, run the Quick start checks: the unit suite, the strict validator and
+change, run the Repository checks: the unit suite, the strict validator and
 the public-file check. `GATES.md` lists the same repository gate. CI also
 lints the Python files with a hash-pinned Ruff; [CONTRIBUTING.md](CONTRIBUTING.md)
 shows how to run it locally.
@@ -122,9 +139,31 @@ gives the same value for ordinary file names.
 
 `--strict` fails when a run's recorded digest differs from the current skill
 files, so a changed skill or asset marks its runs stale until they are rerun.
+A run file with a digest must also name who assessed its PASS and FAIL lines in
+exactly one `- Assessed by:` line, or `--strict` fails.
 The current run files predate the digest, and every skill has changed since
 they were recorded, so none carries one: `--strict` lists each of them as 'no
 skill digest recorded' without failing.
+
+## Activation evals
+
+The recorded runs name the skill, so they do not test whether a task selects
+it. `evals/` holds 15 `claude plugin eval` cases that never name a skill: 2 or
+3 per skill, each with a `tool_used: Skill` grader for the expected skill and
+one that fails if a skill with an overlapping description fires instead, plus
+2 prompts where no skill should fire.
+
+```shell
+claude plugin eval . --runs 1 --ablation none --no-publish
+```
+
+On 1 November 2026 (Claude Code 2.1.312, default model, 1 run per case) 12 of
+15 cases chose the expected skill; in the other 3, about adopting a dependency,
+a README badge and a getting-started section, no skill fired. After the
+`github-repository-audit` and `github-readme-polish` descriptions were widened
+to cover those tasks, all 15 passed. One run per case is a small sample, so a
+repeat can differ. Each run is a full Claude Code session billed to the
+operator's account; the 2 runs reported US$1.18 and US$1.22.
 
 ## Boundary
 

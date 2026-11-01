@@ -1,5 +1,5 @@
 The Atheris target exercises the public-file scanner with fabricated bytes:
-BOM-marked and NUL-bearing text decoding, Quick start command extraction and
+BOM-marked and NUL-bearing text decoding, Repository checks command extraction and
 every safety pattern. It checks that decoding returns text or a failure, never
 both, that extracted commands are stripped and non-empty, and that each pattern
 finishes on arbitrary input. Unexpected exceptions and failed invariants fail
