@@ -1,4 +1,5 @@
 import io
+import re
 import subprocess
 import tempfile
 import unittest
@@ -311,14 +312,12 @@ class WorkflowTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
         permissions = public_files.permissions_block(workflow)
         self.assertEqual(permissions, ["  contents: read"])
-        self.assertIn(
-            "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-            workflow,
-        )
-        self.assertIn(
-            "actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97",
-            workflow,
-        )
+        # Pinned to a full commit SHA, whichever one Dependabot last chose.
+        for action in ("actions/checkout", "actions/setup-python"):
+            refs = re.findall(rf"uses: {action}@(\S+)", workflow)
+            self.assertTrue(refs, action)
+            for ref in refs:
+                self.assertRegex(ref, r"^[0-9a-f]{40}$", action)
         self.assertIn("python: [\"3.14\", \"3.15\"]", workflow)
         self.assertIn("python-version: '3.15'", workflow)
         for command in (
