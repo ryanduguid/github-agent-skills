@@ -11,6 +11,23 @@ from scripts import check_public_files as public_files
 
 ROOT = Path(__file__).parents[1]
 WORKFLOW = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
+PINNED_USE = re.compile(r"""\s*(?:-\s+)?uses:\s*(['"]?)([^@\s'"]+)@[0-9a-f]{40}\1\s*""")
+
+
+def action_pins(workflow):
+    """Return the actions that `uses:` lines pin to a full commit SHA, and every
+    `uses:` line that is not pinned that way. A comment is not a step."""
+    actions, unpinned = set(), []
+    for line in workflow.splitlines():
+        code = line.split("#", 1)[0]
+        if "uses:" not in code:
+            continue
+        match = PINNED_USE.fullmatch(code)
+        if match:
+            actions.add(match.group(2))
+        else:
+            unpinned.append(line.strip())
+    return actions, unpinned
 
 
 class PublicRepositoryTests(unittest.TestCase):
@@ -308,18 +325,33 @@ class MainTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_action_pins_refuse_every_reference_that_is_not_a_commit_sha(self):
+        sha = "3d3c42e5aac5ba805825da76410c181273ba90b1"
+        pinned = [
+            f"      - uses: owner/action@{sha} # v1.2.3",
+            f"        uses:  owner/action@{sha}",
+            f"      - uses: 'owner/action@{sha}'",
+            f'      - uses: "owner/path/action@{sha}"',
+            "      # - uses: owner/action@v1",
+        ]
+        self.assertEqual(action_pins("\n".join(pinned)), ({"owner/action", "owner/path/action"}, []))
+        for line in (
+            "      - uses: owner/action",
+            "      - uses:  owner/action@v1",
+            "      - uses: owner/action@v1 # v1",
+            f"      - uses: owner/action@{sha[:-1]}",
+            f"      - uses: 'owner/action@{sha}\"",
+        ):
+            self.assertEqual(action_pins(line), (set(), [line.strip()]), line)
+
     def test_workflow_has_read_only_permissions_and_required_checks(self):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
         permissions = public_files.permissions_block(workflow)
         self.assertEqual(permissions, ["  contents: read"])
         # Every action is pinned to a full commit SHA; Dependabot moves the SHAs.
-        actions = re.findall(r"uses: ([^@\s]+)@(\S+)", workflow)
-        for action, ref in actions:
-            self.assertRegex(ref, r"^[0-9a-f]{40}$", action)
-        self.assertLessEqual(
-            {"actions/checkout", "actions/setup-python"},
-            {action for action, _ in actions},
-        )
+        actions, unpinned = action_pins(workflow)
+        self.assertEqual(unpinned, [])
+        self.assertLessEqual({"actions/checkout", "actions/setup-python"}, actions)
         self.assertIn("python: [\"3.14\", \"3.15\"]", workflow)
         self.assertIn("python-version: '3.15'", workflow)
         for command in (
