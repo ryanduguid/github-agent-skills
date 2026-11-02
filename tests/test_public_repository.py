@@ -33,7 +33,8 @@ def action_pins(workflow):
         if "\\" in line or re.match(r"\s*(?:-\s+)?\?(?:\s|$)", line):
             unpinned.append(line.strip())
             continue
-        if not USES_FIELD.search(line):
+        code = re.split(r"[ \t]+#", line, maxsplit=1)[0]
+        if not USES_FIELD.search(code):
             continue
         match = PINNED_USE.fullmatch(line)
         if match and all(part not in (".", "..") for part in match.group(3).split("/")):
@@ -388,6 +389,14 @@ class WorkflowTests(unittest.TestCase):
     def test_action_pins_allow_dependabot_to_change_every_action_sha(self):
         bumped = re.sub(r"@[0-9a-f]{40}", "@" + "a" * 40, WORKFLOW)
         self.assertEqual(action_pins(bumped), action_pins(WORKFLOW))
+
+    def test_action_pins_ignore_inline_comment_key_examples(self):
+        for line in (
+            "name: CI # uses: owner/action@v1",
+            "run: echo ok\t# uses: owner/action@v1",
+        ):
+            with self.subTest(line=line):
+                self.assertEqual(action_pins(line), (set(), []))
 
     def test_workflow_has_read_only_permissions_and_required_checks(self):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
