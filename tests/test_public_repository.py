@@ -13,21 +13,30 @@ ROOT = Path(__file__).parents[1]
 WORKFLOW = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
 USES_FIELD = re.compile(r"""\buses['"]?\s*:""")
 PINNED_USE = re.compile(
-    r"""\s*(?:-\s+)?(['"]?)uses\1\s*:\s*(['"]?)([\w.-]+(?:/[\w.-]+)+)@[0-9a-f]{40}\2\s*"""
+    r"""\s*(?:-\s+)?(['"]?)uses\1\s*:\s*(['"]?)"""
+    r"([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*)"
+    r"@[0-9a-f]{40}\2(?:[ \t]+#[^\r\n]*)?[ \t]*"
 )
 
 
 def action_pins(workflow):
     """Return the actions that `uses` keys pin to a full commit SHA, and every
     line with a `uses` key that is not pinned that way, including forms this
-    check cannot read, such as a flow mapping. A comment is not a step."""
+    check cannot read, such as a flow mapping. A comment is not a step.
+
+    Backslashes and explicit YAML keys are refused throughout this workflow."""
     actions, unpinned = set(), []
     for line in workflow.splitlines():
-        code = line.split("#", 1)[0]
-        if not USES_FIELD.search(code):
+        if line.lstrip().startswith("#"):
             continue
-        match = PINNED_USE.fullmatch(code)
-        if match:
+        # shortcut: no escaped or explicit keys; use a YAML parser if needed.
+        if "\\" in line or re.match(r"\s*(?:-\s+)?\?(?:\s|$)", line):
+            unpinned.append(line.strip())
+            continue
+        if not USES_FIELD.search(line):
+            continue
+        match = PINNED_USE.fullmatch(line)
+        if match and all(part not in (".", "..") for part in match.group(3).split("/")):
             actions.add(match.group(3))
         else:
             unpinned.append(line.strip())
@@ -339,6 +348,7 @@ class WorkflowTests(unittest.TestCase):
             f"      - uses : owner/action@{sha}",
             f'      - "uses": owner/action@{sha}',
             "      # - uses: owner/action@v1",
+            r'      # "u\u0073es": owner/action@v1',
         ]
         self.assertEqual(action_pins("\n".join(pinned)), ({"owner/action", "owner/path/action"}, []))
         for line in (
@@ -354,6 +364,30 @@ class WorkflowTests(unittest.TestCase):
             f"      - {{uses: owner/action@{sha}}}",
         ):
             self.assertEqual(action_pins(line), (set(), [line.strip()]), line)
+
+    def test_action_pins_reject_scalar_suffixes_unsupported_keys_and_invalid_names(self):
+        sha = "3d3c42e5aac5ba805825da76410c181273ba90b1"
+        for line in (
+            f"      - uses: owner/action@{sha}#junk",
+            f"      - uses: 'owner/action@{sha}#junk'",
+            f'      - uses: "owner/action@{sha}#junk"',
+            r'      - "u\u0073es": owner/action@v1',
+            r'      - "\x75ses": owner/action@v1',
+            "      - ? uses\n        : owner/action@v1",
+            "      - ?\n          uses\n        : owner/action@v1",
+            f"      - uses: ./action@{sha}",
+            f"      - uses: café/action@{sha}",
+            f"      - uses: owner/café@{sha}",
+            f"      - uses: owner/../action@{sha}",
+        ):
+            with self.subTest(line=line):
+                actions, unpinned = action_pins(line)
+                self.assertEqual(actions, set())
+                self.assertTrue(unpinned)
+
+    def test_action_pins_allow_dependabot_to_change_every_action_sha(self):
+        bumped = re.sub(r"@[0-9a-f]{40}", "@" + "a" * 40, WORKFLOW)
+        self.assertEqual(action_pins(bumped), action_pins(WORKFLOW))
 
     def test_workflow_has_read_only_permissions_and_required_checks(self):
         workflow = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
