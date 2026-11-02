@@ -11,20 +11,24 @@ from scripts import check_public_files as public_files
 
 ROOT = Path(__file__).parents[1]
 WORKFLOW = (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8")
-PINNED_USE = re.compile(r"""\s*(?:-\s+)?uses:\s*(['"]?)([^@\s'"]+)@[0-9a-f]{40}\1\s*""")
+USES_FIELD = re.compile(r"""\buses['"]?\s*:""")
+PINNED_USE = re.compile(
+    r"""\s*(?:-\s+)?(['"]?)uses\1\s*:\s*(['"]?)([\w.-]+(?:/[\w.-]+)+)@[0-9a-f]{40}\2\s*"""
+)
 
 
 def action_pins(workflow):
-    """Return the actions that `uses:` lines pin to a full commit SHA, and every
-    `uses:` line that is not pinned that way. A comment is not a step."""
+    """Return the actions that `uses` keys pin to a full commit SHA, and every
+    line with a `uses` key that is not pinned that way, including forms this
+    check cannot read, such as a flow mapping. A comment is not a step."""
     actions, unpinned = set(), []
     for line in workflow.splitlines():
         code = line.split("#", 1)[0]
-        if "uses:" not in code:
+        if not USES_FIELD.search(code):
             continue
         match = PINNED_USE.fullmatch(code)
         if match:
-            actions.add(match.group(2))
+            actions.add(match.group(3))
         else:
             unpinned.append(line.strip())
     return actions, unpinned
@@ -332,6 +336,8 @@ class WorkflowTests(unittest.TestCase):
             f"        uses:  owner/action@{sha}",
             f"      - uses: 'owner/action@{sha}'",
             f'      - uses: "owner/path/action@{sha}"',
+            f"      - uses : owner/action@{sha}",
+            f'      - "uses": owner/action@{sha}',
             "      # - uses: owner/action@v1",
         ]
         self.assertEqual(action_pins("\n".join(pinned)), ({"owner/action", "owner/path/action"}, []))
@@ -339,8 +345,13 @@ class WorkflowTests(unittest.TestCase):
             "      - uses: owner/action",
             "      - uses:  owner/action@v1",
             "      - uses: owner/action@v1 # v1",
+            "      - uses : owner/action@v1",
+            '      - "uses": owner/action@v1',
+            "      - 'uses\": owner/action@v1",
             f"      - uses: owner/action@{sha[:-1]}",
             f"      - uses: 'owner/action@{sha}\"",
+            f"      - uses: action@{sha}",
+            f"      - {{uses: owner/action@{sha}}}",
         ):
             self.assertEqual(action_pins(line), (set(), [line.strip()]), line)
 
