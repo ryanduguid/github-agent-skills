@@ -69,7 +69,7 @@ validates the result. Do not edit the generated directory directly.
 
 For a project-local installation, copy the directory for the runtime you use
 into that project's corresponding discovery path. To keep a local clone as the
-source of truth, update `.claude/skills/`, rerun the synchroniser, and copy the
+source of truth, update `.claude/skills/`, rerun the synchroniser and copy the
 runtime directory again. Use only the runtime you need.
 
 ### Local plugin package
@@ -182,7 +182,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## Licence
 
-Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 two years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in NOTICE.
+Licensed under the Functional Source License, Version 1.1, ALv2 Future License (FSL-1.1-ALv2). You may use, modify and redistribute it for any purpose except a Competing Use as defined in LICENSE (making it available to others in a competing commercial product or service), and each version becomes available under Apache-2.0 2 years after it is made available. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you redistribute this work or build on it, keep the copyright notices in NOTICE.
 
 ---
 
