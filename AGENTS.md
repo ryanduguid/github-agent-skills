@@ -1,8 +1,8 @@
 # Agent instructions
 
-`.claude/skills/` is the canonical source for portable skills. This repository requires Python 3.14+. After every skill edit, run `python scripts/validate_skills.py --sync` to refresh the Codex copy in `.agents/skills/`.
+`.claude/skills/` is the canonical source for portable skills. The checks are the Rust command in `tools/github-skills`, built with the toolchain `rust-toolchain.toml` pins; the unit tests need Python 3.14+. After every skill edit, run `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync` to refresh the Codex copy in `.agents/skills/`.
 
-During incremental authoring, run `python scripts/validate_skills.py`; it validates the discovered approved subset and any existing generated copy. Before release, run `python scripts/validate_skills.py --strict` to require all 5 skills and the Codex copy.
+During incremental authoring, run `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`; it validates the discovered approved subset and any existing generated copy. Before release, run the same command with `--strict` to require all 5 skills, the Codex copy and a scenario for each skill.
 
 Before changing a skill, read [CONTRIBUTING.md](CONTRIBUTING.md). Edit the canonical
 `.claude/skills/` source, then synchronise; the Codex copy is generated.

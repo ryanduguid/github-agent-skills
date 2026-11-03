@@ -72,21 +72,21 @@ pub fn python_regex(pattern: &str, ignore_case: bool, multiline: bool) -> Regex 
         .expect("valid fixed Python-compatible pattern")
 }
 
-static PRIVATE_CONFIG: LazyLock<Regex> = LazyLock::new(|| {
+pub(crate) static PRIVATE_CONFIG: LazyLock<Regex> = LazyLock::new(|| {
     python_regex(
         r"(?:^|/)(?:\.env(?:\.[^/]+)?|\.netrc|\.npmrc|credentials(?:\.[^/]+)?|\.(?:ssh|aws)(?:/|$)|(?:home|Users)/[^/]+/\.config(?:/|$))",
         true,
         false,
     )
 });
-static CLIENT_DATA_PATH: LazyLock<Regex> = LazyLock::new(|| {
+pub(crate) static CLIENT_DATA_PATH: LazyLock<Regex> = LazyLock::new(|| {
     python_regex(
         r"(?:^|/)(?:clients?|customers?)(?:/|$)|(?:^|/)(?:client|customer)[_-](?:data|records?|export|files?)(?:[._-]|$)",
         true,
         false,
     )
 });
-static TEXT_RULES: LazyLock<Vec<(&str, Regex)>> = LazyLock::new(|| {
+pub(crate) static TEXT_RULES: LazyLock<Vec<(&str, Regex)>> = LazyLock::new(|| {
     vec![
         (
             "transcript-path",
@@ -158,8 +158,10 @@ static FENCED_COMMANDS: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"```(?:powershell|shell)\n([\s\S]*?)```", false, false));
 static VALIDATE_JOB: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"^  validate:\n((?:^(?:    .*)?$\n)+)", false, true));
+// Every single-line step command in the validate job, in order: the README lists
+// the same commands, so a contributor can run each check the job runs.
 static WORKFLOW_CHECK: LazyLock<Regex> =
-    LazyLock::new(|| python_regex(r"^ {8}run: (python .+)$", false, true));
+    LazyLock::new(|| python_regex(r"^ {8}run: (.+)$", false, true));
 static PERMISSIONS: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"^permissions:\n((?:^[ ]{2}.*\n)+)", false, true));
 

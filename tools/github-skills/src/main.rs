@@ -5,9 +5,9 @@ use std::{
     process::ExitCode,
 };
 
-const HELP: &str = "Usage: github-skills <validate-skills|check-public-files> [--root PATH] [--strict] [--sync] [--skill-digest NAME]\n\nLocal Rust candidate. The root defaults to the current directory.\n--strict, --sync and --skill-digest apply only to validate-skills.\n--skill-digest prints the skill digest line to record in a new run file\nfor approved skill NAME, after strict validation.\n";
+const HELP: &str = "Usage: github-skills <validate-skills|check-public-files> [--root PATH] [--strict] [--sync] [--skill-digest NAME]\n\nChecks this repository's skills and public files. The root defaults to the\ncurrent directory.\n--strict, --sync and --skill-digest apply only to validate-skills.\n--skill-digest prints the skill digest line to record in a new run file\nfor approved skill NAME, after strict validation.\n";
 
-/// Mirrors `validate_skills.py`: run notices and the digest line use stdout.
+/// Run notices and the digest line use stdout; failures use stderr.
 fn validate_skills(
     root: &Path,
     strict: bool,
@@ -21,6 +21,7 @@ fn validate_skills(
     if failures.is_empty() && strict {
         let notices;
         (failures, notices) = skills::check_runs(root)?;
+        failures.extend(skills::check_scenarios(root));
         for notice in notices {
             println!("{notice}");
         }

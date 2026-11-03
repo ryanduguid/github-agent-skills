@@ -29,8 +29,10 @@ generated copy in `.agents/skills/` serves Codex.
 
 ## Requirements
 
-Python 3.14+ is required. The repository uses the Python standard library; no
-package installation is needed.
+The skills are Markdown and need no installation. The repository checks need
+[rustup](https://rustup.rs/), which installs the Rust release pinned in
+`rust-toolchain.toml`, and Python 3.14+ for the unit tests, which use only the
+standard library.
 
 ## First use
 
@@ -55,17 +57,20 @@ and changed no files.
 git clone https://github.com/ryanduguid/github-agent-skills.git
 cd github-agent-skills
 python -m unittest discover -s tests -v
-python scripts/validate_skills.py --strict
-python scripts/check_public_files.py
+rustup toolchain install
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-public-files
 ```
 
 These are the checks the Validate workflow runs, in the same order. The Codex
-copy is tracked, so a fresh clone needs no synchronising step.
+copy is tracked, so a fresh clone needs no synchronising step. The checker is
+the Rust command in [`tools/github-skills`](tools/github-skills/README.md).
 
 ## Runtimes and installation
 
 `.claude/skills/` is the only canonical source, and Claude Code reads it in
-place. After changing a skill, run `python scripts/validate_skills.py --sync`;
+place. After changing a skill, run
+`cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync`;
 it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
 validates the result. Do not edit the generated directory directly.
 
@@ -106,11 +111,13 @@ than parsing YAML, so it refuses a value a parser could read differently, such
 as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
 indented continuation line.
 
-During authoring, run `python scripts/validate_skills.py`. Before sharing a
-change, run the Repository checks: the unit suite, the strict validator and
-the public-file check. `GATES.md` lists the same repository gate. CI also
-lints the Python files with a hash-pinned Ruff; [CONTRIBUTING.md](CONTRIBUTING.md)
-shows how to run it locally.
+During authoring, run
+`cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`.
+Before sharing a change, run the Repository checks: the unit suite, the strict
+validator and the public-file check. Strict validation also requires one
+scenario in `tests/scenarios/` for each skill. `GATES.md` lists the same
+repository gate. CI also lints the Python tests with a hash-pinned Ruff;
+[CONTRIBUTING.md](CONTRIBUTING.md) shows how to run it locally.
 
 ## Recorded runs
 
@@ -128,7 +135,8 @@ runs produced; they are not a promise that a rerun reproduces them.
 
 A run's results apply only to the skill files it ran against. New run files
 record that version as a skill digest line, which
-`python scripts/validate_skills.py --skill-digest <skill>` prints; record it in
+`cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --skill-digest <skill>`
+prints; record it in
 the control run too, so both runs of a pair name the same skill version. The
 digest (v1) is the SHA-256 of a manifest of every file under
 `.claude/skills/<skill>/`, so it covers `SKILL.md` and any scripts, references

@@ -22,10 +22,22 @@ directory.
 ### Recorded runs
 
 Run files can record a skill digest covering every file in the skill
-directory. `python scripts/validate_skills.py --skill-digest <skill>` prints
+directory. `github-skills validate-skills --skill-digest <skill>` prints
 the line to record, and `--strict` fails on a run whose digest no longer
 matches the skill files. Runs without a digest, which today is all of them, are
 listed rather than failed.
+
+### Rust checks
+
+The Rust command in `tools/github-skills` replaces `scripts/validate_skills.py`
+and `scripts/check_public_files.py`, with the same checks and failure messages;
+invalid arguments and processing errors exit 2. Run it with
+`cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- <command>`.
+Strict validation now also requires one scenario in `tests/scenarios/` for
+each skill, a rule the unit tests held before. The Validate workflow runs the
+Rust tests on Linux and Windows, measures their line coverage for Codecov and
+fuzzes the scanner weekly with cargo-fuzz instead of Atheris. The Python 3.14
+requirement now applies only to the unit tests.
 
 ## v0.1.0
 

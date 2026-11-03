@@ -4,13 +4,16 @@ Keep each skill focused, evidence-based, and explicit about its authority
 boundary. Edit only `.claude/skills/`, then regenerate the Codex copy:
 
 ```shell
-python scripts/validate_skills.py --sync
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync
 python -m unittest discover -s tests -v
-python scripts/validate_skills.py --strict
-python scripts/check_public_files.py
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-public-files
 ```
 
-CI also lints the Python files with Ruff, using the configuration in
+To change the checker itself, run the checks its
+[README](tools/github-skills/README.md) lists.
+
+CI also lints the Python tests with Ruff, using the configuration in
 `pyproject.toml`. To run the same check locally, install the hash-pinned
 linter and run it:
 

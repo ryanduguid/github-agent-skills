@@ -1,7 +1,7 @@
 # Tool configuration only. This repository is not a Python package.
 
 [tool.ruff]
-src = ["scripts", "tests", "fuzz"]
+src = ["tests"]
 target-version = "py314"
 
 [tool.ruff.lint]

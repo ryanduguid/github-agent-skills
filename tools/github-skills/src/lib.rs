@@ -1,4 +1,5 @@
-//! Native candidates for the repository's existing Python checks.
+//! The repository's skill validator, synchroniser and public-file checker.
+pub mod fuzz;
 pub mod public_files;
 pub mod skills;
 

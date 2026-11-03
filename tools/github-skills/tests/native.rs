@@ -1,15 +1,9 @@
+mod common;
+
+use common::{cli, skill, write};
 use github_skills::{public_files as p, skills as s};
 use serde_json::Value;
 use std::{fs, path::Path, process::Command};
-
-fn write(root: &Path, name: &str, bytes: &[u8]) {
-    let path = root.join(name);
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    fs::write(path, bytes).unwrap();
-}
-fn skill(name: &str) -> Vec<u8> {
-    format!("---\nname: {name}\ndescription: Use when testing.\n---\n# Skill\n").into_bytes()
-}
 
 #[test]
 fn frozen_original_scanner_and_decoder_oracles() {
@@ -395,6 +389,83 @@ fn quick_start_and_permissions_contract() {
 }
 
 #[test]
+fn quick_start_lists_every_command_the_validate_job_runs() {
+    let workflow = "jobs:\n  validate:\n    steps:\n      - name: Unit tests\n        run: python -m unittest discover -s tests -v\n      - name: Strict validation\n        run: cargo run --locked -- validate-skills --strict\n";
+    let readme = |commands: &str| {
+        format!(
+            "## Repository checks\n```shell\ngit clone {}\ncd {}\n{commands}```\n",
+            p::CLONE_URL,
+            p::REPOSITORY_NAME
+        )
+    };
+    let unit_tests = "python -m unittest discover -s tests -v\n";
+    let both = format!("{unit_tests}cargo run --locked -- validate-skills --strict\n");
+    assert!(
+        p::quick_start_failures(&readme(&both), workflow)
+            .unwrap()
+            .is_empty()
+    );
+    // A README that drops the native check no longer matches the workflow.
+    assert_eq!(
+        p::quick_start_failures(&readme(unit_tests), workflow)
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn strict_validation_requires_one_scenario_per_skill() {
+    let root = tempfile::tempdir().unwrap();
+    for name in s::APPROVED_NAMES {
+        write(
+            root.path(),
+            &format!("{}/{name}/SKILL.md", s::CANONICAL),
+            &skill(name),
+        );
+    }
+    assert!(s::sync(root.path()).unwrap().is_empty());
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(1));
+    let missing: Vec<_> = s::APPROVED_NAMES
+        .iter()
+        .map(|name| format!("tests/scenarios: missing scenario for skill '{name}'"))
+        .collect();
+    assert_eq!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .lines()
+            .collect::<Vec<_>>(),
+        missing
+    );
+    for name in s::APPROVED_NAMES {
+        write(
+            root.path(),
+            &format!("tests/scenarios/{name}.md"),
+            b"# Scenario\n",
+        );
+    }
+    write(root.path(), "tests/scenarios/notes.txt", b"not a scenario");
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(0));
+    assert!(output.stderr.is_empty());
+    write(
+        root.path(),
+        "tests/scenarios/retired-skill.md",
+        b"# Scenario\n",
+    );
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap(),
+        "tests/scenarios/retired-skill.md: names no approved skill\n"
+    );
+    // Incremental authoring does not require the scenarios.
+    let output = cli(root.path(), &["validate-skills"]);
+    assert_eq!(output.status.code(), Some(0));
+}
+
+#[test]
 fn cli_uses_explicit_root_and_reports_failures_without_stdout() {
     let root = tempfile::tempdir().unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_github-skills"))
@@ -442,6 +513,53 @@ fn root_operand_cannot_consume_an_option() {
         .unwrap();
     assert_eq!(output.status.code(), Some(0));
     assert!(output.stdout.is_empty() && output.stderr.is_empty());
+}
+
+#[test]
+fn cli_help_version_and_usage_errors() {
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_github-skills"))
+            .args(args)
+            .output()
+            .unwrap()
+    };
+    let output = run(&[]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .starts_with("Usage: github-skills")
+    );
+    for args in [
+        ["--help"].as_slice(),
+        &["-h"],
+        &["validate-skills", "--help"],
+        &["check-public-files", "-h"],
+    ] {
+        let output = run(args);
+        assert_eq!(output.status.code(), Some(0), "{args:?}");
+        assert!(
+            String::from_utf8(output.stdout)
+                .unwrap()
+                .starts_with("Usage: github-skills")
+        );
+        assert!(output.stderr.is_empty());
+    }
+    let output = run(&["--version"]);
+    assert_eq!(output.status.code(), Some(0));
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        format!("github-skills {}\n", env!("CARGO_PKG_VERSION"))
+    );
+    for args in [
+        ["missing-command"].as_slice(),
+        &["validate-skills", "--unknown"],
+    ] {
+        let output = run(args);
+        assert_eq!(output.status.code(), Some(2), "{args:?}");
+        assert!(output.stdout.is_empty());
+    }
 }
 
 #[test]
@@ -696,15 +814,6 @@ fn recorded_run_suffix_follows_the_platform_glob() {
     assert_eq!(found, usize::from(cfg!(windows)));
 }
 
-fn cli(root: &Path, args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_github-skills"))
-        .args(args)
-        .arg("--root")
-        .arg(root)
-        .output()
-        .unwrap()
-}
-
 #[test]
 fn cli_strict_checks_runs_and_prints_the_digest_line() {
     let root = tempfile::tempdir().unwrap();
@@ -721,6 +830,11 @@ fn cli_strict_checks_runs_and_prints_the_digest_line() {
             root.path(),
             &format!("{}/{skill_name}/SKILL.md", s::CANONICAL),
             &skill(skill_name),
+        );
+        write(
+            root.path(),
+            &format!("{}/{skill_name}.md", s::SCENARIOS),
+            b"# Scenario\n",
         );
     }
     assert!(s::sync(root.path()).unwrap().is_empty());
