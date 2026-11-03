@@ -88,6 +88,8 @@ jobs:
 
   # The checks in tools/github-skills: formatting, Clippy, the tests and the
   # release build, on Linux and on Windows, where links are NTFS junctions.
+  # On Linux it also lints the fuzz target, which has its own workspace, so a
+  # change that breaks it fails here rather than in the weekly fuzz run.
   native:
     name: native (${{ matrix.os }})
     timeout-minutes: 30
@@ -118,6 +120,8 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - run: cargo build --locked --release
+      - if: runner.os == 'Linux'
+        run: cargo clippy --manifest-path fuzz/Cargo.toml --locked --all-targets -- -D warnings
 
   # Measures the native tests' line coverage for the Codecov badge. It runs
   # apart from the native job so that job's commands stay unchanged.

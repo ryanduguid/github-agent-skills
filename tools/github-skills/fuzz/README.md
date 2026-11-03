@@ -16,7 +16,8 @@ cargo +nightly-2026-10-15 fuzz run --target x86_64-unknown-linux-gnu public_file
 The cargo-fuzz release binary is built for musl and defaults to that target,
 where the address sanitiser cannot build, so the command names the glibc
 target. CI runs the target weekly and on demand, with read-only repository
-access and a 20-minute timeout. `tests/fuzz_harness.rs` replays the checked-in
-corpus with `cargo test` on Linux and Windows, and proves that a failed
+access and a 20-minute timeout, and lints it with Clippy on every pull request.
+`tests/fuzz_harness.rs` replays the checked-in corpus with `cargo test` on
+Linux and Windows, and proves that a failed
 invariant or a scanner panic reaches the caller. A successful run is bounded
 evidence, not proof that every input is handled.
