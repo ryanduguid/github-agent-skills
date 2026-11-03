@@ -489,6 +489,17 @@ fn the_readme_lists_the_validate_job_checks_and_any_change_is_caught() {
     let readme = github_skills::read_text(&repository.join("README.md")).unwrap();
     let workflow =
         github_skills::read_text(&repository.join(".github/workflows/validate.yml")).unwrap();
+    // The validate job is the gate, so a check moved out of it must fail here too.
+    let checker = "cargo run --manifest-path tools/github-skills/Cargo.toml --locked --";
+    assert_eq!(
+        p::supported_quick_start(&workflow).unwrap()[2..],
+        [
+            "python -m unittest discover -s tests -v".to_owned(),
+            "rustup toolchain install".to_owned(),
+            format!("{checker} validate-skills --strict"),
+            format!("{checker} check-public-files"),
+        ]
+    );
     assert!(
         p::quick_start_failures(&readme, &workflow)
             .unwrap()
