@@ -21,7 +21,7 @@ updates:
       # unapproved SHA to the portfolio audit without changing the workflow,
       # so re-pin by hand instead.
       - dependency-name: "ryanduguid/release-policy/.github/workflows/*"
-  # The hash-pinned dev tools in requirements-*.txt: ruff, coverage and atheris.
+  # The hash-pinned dev tool in requirements-lint.txt: ruff.
   - package-ecosystem: pip
     directory: /
     schedule:

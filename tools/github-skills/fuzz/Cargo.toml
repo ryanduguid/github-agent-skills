@@ -1,0 +1,23 @@
+[package]
+name = "github-skills-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+github-skills = { path = ".." }
+
+# A separate workspace, so the checker's own build never compiles the fuzzer.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "public_files"
+path = "fuzz_targets/public_files.rs"
+test = false
+doc = false
+bench = false

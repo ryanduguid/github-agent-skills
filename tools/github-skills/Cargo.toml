@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.99"
 license = "FSL-1.1-ALv2"
-description = "Native candidate for the portable GitHub skill repository checks"
+description = "Skill validator, synchroniser and public-file checker for the portable GitHub skills"
 publish = false
 
 [dependencies]

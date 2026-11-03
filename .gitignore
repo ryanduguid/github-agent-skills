@@ -3,3 +3,6 @@ __pycache__/
 .superpowers/sdd/*/raw/
 /tools/github-skills/target/
 /evals/results/
+/tools/github-skills/fuzz/target/
+/tools/github-skills/fuzz/artifacts/
+/tools/github-skills/coverage-rust.lcov

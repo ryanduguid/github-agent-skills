@@ -71,28 +71,23 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
+      # Each single-line run below is a README Repository checks command, in
+      # order; check-public-files fails when the two lists differ.
       - name: Unit tests
         run: python -m unittest discover -s tests -v
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
       - name: Strict validation
-        run: python scripts/validate_skills.py --strict
+        run: cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
       - name: Check public files
-        run: python scripts/check_public_files.py
-  windows-sync-safety:
-    timeout-minutes: 30
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.15'
-          allow-prereleases: true
-      - name: Exercise NTFS junction safety
-        run: python -m unittest tests.test_sync_skills.SyncSkillsTests -v
+        run: cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-public-files
 
-  # The native Rust candidate in tools/github-skills. The Python scripts stay
-  # the live checks; this job keeps the candidate building and in parity.
+  # removed-jobs: windows-sync-safety
+  # The native job's Windows leg runs the NTFS junction safety tests that
+  # windows-sync-safety ran with Python.
+
+  # The checks in tools/github-skills: formatting, Clippy, the tests and the
+  # release build, on Linux and on Windows, where links are NTFS junctions.
   native:
     name: native (${{ matrix.os }})
     timeout-minutes: 30
@@ -111,9 +106,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.14"
       - name: Install the pinned toolchain
         run: rustup toolchain install
       - name: Restore the dependency build cache
@@ -126,44 +118,39 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - run: cargo build --locked --release
-      - name: Build the contract probe
-        run: cargo build --locked --examples
-      - name: Replay the original Python assertions against the native candidate
-        working-directory: .
-        run: >-
-          python tools/github-skills/tests/original_contract.py --root .
-          --probe tools/github-skills/target/debug/examples/contract_probe
-          --binary tools/github-skills/target/debug/github-skills
-          --record "$RUNNER_TEMP/native-contract-results.json"
 
-  # Measures the unit tests' branch coverage for the Codecov badge. It runs
-  # apart from the other jobs so their commands stay unchanged.
+  # Measures the native tests' line coverage for the Codecov badge. It runs
+  # apart from the native job so that job's commands stay unchanged.
   coverage:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: tools/github-skills
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: Install the pinned toolchain and its coverage tools
+        run: |
+          rustup toolchain install
+          rustup component add llvm-tools
+      - name: Install the pinned cargo-llvm-cov
+        uses: taiki-e/install-action@5488ac5a951645ce95062214902ac4b6bc1a1037 # v2.87.32
         with:
-          python-version: "3.14"
-          allow-prereleases: true
-      - name: Install the hash-pinned coverage tool
-        run: python -m pip install --disable-pip-version-check --require-hashes --no-deps --only-binary=coverage --requirement requirements-coverage.txt
-      - name: Run the unit tests under branch coverage
-        run: python -m coverage run --branch --source=scripts -m unittest discover -s tests
-      - name: Report coverage
-        run: python -m coverage report --fail-under=100
-      - name: Write coverage for Codecov
-        run: python -m coverage xml -o coverage-codecov.xml
+          tool: cargo-llvm-cov@0.9.1
+          fallback: none
+      # The floor is the measured line coverage, rounded down (FLOOR_PENDING).
+      # Raise it with the tests, never lower it to pass.
+      - name: Run the native tests with line coverage
+        run: cargo llvm-cov --locked --lcov --output-path coverage-rust.lcov --fail-under-lines 80
       - name: Keep the coverage report for the Codecov upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-codecov
-          path: coverage-codecov.xml
+          path: tools/github-skills/coverage-rust.lcov
           retention-days: 1
 
   # The upload runs apart from the tests so the OIDC token is never available
@@ -188,7 +175,7 @@ jobs:
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           use_oidc: true
-          files: coverage-codecov.xml
+          files: coverage-rust.lcov
           disable_search: true
           fail_ci_if_error: true
 
@@ -198,26 +185,37 @@ jobs:
     # runs weekly and on demand rather than on pull requests or pushes.
     # validate-gates exempts this job, so a skipped run leaves main green.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    timeout-minutes: 5
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: tools/github-skills
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.14"
+      # libFuzzer instrumentation needs a nightly compiler; the date is pinned.
       - name: Install the pinned fuzzer
-        run: >-
-          python -m pip install --require-hashes --only-binary :all:
-          --requirement requirements-fuzz.txt
+        env:
+          CARGO_FUZZ_VERSION: "0.13.2"
+          # install-action has no cargo-fuzz manifest, so the release asset is
+          # checked against GitHub's digest for it at pin time.
+          CARGO_FUZZ_SHA256: "b5b704018b63e0f151c17a057ac53b5111e1db545d1b9f72fee79f08a545931c"
+        run: |
+          set -euo pipefail
+          rustup toolchain install nightly-2026-10-15 --profile minimal
+          asset="cargo-fuzz-${CARGO_FUZZ_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          curl --proto '=https' --proto-redir '=https' -sSLO "https://github.com/rust-fuzz/cargo-fuzz/releases/download/${CARGO_FUZZ_VERSION}/$asset"
+          echo "${CARGO_FUZZ_SHA256}  $asset" | sha256sum --check
+          tar -xzf "$asset" -C "${CARGO_HOME:-$HOME/.cargo}/bin" cargo-fuzz
+      # The cargo-fuzz release binary is built for musl and defaults to that
+      # target, where the address sanitiser cannot build; fuzz on glibc instead.
       - name: Fuzz the scanner
         run: >-
-          python -m fuzz.public_files fuzz/corpus
+          cargo +nightly-2026-10-15 fuzz run --target x86_64-unknown-linux-gnu public_files fuzz/corpus --
           -max_total_time=60 -max_len=4096 -timeout=2 -rss_limit_mb=1024
 
   validate-gates:
@@ -225,7 +223,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, validate, windows-sync-safety, native, coverage]
+    needs: [lint, validate, native, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

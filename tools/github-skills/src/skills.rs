@@ -17,6 +17,8 @@ pub const APPROVED_NAMES: [&str; 5] = [
 pub const CANONICAL: &str = ".claude/skills";
 pub const RUNTIME: &str = ".agents/skills";
 pub const RUN_DIRECTORIES: [&str; 2] = ["validation/baselines", "validation/forward"];
+// Each canonical skill has one scenario, named after it, that its recorded runs use.
+pub const SCENARIOS: &str = "tests/scenarios";
 // A recorded run names its skill by file stem and records the skill digest as
 // "- Skill digest v1:" followed by the backquoted digest, on the same line or
 // the next.
@@ -30,8 +32,8 @@ static RUN_ASSESSOR: LazyLock<Regex> =
     LazyLock::new(|| crate::public_files::python_regex(r"^- Assessed by:[ \t]+\S.*$", false, true));
 static RUN_ASSESSOR_LABEL: LazyLock<Regex> =
     LazyLock::new(|| crate::public_files::python_regex(r"^- Assessed by\b", false, true));
-// Limits from https://agentskills.io/specification, as scripts/validate_skills.py
-// applies them.
+// Limits from https://agentskills.io/specification. The name needs no check of
+// its own: it must equal its directory, an approved name a test holds to them.
 const MAX_DESCRIPTION: usize = 1024;
 const MAX_COMPATIBILITY: usize = 500;
 const UNSAFE_PLAIN_START: &str = "!\"#%&'*>?@[]`{|},";
@@ -348,6 +350,7 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
         }
         valid.push((name.into_owned(), path));
     }
+    // Strict is the max cape: every approved skill, not most of them.
     if strict {
         let present: BTreeSet<_> = skills
             .iter()
@@ -482,26 +485,26 @@ pub fn skill_digest(directory: &Path) -> io::Result<String> {
     Ok(hex(&Sha256::digest(manifest)))
 }
 
-/// `Path.glob("*.txt")` within one directory, in `sorted()` order.
-fn recorded_runs(directory: &Path) -> Vec<PathBuf> {
+/// `Path.glob("*<suffix>")` within one directory, in `sorted()` order.
+fn with_suffix(directory: &Path, suffix: &str) -> Vec<PathBuf> {
     // pathlib's glob yields nothing for a directory it cannot list.
     let Ok(children) = entries(directory) else {
         return vec![];
     };
-    let mut runs: Vec<_> = children
+    let mut found: Vec<_> = children
         .into_iter()
         .filter(|path| {
             let name = path.file_name().unwrap().to_string_lossy();
             // pathlib matches case-insensitively on Windows.
             if cfg!(windows) {
-                name.to_ascii_lowercase().ends_with(".txt")
+                name.to_ascii_lowercase().ends_with(suffix)
             } else {
-                name.ends_with(".txt")
+                name.ends_with(suffix)
             }
         })
         .collect();
-    runs.sort_by_key(|path| path_order(path));
-    runs
+    found.sort_by_key(|path| path_order(path));
+    found
 }
 
 fn collect_matches(
@@ -517,7 +520,7 @@ pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
     let mut notices = Vec::new();
     let mut current = BTreeMap::new();
     for directory in RUN_DIRECTORIES {
-        for run in recorded_runs(&root.join(directory)) {
+        for run in with_suffix(&root.join(directory), ".txt") {
             let name = relative(&run, root);
             let stem = run.file_stem().unwrap().to_string_lossy().into_owned();
             if !APPROVED_NAMES.contains(&stem.as_str()) {
@@ -576,6 +579,29 @@ pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
         }
     }
     Ok((failures, notices))
+}
+
+/// Failures for an approved skill with no scenario of the same name, and for a
+/// scenario that names no approved skill. Strict validation runs first, so the
+/// canonical tree then holds exactly the approved skills.
+pub fn check_scenarios(root: &Path) -> Vec<String> {
+    let scenarios = with_suffix(&root.join(SCENARIOS), ".md");
+    let stem = |path: &PathBuf| path.file_stem().unwrap().to_string_lossy().into_owned();
+    let names: BTreeSet<_> = scenarios.iter().map(stem).collect();
+    let mut failures: Vec<_> = APPROVED_NAMES
+        .iter()
+        .filter(|name| !names.contains(**name))
+        .map(|name| format!("{SCENARIOS}: missing scenario for skill '{name}'"))
+        .collect();
+    for scenario in &scenarios {
+        if !APPROVED_NAMES.contains(&stem(scenario).as_str()) {
+            failures.push(format!(
+                "{}: names no approved skill",
+                relative(scenario, root)
+            ));
+        }
+    }
+    failures
 }
 
 pub fn sync(root: &Path) -> io::Result<Vec<String>> {
