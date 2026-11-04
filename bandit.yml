@@ -1,0 +1,6 @@
+# Codacy runs Bandit with this file.
+#
+# The tests run argument-list subprocess calls on purpose, so they are
+# excluded. Bandit skips every file whose path contains this name.
+exclude_dirs:
+  - tests

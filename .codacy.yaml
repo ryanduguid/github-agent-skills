@@ -1,0 +1,24 @@
+---
+# Opengrep's subprocess audit rules fire on the Python tests in tests/, which
+# run argument-list commands on purpose; the Rust tests and fuzz harness under
+# tools/github-skills are test code too. Bandit's test exclusion lives in
+# bandit.yml, which Codacy reads for that tool.
+#
+# Lizard and Prospector measure function and file size and complexity. Tests
+# are long by design, one case per assertion block, and Cargo.lock files are
+# generated, so neither is measured; production code still is.
+engines:
+  opengrep:
+    exclude_paths:
+      - "tests/**"
+      - "**/tests/**"
+      - "**/fuzz/**"
+  lizard:
+    exclude_paths:
+      - "tests/**"
+      - "**/tests/**"
+      - "**/fuzz/**"
+      - "**/Cargo.lock"
+  prospector:
+    exclude_paths:
+      - "tests/**"
