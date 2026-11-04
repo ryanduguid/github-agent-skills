@@ -35,7 +35,10 @@ Unicode 18.0 Default_Ignorable_Code_Point, which includes every Bidi_Control
 character, the soft hyphen, U+FEFF anywhere and the tag block. The failure
 names the first such character's code point, line and column; lines end at LF,
 CR or CRLF, and columns count code points from 1. The retired Python validator
-had no such check, and it runs before the frontmatter checks.
+had no such check, and it runs before the frontmatter checks. Skill
+instructions are plain text, so an emoji built with U+200D ZERO WIDTH JOINER,
+U+FE0F VARIATION SELECTOR-16 or tag characters, such as a family emoji or
+Scotland's flag, fails too; an emoji without them passes.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is

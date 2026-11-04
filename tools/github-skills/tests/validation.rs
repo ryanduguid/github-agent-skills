@@ -223,6 +223,18 @@ fn hidden_characters_are_refused_with_their_position() {
         check(&format!("{clean}Hello{smuggled}\n")),
         hidden('\u{e0068}', 7, 6)
     );
+    // So do emoji built with a zero width joiner, VARIATION SELECTOR-16 or tag
+    // characters, such as Scotland's flag; skill instructions are plain text.
+    for (emoji, c) in [
+        ("\u{1f469}\u{200d}\u{1f4bb}", '\u{200d}'),
+        ("\u{26a0}\u{fe0f}", '\u{fe0f}'),
+        (
+            "\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}",
+            '\u{e0067}',
+        ),
+    ] {
+        assert_eq!(check(&format!("{clean}{emoji}\n")), hidden(c, 7, 2));
+    }
     // Reported before the frontmatter checks it would otherwise mislead.
     assert_eq!(
         check(&clean.replacen(NAME, &format!("{NAME}\u{200b}"), 1)),

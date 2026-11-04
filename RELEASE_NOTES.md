@@ -26,6 +26,9 @@ bidirectional control character (Trojan Source, CVE-2021-42574), meaning any
 Unicode 18.0 Default_Ignorable_Code_Point, and names the line, column and code
 point of the first one. A leading byte order mark, which
 was already refused as missing frontmatter delimiters, is now reported this way.
+Skill instructions are plain text, so an emoji built with a zero width joiner,
+VARIATION SELECTOR-16 or tag characters, such as a family emoji or a
+subdivision flag, also fails.
 
 ### Recorded runs
 
