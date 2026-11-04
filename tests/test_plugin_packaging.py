@@ -19,7 +19,7 @@ class PluginPackagingTests(unittest.TestCase):
             self.assertEqual(claude[field], codex[field], field)
         for plugin in (claude, codex):
             self.assertEqual(plugin["name"], "github-agent-skills")
-            self.assertEqual(plugin["license"], "FSL-1.1-ALv2")
+            self.assertEqual(plugin["license"], "LicenseRef-Duguid-Public-Attribution-1.0")
             self.assertEqual(plugin["skills"].rstrip("/"), "./.claude/skills")
             self.assertTrue((ROOT / plugin["skills"]).is_dir())
             self.assertNotIn("mcpServers", plugin)

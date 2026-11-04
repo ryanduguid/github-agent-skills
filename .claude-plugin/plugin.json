@@ -5,7 +5,7 @@
   "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
   "author": { "name": "Ryan Duguid" },
   "repository": "https://github.com/ryanduguid/github-agent-skills",
-  "license": "FSL-1.1-ALv2",
+  "license": "LicenseRef-Duguid-Public-Attribution-1.0",
   "keywords": ["github", "agent-skills", "claude-code", "codex"],
   "skills": "./.claude/skills"
 }
