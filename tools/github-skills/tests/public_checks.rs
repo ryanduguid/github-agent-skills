@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: FSL-1.1-ALv2
+// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
 //! Public-file scanner and `check-public-files` contracts, ported from the
 //! retired tests/test_public_repository.py. Unsafe sample text is split with

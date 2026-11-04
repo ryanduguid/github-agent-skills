@@ -18,7 +18,7 @@
         "./.claude/skills/github-release-prep",
         "./.claude/skills/github-repository-audit"
       ],
-      "license": "FSL-1.1-ALv2"
+      "license": "LicenseRef-Duguid-Public-Attribution-1.0"
     }
   ]
 }

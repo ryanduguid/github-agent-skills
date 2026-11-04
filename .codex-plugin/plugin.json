@@ -1,7 +1,7 @@
 {
   "name": "github-agent-skills",
   "version": "0.1.1",
-  "license": "FSL-1.1-ALv2",
+  "license": "LicenseRef-Duguid-Public-Attribution-1.0",
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "author": { "name": "Ryan Duguid" },
   "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",

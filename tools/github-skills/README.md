@@ -114,5 +114,5 @@ list and the check together.
 
 [`fuzz/`](fuzz/README.md) holds a cargo-fuzz target for the scanner.
 
-FSL-1.1-ALv2, as the repository. Retain its `LICENSE` and `NOTICE` when
+the Ryan Duguid Public Attribution Licence 1.0, as the repository. Retain its `LICENSE` and `NOTICE` when
 redistributing.
