@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 """Local manifests discover the canonical five skills without adding runtime tools."""
 
 import json
