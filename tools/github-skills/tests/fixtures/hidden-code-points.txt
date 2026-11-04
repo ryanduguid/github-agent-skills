@@ -1,0 +1,39 @@
+# The code points validate-skills must refuse in a SKILL.md, read by
+# hidden_characters_cover_unicode_default_ignorables in tests/validation.rs.
+# Data lines are copied unchanged, without their comments, from the Unicode
+# Character Database 18.0.0 (https://www.unicode.org/Public/18.0.0/ucd/), read
+# 4 November 2026: Default_Ignorable_Code_Point from
+# DerivedCoreProperties-18.0.0.txt (Date: 2026-08-07, 16:19:42 GMT) and
+# Bidi_Control from PropList-18.0.0.txt (Date: 2026-08-07, 16:20:14 GMT).
+# © 2026 Unicode®, Inc. Terms of use: https://www.unicode.org/terms_of_use.html
+00AD          ; Default_Ignorable_Code_Point
+034F          ; Default_Ignorable_Code_Point
+061C          ; Default_Ignorable_Code_Point
+115F..1160    ; Default_Ignorable_Code_Point
+17B4..17B5    ; Default_Ignorable_Code_Point
+180B..180D    ; Default_Ignorable_Code_Point
+180E          ; Default_Ignorable_Code_Point
+180F          ; Default_Ignorable_Code_Point
+200B..200F    ; Default_Ignorable_Code_Point
+202A..202E    ; Default_Ignorable_Code_Point
+2060..2064    ; Default_Ignorable_Code_Point
+2065          ; Default_Ignorable_Code_Point
+2066..206F    ; Default_Ignorable_Code_Point
+3164          ; Default_Ignorable_Code_Point
+FE00..FE0F    ; Default_Ignorable_Code_Point
+FEFF          ; Default_Ignorable_Code_Point
+FFA0          ; Default_Ignorable_Code_Point
+FFF0..FFF8    ; Default_Ignorable_Code_Point
+1BCA0..1BCA3  ; Default_Ignorable_Code_Point
+1D173..1D17A  ; Default_Ignorable_Code_Point
+E0000         ; Default_Ignorable_Code_Point
+E0001         ; Default_Ignorable_Code_Point
+E0002..E001F  ; Default_Ignorable_Code_Point
+E0020..E007F  ; Default_Ignorable_Code_Point
+E0080..E00FF  ; Default_Ignorable_Code_Point
+E0100..E01EF  ; Default_Ignorable_Code_Point
+E01F0..E0FFF  ; Default_Ignorable_Code_Point
+061C          ; Bidi_Control
+200E..200F    ; Bidi_Control
+202A..202E    ; Bidi_Control
+2066..2069    ; Bidi_Control

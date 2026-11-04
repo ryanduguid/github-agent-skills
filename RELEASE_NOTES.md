@@ -22,8 +22,9 @@ directory.
 ### Hidden characters
 
 `validate-skills` refuses a `SKILL.md` containing an invisible or
-bidirectional control character (Trojan Source, CVE-2021-42574) and names the
-line, column and code point of the first one. A leading byte order mark, which
+bidirectional control character (Trojan Source, CVE-2021-42574), meaning any
+Unicode 18.0 Default_Ignorable_Code_Point, and names the line, column and code
+point of the first one. A leading byte order mark, which
 was already refused as missing frontmatter delimiters, is now reported this way.
 
 ### Recorded runs

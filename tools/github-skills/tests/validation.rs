@@ -171,8 +171,8 @@ fn hidden_characters_are_refused_with_their_position() {
     // Six lines, so the body text below starts on line 7.
     let clean = skill_text(NAME, "assessing a repository");
     assert!(check(&format!("{clean}Run it now.\n")).is_empty());
-    // Neighbours of the refused ranges, and the emoji variation selector.
-    for c in ['\u{200a}', '\u{2010}', '\u{205f}', '\u{fe0f}', 'é'] {
+    // Neighbours of the refused ranges.
+    for c in ['\u{200a}', '\u{2010}', '\u{205f}', 'é'] {
         assert!(
             check(&format!("{clean}Run it{c} now.\n")).is_empty(),
             "{c:?}"
@@ -180,7 +180,9 @@ fn hidden_characters_are_refused_with_their_position() {
     }
     // Both ends of each class: the Arabic letter mark, zero-width characters and
     // directional marks, embeddings and overrides, the word joiner and invisible
-    // operators, isolates, the byte order mark and the tag block.
+    // operators, isolates, the byte order mark and the tag block. Then the soft
+    // hyphen, combining grapheme joiner, Mongolian vowel separator and variation
+    // selectors, which are as invisible.
     for c in [
         '\u{61c}',
         '\u{200b}',
@@ -194,6 +196,12 @@ fn hidden_characters_are_refused_with_their_position() {
         '\u{feff}',
         '\u{e0000}',
         '\u{e007f}',
+        '\u{ad}',
+        '\u{34f}',
+        '\u{180e}',
+        '\u{fe0f}',
+        '\u{e0100}',
+        '\u{e01ef}',
     ] {
         assert_eq!(check(&format!("{clean}Run it{c} now.\n")), hidden(c, 7, 7));
     }
@@ -221,6 +229,38 @@ fn hidden_characters_are_refused_with_their_position() {
         hidden('\u{200b}', 2, 7 + NAME.len())
     );
     assert_eq!(check(&format!("\u{feff}{clean}")), hidden('\u{feff}', 1, 1));
+}
+
+#[test]
+fn hidden_characters_cover_unicode_default_ignorables() {
+    // Listed code points a skill may still use. Empty: skill instructions are
+    // plain text, and no skill needs one.
+    const ALLOWED: [char; 0] = [];
+    let mut ranges = Vec::new();
+    for line in include_str!("fixtures/hidden-code-points.txt").lines() {
+        if line.starts_with('#') {
+            continue;
+        }
+        let range = line.split(';').next().unwrap().trim();
+        let (first, last) = range.split_once("..").unwrap_or((range, range));
+        let code = |hex| u32::from_str_radix(hex, 16).unwrap();
+        ranges.push(code(first)..=code(last));
+    }
+    // 4,174 Default_Ignorable_Code_Point and 12 Bidi_Control code points.
+    assert_eq!(
+        ranges.iter().map(|r| r.clone().count()).sum::<usize>(),
+        4186
+    );
+    // Every listed character is refused and every other one is not.
+    for c in '\0'..=char::MAX {
+        let listed = ranges.iter().any(|r| r.contains(&u32::from(c)));
+        assert_eq!(
+            s::is_hidden(c),
+            listed && !ALLOWED.contains(&c),
+            "U+{:04X}",
+            u32::from(c)
+        );
+    }
 }
 
 #[test]
