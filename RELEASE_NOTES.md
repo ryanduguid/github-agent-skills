@@ -19,6 +19,13 @@ Agent Skills specification, refuses frontmatter values a YAML parser could read
 differently, and fails on a relative reference that is not a file in the skill
 directory.
 
+### Hidden characters
+
+`validate-skills` refuses a `SKILL.md` containing an invisible or
+bidirectional control character (Trojan Source, CVE-2021-42574) and names the
+line, column and code point of the first one. A leading byte order mark, which
+was already refused as missing frontmatter delimiters, is now reported this way.
+
 ### Recorded runs
 
 Run files can record a skill digest covering every file in the skill

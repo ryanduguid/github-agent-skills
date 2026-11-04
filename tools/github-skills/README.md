@@ -28,6 +28,15 @@ run that records a skill digest must match the current skill, and
 Add `--skill-digest NAME` to print the digest line for a new run file after
 strict validation.
 
+Both modes refuse a `SKILL.md` that contains a character which renders as
+nothing or reorders the text around it, so a reviewer could read a different
+skill from the one an agent loads (Trojan Source, CVE-2021-42574): U+061C,
+U+200B to U+200F, U+202A to U+202E, U+2060 to U+2064, U+2066 to U+2069,
+U+FEFF anywhere and U+E0000 to U+E007F. The failure names the first such
+character's code point, line and column; lines end at LF, CR or CRLF, and
+columns count code points from 1. The retired Python validator had no such
+check, and it runs before the frontmatter checks.
+
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is
 present.

@@ -69,6 +69,37 @@ static PLACEHOLDER: LazyLock<Regex> = LazyLock::new(|| {
     )
 });
 
+/// Whether a character renders as nothing or reorders the text around it, so a
+/// reviewer can read a different skill from the one an agent loads (Trojan
+/// Source, CVE-2021-42574): the Unicode 18.0 Bidi_Control characters, the zero
+/// width space and joiners, the word joiner and invisible operators, U+FEFF
+/// anywhere (a leading byte order mark already broke the frontmatter check) and
+/// the tag block, which can spell out hidden ASCII.
+fn hidden(c: char) -> bool {
+    matches!(
+        c,
+        '\u{61c}'
+            | '\u{200b}'..='\u{200f}'
+            | '\u{202a}'..='\u{202e}'
+            | '\u{2060}'..='\u{2064}'
+            | '\u{2066}'..='\u{2069}'
+            | '\u{feff}'
+            | '\u{e0000}'..='\u{e007f}'
+    )
+}
+
+/// The first hidden character in text from `read_text`, whose lines end in LF,
+/// with its line and column counted from 1 in code points.
+fn hidden_character(text: &str) -> Option<String> {
+    text.split('\n').zip(1usize..).find_map(|(line, number)| {
+        let (c, column) = line.chars().zip(1usize..).find(|(c, _)| hidden(*c))?;
+        Some(format!(
+            "invisible or bidirectional control character U+{:04X} at line {number}, column {column}",
+            u32::from(c)
+        ))
+    })
+}
+
 pub fn is_link(path: &Path) -> io::Result<bool> {
     match fs::symlink_metadata(path) {
         Ok(metadata) => {
@@ -302,6 +333,14 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.push(format!("{directory_name}: missing SKILL.md"));
             continue;
         }
+        // Checked first, because a hidden character can make a later failure
+        // misleading, such as a name that looks like its directory's. The
+        // frontmatter check reports text that is not UTF-8.
+        let text = crate::read_text(&path);
+        if let Some(hidden) = text.as_deref().ok().and_then(hidden_character) {
+            failures.push(format!("{file_name}: {hidden}"));
+            continue;
+        }
         let metadata = match frontmatter(&path)? {
             Ok(metadata) => metadata,
             Err(error) => {
@@ -334,7 +373,7 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.push(format!("{file_name}: {error}"));
             continue;
         }
-        let text = crate::read_text(&path)?;
+        let text = text?;
         if let Some(matched) = PLACEHOLDER.find(&text).map_err(io::Error::other)? {
             failures.push(format!(
                 "{file_name}: forbidden placeholder '{}'",

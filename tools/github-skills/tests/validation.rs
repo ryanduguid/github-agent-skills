@@ -156,6 +156,74 @@ fn each_skill_rule_reports_its_own_failure() {
 }
 
 #[test]
+fn hidden_characters_are_refused_with_their_position() {
+    let root = tempfile::tempdir().unwrap();
+    let check = |text: &str| {
+        write(root.path(), SKILL_FILE, text.as_bytes());
+        s::validate(root.path(), false).unwrap()
+    };
+    let hidden = |c: char, line: usize, column: usize| {
+        [format!(
+            "{SKILL_FILE}: invisible or bidirectional control character U+{:04X} at line {line}, column {column}",
+            u32::from(c)
+        )]
+    };
+    // Six lines, so the body text below starts on line 7.
+    let clean = skill_text(NAME, "assessing a repository");
+    assert!(check(&format!("{clean}Run it now.\n")).is_empty());
+    // Neighbours of the refused ranges, and the emoji variation selector.
+    for c in ['\u{200a}', '\u{2010}', '\u{205f}', '\u{fe0f}', 'é'] {
+        assert!(
+            check(&format!("{clean}Run it{c} now.\n")).is_empty(),
+            "{c:?}"
+        );
+    }
+    // Both ends of each class: the Arabic letter mark, zero-width characters and
+    // directional marks, embeddings and overrides, the word joiner and invisible
+    // operators, isolates, the byte order mark and the tag block.
+    for c in [
+        '\u{61c}',
+        '\u{200b}',
+        '\u{200f}',
+        '\u{202a}',
+        '\u{202e}',
+        '\u{2060}',
+        '\u{2064}',
+        '\u{2066}',
+        '\u{2069}',
+        '\u{feff}',
+        '\u{e0000}',
+        '\u{e007f}',
+    ] {
+        assert_eq!(check(&format!("{clean}Run it{c} now.\n")), hidden(c, 7, 7));
+    }
+    // Lines end at LF, CR or CRLF; columns count code points, so an astral
+    // character is one column. Only the first hidden character is reported.
+    assert_eq!(
+        check(&format!(
+            "{}\r\n\r\u{1f600}\u{2067}x\u{202e}\n",
+            clean.replace('\n', "\r\n")
+        )),
+        hidden('\u{2067}', 9, 2)
+    );
+    // Tag characters can spell out text no reviewer sees: here 'hello friend'.
+    let smuggled: String = "hello friend"
+        .chars()
+        .map(|c| char::from_u32(0xe0000 + u32::from(c)).unwrap())
+        .collect();
+    assert_eq!(
+        check(&format!("{clean}Hello{smuggled}\n")),
+        hidden('\u{e0068}', 7, 6)
+    );
+    // Reported before the frontmatter checks it would otherwise mislead.
+    assert_eq!(
+        check(&clean.replacen(NAME, &format!("{NAME}\u{200b}"), 1)),
+        hidden('\u{200b}', 2, 7 + NAME.len())
+    );
+    assert_eq!(check(&format!("\u{feff}{clean}")), hidden('\u{feff}', 1, 1));
+}
+
+#[test]
 fn compatibility_length_follows_the_specification() {
     let root = tempfile::tempdir().unwrap();
     let description = "Use when assessing a repository.";

@@ -109,7 +109,10 @@ and `compatibility` lengths, plain YAML strings only, and relative references
 that resolve inside the skill directory. It splits frontmatter on colons rather
 than parsing YAML, so it refuses a value a parser could read differently, such
 as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
-indented continuation line.
+indented continuation line. It also refuses a `SKILL.md` containing an
+invisible or bidirectional control character, such as a right-to-left override,
+zero-width space or Unicode tag, which can show a reviewer different text from
+what an agent reads, and names the file, line, column and code point.
 
 During authoring, run
 `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`.
