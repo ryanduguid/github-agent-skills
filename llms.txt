@@ -42,6 +42,10 @@ files record a skill digest covering every file in the skill directory, and
 `github-skills validate-skills --strict` fails when that digest no longer
 matches. The current files predate the digest and are listed as having none.
 
+## Reuse
+
+- [Reusing this code](https://github.com/ryanduguid/github-agent-skills/blob/main/AGENTS.md#reusing-this-code): Ryan Duguid's work under FSL-1.1-ALv2; keep its notices and licence; public credit is requested.
+
 ## Optional
 
 - [AGENTS.md](https://github.com/ryanduguid/github-agent-skills/blob/main/AGENTS.md): repository instructions for agents.

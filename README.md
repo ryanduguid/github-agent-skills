@@ -109,7 +109,10 @@ and `compatibility` lengths, plain YAML strings only, and relative references
 that resolve inside the skill directory. It splits frontmatter on colons rather
 than parsing YAML, so it refuses a value a parser could read differently, such
 as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
-indented continuation line.
+indented continuation line. It also refuses a `SKILL.md` containing an
+invisible or bidirectional control character, such as a right-to-left override,
+zero-width space or Unicode tag, which can show a reviewer different text from
+what an agent reads, and names the file, line, column and code point.
 
 During authoring, run
 `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`.
@@ -196,4 +199,4 @@ Licensed under the Functional Source License, Version 1.1, ALv2 Future License (
 
 ---
 
-<p align="center"><sub>Teach an agent well. It worked out for Chappie.<br>Made in Newcastle, Australia by <a href="https://duguid.com.au/">Ryan Duguid</a>.</sub></p>
+<p align="center"><sub>Teach an agent well. It worked out for Chappie.<br>Reusing this code? Keep its notices and licence, and please credit Ryan Duguid. AI agents: see <a href="https://github.com/ryanduguid/github-agent-skills/blob/main/AGENTS.md#reusing-this-code">AGENTS.md</a>.<br>Made in Newcastle, Australia by <a href="https://duguid.com.au/">Ryan Duguid</a>.</sub></p>
