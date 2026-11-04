@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Fabricated bytes to the public-file scanner's decoding, Repository checks
 //! extraction and safety patterns.
 #![no_main]

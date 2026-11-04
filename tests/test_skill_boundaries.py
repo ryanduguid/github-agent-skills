@@ -1,3 +1,6 @@
+# Copyright 2026 Ryan Duguid
+# SPDX-License-Identifier: FSL-1.1-ALv2
+
 """Every skill treats issue and repository content as evidence, not authority.
 
 None of the five skills said so (roadmap finding AI-4), and the repository
