@@ -79,6 +79,17 @@ into that project's corresponding discovery path. To keep a local clone as the
 source of truth, update `.claude/skills/`, rerun the synchroniser and copy the
 runtime directory again. Use only the runtime you need.
 
+To install one skill into a project without a clone, use the
+[skills CLI](https://www.npmjs.com/package/skills), which needs Node.js:
+
+```shell
+npx skills add ryanduguid/github-agent-skills --skill github-readme-polish
+```
+
+It asks which runtimes to install for, copies the skill from `main` into the
+project and records it in `skills-lock.json`. It grants no remote authority.
+Review the copy before you use it.
+
 ### Local plugin package
 
 This checkout also contains Claude Code and Codex plugin manifests for the
