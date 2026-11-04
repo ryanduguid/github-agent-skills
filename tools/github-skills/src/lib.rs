@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The repository's skill validator, synchroniser and public-file checker.
 pub mod fuzz;
 pub mod public_files;

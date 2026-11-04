@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! Skill validation and synchronisation contracts, ported from the retired
 //! tests/test_validate_skills.py and tests/test_sync_skills.py. Link cases use
 //! NTFS junctions on Windows and symbolic links elsewhere.

@@ -1,3 +1,6 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: FSL-1.1-ALv2
+
 //! The fuzz target's invariants on its seed corpus, and proof that a failed
 //! invariant or an unexpected scanner error reaches the caller. Ported from
 //! the retired tests/test_fuzz_harness.py.
