@@ -5,7 +5,7 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Do not include credentials, tokens, personal data, or private repository contents.
+      value: Do not include client, taxpayer, employee or payroll data, taxpayer identifiers such as tax file numbers, credentials, tokens, personal data or private repository contents. Do not attach confidential files.
   - type: input
     id: component
     attributes:
@@ -30,5 +30,5 @@ body:
     attributes:
       label: Safety check
       options:
-        - label: I removed credentials, personal data, and private repository contents.
+        - label: I removed client, taxpayer, employee and payroll data, taxpayer identifiers, credentials, personal data and private repository contents, and attached no confidential files.
           required: true
