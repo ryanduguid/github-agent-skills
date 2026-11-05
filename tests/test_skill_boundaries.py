@@ -36,6 +36,16 @@ class UntrustedContentTests(unittest.TestCase):
         text = flat(SKILLS / "github-repository-audit" / "SKILL.md")
         self.assertIn("Do not run the repository's own scripts, hooks, tests or install steps", text)
 
+    def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
+        skill = flat(SKILLS / "github-repository-audit" / "SKILL.md")
+        for required in (
+            "Drop any finding you cannot quote.",
+            "**Checks run:**",
+            "**Not tested:**",
+            "**Surveyed but not inspected:**",
+        ):
+            self.assertIn(required, skill)
+
 
 if __name__ == "__main__":
     unittest.main()

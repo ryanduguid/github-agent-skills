@@ -45,6 +45,16 @@ gaps:
 | Area | Observed evidence | Risk | Recommendation | Priority |
 | --- | --- | --- | --- | --- |
 
+Quote the line, output or search that supports each finding in **Observed
+evidence**. For **missing**, quote the search and its empty result. Drop any
+finding you cannot quote.
+
+After the table, list what the audit covered, writing `None` for an empty list:
+
+- **Checks run:** each search, read or supplied check, with its result.
+- **Not tested:** each relevant check you did not run, with the reason.
+- **Surveyed but not inspected:** each path you listed but did not read.
+
 Do not recommend adding a file already observed as present. If no evidence
 supports an edit, end: “No repository change is justified by the inspected
 evidence.” When at least one recommendation is evidence-backed, end with the
