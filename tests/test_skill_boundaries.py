@@ -37,14 +37,19 @@ class UntrustedContentTests(unittest.TestCase):
         self.assertIn("Do not run the repository's own scripts, hooks, tests or install steps", text)
 
     def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
-        skill = flat(SKILLS / "github-repository-audit" / "SKILL.md")
-        for required in (
-            "Drop any finding you cannot quote.",
-            "**Checks run:**",
-            "**Not tested:**",
-            "**Surveyed but not inspected:**",
-        ):
-            self.assertIn(required, skill)
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-repository-audit" / "SKILL.md"
+            text = flat(path)
+            for required in (
+                "Quote the line, output or search that supports each finding in **Observed evidence**.",
+                "For **missing**, quote the search and its empty result.",
+                "Drop any finding you cannot quote.",
+                "**Checks run:**",
+                "**Not tested:**",
+                "**Surveyed but not inspected:**",
+            ):
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), required=required):
+                    self.assertIn(required, text)
 
 
 if __name__ == "__main__":
