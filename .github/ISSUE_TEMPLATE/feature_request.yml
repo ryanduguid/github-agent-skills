@@ -7,7 +7,7 @@ body:
     id: problem
     attributes:
       label: Problem and evidence
-      description: Describe the workflow gap with a minimal sanitised example; do not include private repository contents.
+      description: Describe the workflow gap with a minimal sanitised example. Do not include client, taxpayer, employee or payroll data, taxpayer identifiers such as tax file numbers, credentials or private repository contents. Do not attach confidential files.
     validations:
       required: true
   - type: textarea
