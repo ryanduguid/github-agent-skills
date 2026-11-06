@@ -159,8 +159,13 @@ static QUICK_START: LazyLock<Regex> = LazyLock::new(|| {
 });
 static FENCED_COMMANDS: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"```(?:powershell|shell)\n([\s\S]*?)```", false, false));
-static VALIDATE_JOB: LazyLock<Regex> =
-    LazyLock::new(|| python_regex(r"^  validate:\n((?:^(?:    .*)?$\n)+)", false, true));
+static VALIDATE_JOB: LazyLock<Regex> = LazyLock::new(|| {
+    python_regex(
+        r"^  validate:[ \t]*(?:#.*)?\n((?:^(?:    .*|[ \t]*#.*|[ \t]*)$(?:\n|\Z))+)",
+        false,
+        true,
+    )
+});
 // Every single-line step command in the validate job, in order: the README lists
 // the same commands, so a contributor can run each check the job runs.
 static WORKFLOW_CHECK: LazyLock<Regex> =

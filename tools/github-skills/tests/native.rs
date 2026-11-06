@@ -215,15 +215,44 @@ fn skills_are_held_to_the_agent_skills_specification() {
 fn metadata_is_literal_and_uses_python_line_separators() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("SKILL.md");
-    fs::write(&path,"---\u{2028}name: first\u{2028} name: ignored\u{2028}name: last\u{2028}description:\u{1f}Use when testing.\u{1c}---").unwrap();
+    fs::write(&path,"---\u{2028}name: first\u{2028} name: ignored\u{2028}description:\u{1f}Use when testing.\u{1c}---").unwrap();
     let metadata = s::frontmatter(&path).unwrap().unwrap();
-    assert_eq!(metadata["name"], "last");
+    assert_eq!(metadata["name"], "first");
     assert_eq!(metadata["description"], "Use when testing.");
     fs::write(&path, b"\xff\xfe").unwrap();
     assert_eq!(
         s::frontmatter(&path).unwrap(),
         Err("not valid UTF-8 text".into())
     );
+}
+
+#[test]
+fn repeated_frontmatter_fields_are_refused_whatever_their_values() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("SKILL.md");
+    for key in ["name", "description", "compatibility"] {
+        for separator in ["\n", "\r\n", "\u{2028}"] {
+            for (first, second) in [("a", "b"), ("a", "a"), ("", "b"), ("a", "")] {
+                let lines = [
+                    "---".to_owned(),
+                    format!("{key}: {first}"),
+                    format!("{key}: {second}"),
+                    "---".to_owned(),
+                ];
+                fs::write(&path, lines.join(separator)).unwrap();
+                assert_eq!(
+                    s::frontmatter(&path).unwrap(),
+                    Err(format!("duplicate frontmatter field '{key}'"))
+                );
+            }
+        }
+    }
+    fs::write(
+        &path,
+        "---\nname: a\n name: b\nother: 1\nother: 2\n---\nname: c\n",
+    )
+    .unwrap();
+    assert_eq!(s::frontmatter(&path).unwrap().unwrap()["name"], "a");
 }
 
 #[test]
@@ -466,6 +495,63 @@ fn strict_validation_requires_one_scenario_per_skill() {
     // Incremental authoring does not require the scenarios.
     let output = cli(root.path(), &["validate-skills"]);
     assert_eq!(output.status.code(), Some(0));
+}
+
+#[test]
+fn validate_job_runs_across_comments_and_blank_lines_up_to_the_next_job() {
+    for line in [
+        "# note",
+        " # note",
+        "  # note",
+        "   # note",
+        "    # note",
+        "\t# note",
+        "",
+        " ",
+        "  ",
+        "   ",
+    ] {
+        let workflow = format!(
+            "jobs:\n  validate:\n    steps:\n      - name: First\n        run: python first.py\n{line}\n      - name: Second\n        run: python second.py\n# Next.\n  following:\n    steps:\n      - name: Other\n        run: python other.py\n"
+        );
+        assert_eq!(
+            p::supported_quick_start(&workflow).unwrap()[2..],
+            ["python first.py", "python second.py"],
+            "{line:?}"
+        );
+    }
+}
+
+#[test]
+fn validate_job_accepts_inline_header_comments() {
+    for header in ["  validate:  # CI checks", "  validate:\t# CI checks"] {
+        let workflow = format!(
+            "jobs:\n{header}\n    steps:\n      - name: First\n        run: python first.py\n"
+        );
+        assert_eq!(
+            p::supported_quick_start(&workflow).unwrap()[2..],
+            ["python first.py"],
+            "{header:?}"
+        );
+    }
+}
+
+#[test]
+fn validate_job_keeps_final_command_without_newline_and_stops_at_next_job() {
+    for ending in [
+        "",
+        "\n",
+        "\n  following:\n    steps:\n      - run: echo other\n",
+    ] {
+        let workflow = format!(
+            "jobs:\n  validate:\n    steps:\n      - name: First\n        run: python first.py\n      - name: Second\n        run: python second.py{ending}"
+        );
+        assert_eq!(
+            p::supported_quick_start(&workflow).unwrap()[2..],
+            ["python first.py", "python second.py"],
+            "{ending:?}"
+        );
+    }
 }
 
 #[test]

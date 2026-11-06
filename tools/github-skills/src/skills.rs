@@ -235,10 +235,10 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
         if let Some((key, value)) = line.split_once(':')
             && matches!(key, "name" | "description" | "compatibility")
         {
-            metadata.insert(
-                key.to_owned(),
-                value.trim_matches(crate::python_whitespace).to_owned(),
-            );
+            let value = value.trim_matches(crate::python_whitespace).to_owned();
+            if metadata.insert(key.to_owned(), value).is_some() {
+                return Ok(Err(format!("duplicate frontmatter field '{key}'")));
+            }
         }
     }
     Ok(Ok(metadata))
