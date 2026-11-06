@@ -523,6 +523,38 @@ fn validate_job_runs_across_comments_and_blank_lines_up_to_the_next_job() {
 }
 
 #[test]
+fn validate_job_accepts_inline_header_comments() {
+    for header in ["  validate:  # CI checks", "  validate:\t# CI checks"] {
+        let workflow = format!(
+            "jobs:\n{header}\n    steps:\n      - name: First\n        run: python first.py\n"
+        );
+        assert_eq!(
+            p::supported_quick_start(&workflow).unwrap()[2..],
+            ["python first.py"],
+            "{header:?}"
+        );
+    }
+}
+
+#[test]
+fn validate_job_keeps_final_command_without_newline_and_stops_at_next_job() {
+    for ending in [
+        "",
+        "\n",
+        "\n  following:\n    steps:\n      - run: echo other\n",
+    ] {
+        let workflow = format!(
+            "jobs:\n  validate:\n    steps:\n      - name: First\n        run: python first.py\n      - name: Second\n        run: python second.py{ending}"
+        );
+        assert_eq!(
+            p::supported_quick_start(&workflow).unwrap()[2..],
+            ["python first.py", "python second.py"],
+            "{ending:?}"
+        );
+    }
+}
+
+#[test]
 fn cli_uses_explicit_root_and_reports_failures_without_stdout() {
     let root = tempfile::tempdir().unwrap();
     let output = Command::new(env!("CARGO_BIN_EXE_github-skills"))

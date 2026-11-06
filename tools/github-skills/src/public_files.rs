@@ -161,7 +161,7 @@ static FENCED_COMMANDS: LazyLock<Regex> =
     LazyLock::new(|| python_regex(r"```(?:powershell|shell)\n([\s\S]*?)```", false, false));
 static VALIDATE_JOB: LazyLock<Regex> = LazyLock::new(|| {
     python_regex(
-        r"^  validate:\n((?:^(?:    .*|[ \t]*#.*|[ \t]*)$\n)+)",
+        r"^  validate:[ \t]*(?:#.*)?\n((?:^(?:    .*|[ \t]*#.*|[ \t]*)$(?:\n|\Z))+)",
         false,
         true,
     )
