@@ -28,3 +28,27 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+  # The checker and its separately locked cargo-fuzz crate.
+  - package-ecosystem: cargo
+    directories:
+      - /tools/github-skills
+      - /tools/github-skills/fuzz
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      # As for actions: minor and patch updates arrive as one pull request.
+      cargo-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # These exact pins are normal dependencies of the checker, so they also
+      # sit in fuzz/Cargo.lock. Dependabot's fuzz job does not edit the parent
+      # manifest and its checker job does not edit that lock, so a bump fails
+      # CI's --locked fuzz lint. Bump them by hand and refresh both locks.
+      - dependency-name: fancy-regex
+      - dependency-name: sha2
