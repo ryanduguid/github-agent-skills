@@ -579,7 +579,11 @@ fn a_missing_frontmatter_file_preserves_the_io_error() {
 #[test]
 fn a_file_in_place_of_a_generated_skill_directory_is_an_io_error() {
     let root = tempfile::tempdir().unwrap();
-    valid_skill(root.path(), NAME);
+    write(
+        root.path(),
+        SKILL_FILE,
+        skill_text(NAME, "assessing a repository").as_bytes(),
+    );
     write(root.path(), &format!("{}/{NAME}", s::RUNTIME), b"fixture");
     let error = s::validate(root.path(), false).unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::NotADirectory);
