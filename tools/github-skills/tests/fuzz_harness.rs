@@ -34,6 +34,43 @@ fn a_decoder_returning_text_and_failure_is_caught() {
 }
 
 #[test]
+fn a_decoder_returning_an_unrecognised_failure_is_caught() {
+    let scanner = Scanner {
+        decode: |_| (None, Some("unexpected")),
+        ..Scanner::default()
+    };
+    let error = check_with(b"x", &scanner).unwrap_err();
+    assert!(error.contains("unexpected failure"), "{error}");
+}
+
+#[test]
+fn command_extraction_errors_are_reported() {
+    let scanner = Scanner {
+        commands: |_| Err(std::io::Error::other("fixture failure")),
+        ..Scanner::default()
+    };
+    let error = check_with(b"x", &scanner).unwrap_err();
+    assert!(
+        error.contains("extraction failed: fixture failure"),
+        "{error}"
+    );
+}
+
+#[test]
+fn blank_or_unstripped_commands_are_caught() {
+    let assert_refused = |commands| {
+        let scanner = Scanner {
+            commands,
+            ..Scanner::default()
+        };
+        let error = check_with(b"x", &scanner).unwrap_err();
+        assert!(error.contains("blank or unstripped"), "{error}");
+    };
+    assert_refused(|_| Ok(vec![String::new()]));
+    assert_refused(|_| Ok(vec![" git status".into()]));
+}
+
+#[test]
 fn unexpected_scanner_errors_escape() {
     // A panicking scanner is not caught: the fuzzer reports the crash.
     let scanner = Scanner {

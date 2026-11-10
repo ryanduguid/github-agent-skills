@@ -569,6 +569,36 @@ fn recorded_runs_go_stale_on_any_byte_change() {
 }
 
 #[test]
+fn a_missing_frontmatter_file_preserves_the_io_error() {
+    let root = tempfile::tempdir().unwrap();
+    let error = s::frontmatter(&root.path().join("SKILL.md")).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
+}
+
+#[cfg(unix)]
+#[test]
+fn a_file_in_place_of_a_generated_skill_directory_is_an_io_error() {
+    let root = tempfile::tempdir().unwrap();
+    valid_skill(root.path(), NAME);
+    write(root.path(), &format!("{}/{NAME}", s::RUNTIME), b"fixture");
+    let error = s::validate(root.path(), false).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::NotADirectory);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_skill_digest_refuses_a_non_unicode_file_name() {
+    use std::os::unix::ffi::OsStrExt;
+
+    let root = tempfile::tempdir().unwrap();
+    let name = std::ffi::OsStr::from_bytes(b"checklist-\xff.md");
+    fs::write(root.path().join(name), b"fixture").unwrap();
+    let error = s::skill_digest(root.path()).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    assert_eq!(error.to_string(), "skill file name is not valid Unicode");
+}
+
+#[test]
 fn cli_sync_runs_before_validation_and_a_refusal_stops_it() {
     let root = tempfile::tempdir().unwrap();
     let text = skill_text(NAME, "assessing a repository");
