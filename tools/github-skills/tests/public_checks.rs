@@ -387,6 +387,8 @@ fn encodings_are_decoded_or_classified() {
         ("embedded-null.txt", b"note=\0value\n".as_slice()),
         ("bad32.txt", b"\xff\xfe\0\0\xff\xff\xff\xff"),
         ("bad16.txt", b"\xff\xfe\x00\xd8"),
+        ("truncated32.txt", b"\xff\xfe\0\0x\0"),
+        ("truncated16.txt", b"\xff\xfex"),
     ] {
         assert_eq!(
             scan(root.path(), relative, bytes),
@@ -419,6 +421,59 @@ fn an_unreadable_tracked_path_is_reported_and_scanning_continues() {
         failures[0]
     );
     assert_eq!(failures[1], "notes.md: credential-assignment");
+}
+
+#[test]
+fn a_missing_tracked_file_is_reported() {
+    let root = tempfile::tempdir().unwrap();
+    git(root.path(), &["init", "-q"]);
+    write(root.path(), "notes.md", b"Example notes\n");
+    git(root.path(), &["add", "notes.md"]);
+    fs::remove_file(root.path().join("notes.md")).unwrap();
+    assert_eq!(
+        p::tracked_failures(root.path()).unwrap(),
+        ["notes.md: unreadable (FileNotFoundError)"]
+    );
+}
+
+#[test]
+fn a_failed_git_listing_is_an_error() {
+    let root = tempfile::tempdir().unwrap();
+    write(root.path(), ".git", b"gitdir: missing.git\n");
+    let error = p::tracked_paths(root.path()).unwrap_err();
+    assert_eq!(error.to_string(), "git ls-files failed");
+}
+
+#[cfg(unix)]
+#[test]
+fn unreadable_path_components_keep_their_error_classes() {
+    let root = tempfile::tempdir().unwrap();
+    write(root.path(), "notes.md", b"Example notes\n");
+    std::os::unix::fs::symlink("loop", root.path().join("loop")).unwrap();
+    let paths = ["notes.md/child".into(), "loop/child".into()];
+    assert_eq!(
+        p::scan_paths(root.path(), &paths).unwrap(),
+        [
+            "notes.md/child: unreadable (NotADirectoryError)",
+            "loop/child: unreadable (OSError)",
+        ]
+    );
+}
+
+#[test]
+fn command_extraction_normalises_mixed_newlines_and_handles_missing_job() {
+    let readme = "## Repository checks\n\n```shell\n  git status\r\n\n  git diff  \n```\n";
+    assert_eq!(
+        p::quick_start_commands(readme).unwrap(),
+        ["git status", "git diff"]
+    );
+    assert_eq!(
+        p::supported_quick_start("jobs:\n  lint:\n    steps: []\n").unwrap(),
+        [
+            format!("git clone {}", p::CLONE_URL),
+            format!("cd {}", p::REPOSITORY_NAME)
+        ]
+    );
 }
 
 #[test]
