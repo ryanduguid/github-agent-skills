@@ -436,6 +436,31 @@ fn a_missing_tracked_file_is_reported() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn a_permission_denied_file_is_reported_and_scanning_continues() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tempfile::tempdir().unwrap();
+    let denied = root.path().join("unreadable.md");
+    write(root.path(), "unreadable.md", b"Example notes\n");
+    write(
+        root.path(),
+        "notes.md",
+        concat!("api", "_key", " = ", "do-not-echo\n").as_bytes(),
+    );
+    fs::set_permissions(&denied, fs::Permissions::from_mode(0o000)).unwrap();
+    let failures = p::scan_paths(root.path(), &["unreadable.md".into(), "notes.md".into()]);
+    fs::set_permissions(&denied, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(
+        failures.unwrap(),
+        [
+            "unreadable.md: unreadable (PermissionError)",
+            "notes.md: credential-assignment",
+        ]
+    );
+}
+
 #[test]
 fn a_failed_git_listing_is_an_error() {
     let root = tempfile::tempdir().unwrap();

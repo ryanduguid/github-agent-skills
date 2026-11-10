@@ -560,10 +560,12 @@ fn with_suffix(directory: &Path, suffix: &str) -> Vec<PathBuf> {
     found
 }
 
-fn collect_matches(
-    matches: impl Iterator<Item = fancy_regex::Result<String>>,
-) -> io::Result<Vec<String>> {
-    matches.collect::<Result<_, _>>().map_err(io::Error::other)
+fn collect_matches(pattern: &Regex, text: &str, group: usize) -> io::Result<Vec<String>> {
+    pattern
+        .captures_iter(text)
+        .map(|found| found.map(|found| found[group].to_owned()))
+        .collect::<Result<_, _>>()
+        .map_err(io::Error::other)
 }
 
 /// Failures for stale or malformed recorded runs, and notices for runs without
@@ -581,38 +583,22 @@ pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
                 continue;
             }
             let text = crate::read_text(&run)?;
-            let labels = collect_matches(
-                RUN_DIGEST_LABEL
-                    .find_iter(text.as_str())
-                    .map(|found| found.map(|found| found.as_str().to_owned())),
-            )?;
+            let labels = collect_matches(&RUN_DIGEST_LABEL, &text, 0)?;
             if labels.is_empty() {
                 notices.push(format!(
                     "{name}: no skill digest recorded; its results are not tied to a skill revision"
                 ));
                 continue;
             }
-            let recorded = collect_matches(
-                RUN_DIGEST
-                    .captures_iter(text.as_str())
-                    .map(|found| found.map(|found| found[1].to_owned())),
-            )?;
+            let recorded = collect_matches(&RUN_DIGEST, &text, 1)?;
             let ([_], [recorded]) = (labels.as_slice(), recorded.as_slice()) else {
                 failures.push(format!(
                     "{name}: malformed skill digest; record exactly one '- Skill digest v1:' line"
                 ));
                 continue;
             };
-            let assessors = collect_matches(
-                RUN_ASSESSOR
-                    .find_iter(text.as_str())
-                    .map(|found| found.map(|found| found.as_str().to_owned())),
-            )?;
-            let assessor_labels = collect_matches(
-                RUN_ASSESSOR_LABEL
-                    .find_iter(text.as_str())
-                    .map(|found| found.map(|found| found.as_str().to_owned())),
-            )?;
+            let assessors = collect_matches(&RUN_ASSESSOR, &text, 0)?;
+            let assessor_labels = collect_matches(&RUN_ASSESSOR_LABEL, &text, 0)?;
             if assessors.len() != 1 || assessor_labels.len() != 1 {
                 failures.push(format!(
                     "{name}: no assessor; record exactly one '- Assessed by:' line"
