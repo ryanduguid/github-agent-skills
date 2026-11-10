@@ -393,10 +393,8 @@ pub fn tracked_failures(root: &Path) -> io::Result<Vec<String>> {
 pub fn check(root: &Path) -> io::Result<Vec<String>> {
     let mut failures = tracked_failures(root)?;
     let workflow = crate::read_text(&root.join(".github/workflows/validate.yml"))?;
-    failures.extend(quick_start_failures(
-        &crate::read_text(&root.join("README.md"))?,
-        &workflow,
-    )?);
+    let readme = crate::read_text(&root.join("README.md"))?;
+    failures.extend(quick_start_failures(&readme, &workflow)?);
     if permissions_block(&workflow)? != Some(vec!["  contents: read".into()]) {
         failures.push(
             ".github/workflows/validate.yml: workflow permissions are not read-only contents"
