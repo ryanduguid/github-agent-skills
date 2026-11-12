@@ -4,7 +4,8 @@
 > Codex and Claude Code. They are Markdown, so a clone is the whole
 > installation; the repository checks are a Rust command in `tools/github-skills`.
 
-`.claude/skills/` is the canonical source, read in place by Claude Code. The
+`skills/` is the canonical source, loaded by Claude Code through the plugin
+manifest (`claude --plugin-dir .`). The
 tracked Codex copy in `.agents/skills/` is byte-identical to it and is
 regenerated rather than edited. Every skill inspects and prepares local
 work; none of them carries authority to push, open a pull request or release,
@@ -12,18 +13,18 @@ change GitHub settings, or make any other remote mutation.
 
 ## Skills
 
-- [github-repository-audit](https://github.com/ryanduguid/github-agent-skills/blob/main/.claude/skills/github-repository-audit/SKILL.md): assess whether a repository is trustworthy, maintainable, presentable, or ready to feature.
-- [github-readme-polish](https://github.com/ryanduguid/github-agent-skills/blob/main/.claude/skills/github-readme-polish/SKILL.md): improve a README's clarity, quick start, credibility, and badges without overstating repository evidence.
-- [github-profile-curator](https://github.com/ryanduguid/github-agent-skills/blob/main/.claude/skills/github-profile-curator/SKILL.md): select profile projects, refine the profile README narrative, review pins, and prepare portfolio-facing copy.
-- [github-release-prep](https://github.com/ryanduguid/github-agent-skills/blob/main/.claude/skills/github-release-prep/SKILL.md): assess release readiness, reconcile version drift, and prepare an evidence-backed tag, release, or publication handoff.
-- [github-issue-to-pr](https://github.com/ryanduguid/github-agent-skills/blob/main/.claude/skills/github-issue-to-pr/SKILL.md): turn an issue into a narrow, tested local change with a commit and pull-request handoff.
+- [github-repository-audit](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-repository-audit/SKILL.md): assess whether a repository is trustworthy, maintainable, presentable, or ready to feature.
+- [github-readme-polish](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-readme-polish/SKILL.md): improve a README's clarity, quick start, credibility, and badges without overstating repository evidence.
+- [github-profile-curator](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-profile-curator/SKILL.md): select profile projects, refine the profile README narrative, review pins, and prepare portfolio-facing copy.
+- [github-release-prep](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-release-prep/SKILL.md): assess release readiness, reconcile version drift, and prepare an evidence-backed tag, release, or publication handoff.
+- [github-issue-to-pr](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-to-pr/SKILL.md): turn an issue into a narrow, tested local change with a commit and pull-request handoff.
 
 ## Install
 
 - [Repository checks](https://github.com/ryanduguid/github-agent-skills#repository-checks): clone the repository, run the unit suite, then run the strict validator.
 - Codex: copy `.agents/skills/<skill>` into the Codex skill discovery path of the project you are working in.
-- Claude Code: copy `.claude/skills/<skill>` into that project's Claude Code skill discovery path.
-- Install only the runtime you use, and keep `.claude/skills/` as the source of truth for any local edit.
+- Claude Code: copy `skills/<skill>` into that project's Claude Code skill discovery path.
+- Install only the runtime you use, and keep `skills/` as the source of truth for any local edit.
 
 ## Recorded runs
 

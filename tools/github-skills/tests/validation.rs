@@ -15,7 +15,7 @@ use std::{
 };
 
 const NAME: &str = "github-repository-audit";
-const SKILL_FILE: &str = ".claude/skills/github-repository-audit/SKILL.md";
+const SKILL_FILE: &str = "skills/github-repository-audit/SKILL.md";
 const LINK: &str = "is a link, not an ordinary file or directory";
 
 fn skill_text(name: &str, description: &str) -> String {
@@ -149,12 +149,12 @@ fn each_skill_rule_reports_its_own_failure() {
     fs::remove_dir_all(root.path().join(s::CANONICAL)).unwrap();
     write(
         root.path(),
-        ".claude/skills/not-approved/SKILL.md",
+        "skills/not-approved/SKILL.md",
         skill_text("not-approved", "doing something").as_bytes(),
     );
     assert_eq!(
         s::validate(root.path(), false).unwrap(),
-        [".claude/skills/not-approved: unexpected skill name"]
+        ["skills/not-approved: unexpected skill name"]
     );
 }
 
@@ -376,15 +376,15 @@ fn referenced_files_must_be_in_the_skill_directory() {
     let description = "Use when assessing a repository.";
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/references/guide.md",
+        "skills/github-repository-audit/references/guide.md",
         b"guide\n",
     );
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/scripts/run.py",
+        "skills/github-repository-audit/scripts/run.py",
         b"pass\n",
     );
-    write(root.path(), ".claude/skills/outside.md", b"outside\n");
+    write(root.path(), "skills/outside.md", b"outside\n");
     for body in [
         "[guide](references/guide.md)",
         "[guide](references/guide.md#usage)",
@@ -442,7 +442,7 @@ fn generated_copies_must_match_in_both_modes() {
 fn ordinary_files_are_not_skills() {
     let root = tempfile::tempdir().unwrap();
     valid_skill_set(root.path());
-    write(root.path(), ".claude/skills/README.md", b"Skill notes.\n");
+    write(root.path(), "skills/README.md", b"Skill notes.\n");
     write(root.path(), ".agents/skills/README.md", b"Skill notes.\n");
     assert_eq!(
         incremental_and_strict(root.path()),
@@ -469,16 +469,16 @@ fn strict_mode_requires_the_complete_generated_tree() {
     assert_eq!(
         s::validate(root.path(), true).unwrap(),
         [
-            ".claude/skills: missing required skill 'github-issue-to-pr'",
-            ".claude/skills: missing required skill 'github-profile-curator'",
-            ".claude/skills: missing required skill 'github-readme-polish'",
-            ".claude/skills: missing required skill 'github-release-prep'",
+            "skills: missing required skill 'github-issue-to-pr'",
+            "skills: missing required skill 'github-profile-curator'",
+            "skills: missing required skill 'github-readme-polish'",
+            "skills: missing required skill 'github-release-prep'",
         ]
     );
     valid_skill_set(root.path());
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/references/checklist.md",
+        "skills/github-repository-audit/references/checklist.md",
         b"canonical\n",
     );
     assert_eq!(
@@ -620,7 +620,7 @@ fn cli_sync_runs_before_validation_and_a_refusal_stops_it() {
     assert!(output.stdout.is_empty());
     assert_eq!(
         String::from_utf8(output.stderr).unwrap(),
-        ".claude/skills: is missing\n"
+        "skills: is missing\n"
     );
 }
 
@@ -865,22 +865,19 @@ fn sync_refuses_linked_parents_and_a_linked_root() {
     assert_eq!(read(&sentinel), b"outside\n");
     assert_eq!(read(&copy), b"outside-copy\n");
 
-    // A canonical tree whose parent is a link.
+    // A canonical tree that is a link; its parent is the repository root.
     let (root, outside) = synced();
-    let parent = outside.path().join("canonical-parent");
-    fs::rename(root.path().join(".claude"), &parent).unwrap();
-    link_directory(&parent, &root.path().join(".claude"));
+    let canonical = outside.path().join("canonical");
+    fs::rename(root.path().join(s::CANONICAL), &canonical).unwrap();
+    link_directory(&canonical, &root.path().join(s::CANONICAL));
     let copy = root.path().join(s::RUNTIME).join(NAME).join("SKILL.md");
     fs::write(&copy, b"agents-before\n").unwrap();
     assert!(
         s::sync(root.path())
             .unwrap()
-            .contains(&format!(".claude: {LINK}"))
+            .contains(&format!("{}: {LINK}", s::CANONICAL))
     );
-    assert_eq!(
-        read(&parent.join("skills").join(NAME).join("SKILL.md")),
-        b"canonical\n"
-    );
+    assert_eq!(read(&canonical.join(NAME).join("SKILL.md")), b"canonical\n");
     assert_eq!(read(&copy), b"agents-before\n");
 
     // The repository root itself reached through a link.

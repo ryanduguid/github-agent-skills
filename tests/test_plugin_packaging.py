@@ -23,7 +23,7 @@ class PluginPackagingTests(unittest.TestCase):
         for plugin in (claude, codex):
             self.assertEqual(plugin["name"], "github-agent-skills")
             self.assertEqual(plugin["license"], "LicenseRef-Duguid-Public-Attribution-1.0")
-            self.assertEqual(plugin["skills"].rstrip("/"), "./.claude/skills")
+            self.assertEqual(plugin["skills"].rstrip("/"), "./skills")
             self.assertTrue((ROOT / plugin["skills"]).is_dir())
             self.assertNotIn("mcpServers", plugin)
 
@@ -37,7 +37,7 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertEqual(plugin["license"], read_manifest(".claude-plugin/plugin.json")["license"])
         discovered = sorted(
             "./" + path.parent.relative_to(ROOT).as_posix()
-            for path in (ROOT / ".claude/skills").glob("*/SKILL.md")
+            for path in (ROOT / "skills").glob("*/SKILL.md")
         )
         self.assertEqual(len(discovered), 5)
         self.assertEqual(sorted(plugin["skills"]), discovered)
@@ -48,9 +48,9 @@ class PluginPackagingTests(unittest.TestCase):
         plugin = marketplace["plugins"][0]
         self.assertEqual(plugin["name"], "github-agent-skills")
         self.assertEqual(plugin["source"], {"source": "local", "path": "./"})
-        for source in (ROOT / ".claude/skills").rglob("*"):
+        for source in (ROOT / "skills").rglob("*"):
             if source.is_file():
-                generated = ROOT / ".agents/skills" / source.relative_to(ROOT / ".claude/skills")
+                generated = ROOT / ".agents/skills" / source.relative_to(ROOT / "skills")
                 self.assertEqual(source.read_bytes(), generated.read_bytes(), source.name)
 
 

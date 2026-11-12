@@ -110,18 +110,15 @@ fn strict_tree_parity_and_incremental_subset() {
 fn sync_refusal_preserves_generated_files() {
     let root = tempfile::tempdir().unwrap();
     write(root.path(), ".agents/skills/sentinel.txt", b"before");
-    assert_eq!(
-        s::sync(root.path()).unwrap(),
-        vec![".claude/skills: is missing"]
-    );
+    assert_eq!(s::sync(root.path()).unwrap(), vec!["skills: is missing"]);
     assert_eq!(
         fs::read(root.path().join(".agents/skills/sentinel.txt")).unwrap(),
         b"before"
     );
-    write(root.path(), ".claude/skills", b"file");
+    write(root.path(), "skills", b"file");
     assert_eq!(
         s::sync(root.path()).unwrap(),
-        vec![".claude/skills: is not an ordinary directory"]
+        vec!["skills: is not an ordinary directory"]
     );
     assert_eq!(
         fs::read(root.path().join(".agents/skills/sentinel.txt")).unwrap(),
@@ -132,7 +129,7 @@ fn sync_refusal_preserves_generated_files() {
 #[test]
 fn skills_are_held_to_the_agent_skills_specification() {
     let root = tempfile::tempdir().unwrap();
-    let file = ".claude/skills/github-repository-audit/SKILL.md";
+    let file = "skills/github-repository-audit/SKILL.md";
     let check = |description: &str, extra: &str, body: &str| {
         let text = format!(
             "---\nname: github-repository-audit\ndescription: {description}\n{extra}---\n{body}\n"
@@ -194,7 +191,7 @@ fn skills_are_held_to_the_agent_skills_specification() {
     );
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/references/guide.md",
+        "skills/github-repository-audit/references/guide.md",
         b"guide",
     );
     assert_eq!(
@@ -286,7 +283,7 @@ fn links_are_refused_before_sync_and_scanned_as_text() {
     let outside = tempfile::tempdir().unwrap();
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/SKILL.md",
+        "skills/github-repository-audit/SKILL.md",
         &skill("github-repository-audit"),
     );
     write(root.path(), ".agents/skills/sentinel.txt", b"before");
@@ -294,13 +291,13 @@ fn links_are_refused_before_sync_and_scanned_as_text() {
     symlink(
         outside.path(),
         root.path()
-            .join(".claude/skills/github-repository-audit/references"),
+            .join("skills/github-repository-audit/references"),
     )
     .unwrap();
     assert_eq!(
         s::sync(root.path()).unwrap(),
         vec![
-            ".claude/skills/github-repository-audit/references: is a link, not an ordinary file or directory"
+            "skills/github-repository-audit/references: is a link, not an ordinary file or directory"
         ]
     );
     assert_eq!(
@@ -327,7 +324,7 @@ fn links_are_refused_before_sync_and_scanned_as_text() {
 fn byte_copy_does_not_propagate_source_mode() {
     use std::os::unix::fs::PermissionsExt;
     let root = tempfile::tempdir().unwrap();
-    let source = ".claude/skills/github-repository-audit/SKILL.md";
+    let source = "skills/github-repository-audit/SKILL.md";
     write(root.path(), source, &skill("github-repository-audit"));
     fs::set_permissions(root.path().join(source), fs::Permissions::from_mode(0o400)).unwrap();
     s::sync(root.path()).unwrap();
@@ -352,16 +349,13 @@ fn fifo_sync_refuses_within_deadline_and_preserves_generated_bytes() {
     let root = tempfile::tempdir().unwrap();
     write(
         root.path(),
-        ".claude/skills/github-repository-audit/SKILL.md",
+        "skills/github-repository-audit/SKILL.md",
         &skill("github-repository-audit"),
     );
     write(root.path(), ".agents/skills/sentinel.txt", b"before");
     assert!(
         Command::new("mkfifo")
-            .arg(
-                root.path()
-                    .join(".claude/skills/github-repository-audit/pipe")
-            )
+            .arg(root.path().join("skills/github-repository-audit/pipe"))
             .status()
             .unwrap()
             .success()

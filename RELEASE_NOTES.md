@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+The canonical skills moved from `.claude/skills/` to `skills/`, so
+`gh skill install` finds them without `--allow-hidden-dirs`.
+
 ### Licence
 
 Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with

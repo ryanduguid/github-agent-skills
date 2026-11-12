@@ -1,7 +1,7 @@
 # Contributing
 
 Keep each skill focused, evidence-based, and explicit about its authority
-boundary. Edit only `.claude/skills/`, then regenerate the Codex copy:
+boundary. Edit only `skills/`, then regenerate the Codex copy:
 
 ```shell
 cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync

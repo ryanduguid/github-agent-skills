@@ -5,7 +5,7 @@
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "author": { "name": "Ryan Duguid" },
   "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
-  "skills": "./.claude/skills/",
+  "skills": "./skills/",
   "keywords": ["github", "agent-skills", "codex", "claude-code"],
   "interface": {
     "displayName": "GitHub agent skills",
