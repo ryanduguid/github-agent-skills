@@ -138,8 +138,10 @@ The validator holds each skill to the
 and `compatibility` lengths, plain YAML strings only, and relative references
 that resolve inside the skill directory. It splits frontmatter on colons rather
 than parsing YAML, so it refuses a value a parser could read differently, such
-as a block scalar, a quoted value, `true`, `123` or one containing `: `. It does not follow an
-indented continuation line. It also refuses a `SKILL.md` containing an
+as a block scalar, a quoted value, `true`, `123` or one containing `: `. For
+the same reason it refuses an indented frontmatter line, which a parser would
+join to the field above it or read as a nested value, and a line with no key.
+It also refuses a `SKILL.md` containing an
 invisible or bidirectional control character, such as a right-to-left override,
 zero-width space or Unicode tag, which can show a reviewer different text from
 what an agent reads, and names the file, line, column and code point.
@@ -182,6 +184,7 @@ gives the same value for ordinary file names.
 
 `--strict` fails when a run's recorded digest differs from the current skill
 files, so a changed skill or asset marks its runs stale until they are rerun.
+It also fails when `validation/baselines/` or `validation/forward/` is missing.
 A run file with a digest must also name who assessed its PASS and FAIL lines in
 exactly one `- Assessed by:` line, or `--strict` fails.
 The current run files predate the digest, and every skill has changed since
