@@ -7,5 +7,5 @@
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "license": "LicenseRef-Duguid-Public-Attribution-1.0",
   "keywords": ["github", "agent-skills", "claude-code", "codex"],
-  "skills": "./.claude/skills"
+  "skills": "./skills"
 }

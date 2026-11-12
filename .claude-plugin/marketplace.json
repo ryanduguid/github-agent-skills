@@ -12,11 +12,11 @@
       "source": "./",
       "strict": true,
       "skills": [
-        "./.claude/skills/github-issue-to-pr",
-        "./.claude/skills/github-profile-curator",
-        "./.claude/skills/github-readme-polish",
-        "./.claude/skills/github-release-prep",
-        "./.claude/skills/github-repository-audit"
+        "./skills/github-issue-to-pr",
+        "./skills/github-profile-curator",
+        "./skills/github-readme-polish",
+        "./skills/github-release-prep",
+        "./skills/github-repository-audit"
       ],
       "license": "LicenseRef-Duguid-Public-Attribution-1.0"
     }

@@ -17,7 +17,7 @@ pub const APPROVED_NAMES: [&str; 5] = [
     "github-release-prep",
     "github-repository-audit",
 ];
-pub const CANONICAL: &str = ".claude/skills";
+pub const CANONICAL: &str = "skills";
 pub const RUNTIME: &str = ".agents/skills";
 pub const RUN_DIRECTORIES: [&str; 2] = ["validation/baselines", "validation/forward"];
 // Each canonical skill has one scenario, named after it, that its recorded runs use.

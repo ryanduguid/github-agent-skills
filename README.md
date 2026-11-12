@@ -16,8 +16,8 @@
 </div>
 
 Five focused, portable Agent Skills for evidence-based GitHub work. The
-canonical source is `.claude/skills/`, which Claude Code reads in place; a
-generated copy in `.agents/skills/` serves Codex.
+canonical source is `skills/`, which Claude Code loads through the plugin
+manifest; a generated copy in `.agents/skills/` serves Codex.
 
 ## Skills
 
@@ -68,15 +68,15 @@ the Rust command in [`tools/github-skills`](tools/github-skills/README.md).
 
 ## Runtimes and installation
 
-`.claude/skills/` is the only canonical source, and Claude Code reads it in
-place. After changing a skill, run
+`skills/` is the only canonical source, and Claude Code loads it through the
+plugin manifest (`claude --plugin-dir .`). After changing a skill, run
 `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync`;
 it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
 validates the result. Do not edit the generated directory directly.
 
 For a project-local installation, copy the directory for the runtime you use
 into that project's corresponding discovery path. To keep a local clone as the
-source of truth, update `.claude/skills/`, rerun the synchroniser and copy the
+source of truth, update `skills/`, rerun the synchroniser and copy the
 runtime directory again. Use only the runtime you need.
 
 To install one skill into a project without a clone, use the
@@ -90,12 +90,31 @@ It asks which runtimes to install for, copies the skill from `main` into the
 project and records it in `skills-lock.json`. It grants no remote authority.
 Review the copy before you use it.
 
+The GitHub CLI's `gh skill` command installs from the latest tagged release
+instead:
+
+```shell
+gh skill install ryanduguid/github-agent-skills github-readme-polish
+```
+
+### Claude Code plugin
+
+To install all 5 skills as a Claude Code plugin from this repository's marketplace:
+
+```shell
+claude plugin marketplace add ryanduguid/github-agent-skills
+claude plugin install github-agent-skills@ryanduguid-github-skills
+```
+
+Inside a session, `/plugin marketplace add ryanduguid/github-agent-skills` then
+`/plugin install github-agent-skills@ryanduguid-github-skills` do the same. The
+plugin reads `main` and grants no remote authority.
+
 ### Local plugin package
 
 This checkout also contains Claude Code and Codex plugin manifests for the
 same 5 canonical skills, following the Australian accounting skills package.
-The manifests read version `0.1.1`; this does not publish or change the existing
-`v0.1.0` tagged release.
+The manifests read version `0.1.1`, the latest tagged release.
 
 After cloning and checking out the revision you reviewed, start Claude Code
 from the repository root with:
@@ -106,7 +125,7 @@ claude --plugin-dir .
 
 The Claude marketplace file lists every canonical skill explicitly. The Codex
 marketplace at `.agents/plugins/marketplace.json` points to this local package,
-whose `.codex-plugin/plugin.json` also reads `.claude/skills/`. A host with local
+whose `.codex-plugin/plugin.json` also reads `skills/`. A host with local
 plugin support can register that marketplace; the project-local copy route
 above remains available. These manifests add no MCP server or credentials.
 Installation grants no authority for remote mutations. Run the repository's
@@ -153,7 +172,7 @@ record that version as a skill digest line, which
 prints; record it in
 the control run too, so both runs of a pair name the same skill version. The
 digest (v1) is the SHA-256 of a manifest of every file under
-`.claude/skills/<skill>/`, so it covers `SKILL.md` and any scripts, references
+`skills/<skill>/`, so it covers `SKILL.md` and any scripts, references
 or other assets. Each manifest line holds a file's SHA-256 and its path
 relative to the skill directory, separated by 2 spaces, and lines are sorted by
 path. Bytes are hashed as checked out; `.gitattributes` gives text files LF
