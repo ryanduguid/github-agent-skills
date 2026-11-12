@@ -90,12 +90,31 @@ It asks which runtimes to install for, copies the skill from `main` into the
 project and records it in `skills-lock.json`. It grants no remote authority.
 Review the copy before you use it.
 
+The GitHub CLI's `gh skill` command installs from the latest tagged release
+instead:
+
+```shell
+gh skill install ryanduguid/github-agent-skills github-readme-polish
+```
+
+### Claude Code plugin
+
+To install all 5 skills as a Claude Code plugin from this repository's marketplace:
+
+```shell
+claude plugin marketplace add ryanduguid/github-agent-skills
+claude plugin install github-agent-skills@ryanduguid-github-skills
+```
+
+Inside a session, `/plugin marketplace add ryanduguid/github-agent-skills` then
+`/plugin install github-agent-skills@ryanduguid-github-skills` do the same. The
+plugin reads `main` and grants no remote authority.
+
 ### Local plugin package
 
 This checkout also contains Claude Code and Codex plugin manifests for the
 same 5 canonical skills, following the Australian accounting skills package.
-The manifests read version `0.1.1`; this does not publish or change the existing
-`v0.1.0` tagged release.
+The manifests read version `0.1.1`, the latest tagged release.
 
 After cloning and checking out the revision you reviewed, start Claude Code
 from the repository root with:

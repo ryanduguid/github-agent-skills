@@ -1,9 +1,11 @@
 # Release notes
 
-## Unreleased
+## v0.1.1
 
 The canonical skills moved from `.claude/skills/` to `skills/`, so
-`gh skill install` finds them without `--allow-hidden-dirs`.
+`gh skill install` finds them without `--allow-hidden-dirs` and lists each
+once. The skills also install as a Claude Code plugin from this repository's
+marketplace (see README).
 
 ### Licence
 
