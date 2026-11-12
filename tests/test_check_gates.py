@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -188,6 +189,33 @@ class GatePredecessorTests(unittest.TestCase):
                 with self.assertRaisesRegex(SystemExit, "Cannot determine the gate context"):
                     self.run_gate("replacement", "validate-gates", head=head)
 
+
+class LiteralNameTests(unittest.TestCase):
+    def test_reads_and_refuses_the_same_names(self):
+        cases = {
+            "build": "build",
+            "build # note": "build",
+            "build#tag": "build#tag",
+            "build\t# note": "build",
+            "a # b # c": "a",
+            "  spaced  name  # c": "spaced  name",
+            "'it''s' # c": "it's",
+            '"json" # c': "json",
+            "# note": None,
+            "": None,
+            "true": None,
+            "12": None,
+            "key: value": None,
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(CHECK_GATES.literal_name(text), expected)
+
+    def test_a_long_run_of_spaces_without_a_comment_returns_promptly(self):
+        text = "a" + " " * 100_000 + "b"
+        start = time.perf_counter()
+        self.assertEqual(CHECK_GATES.literal_name(text), text)
+        self.assertLess(time.perf_counter() - start, 1)
 
 
 class GateCliTests(unittest.TestCase):
