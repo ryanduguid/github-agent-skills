@@ -212,7 +212,11 @@ fn skills_are_held_to_the_agent_skills_specification() {
 fn metadata_is_literal_and_uses_python_line_separators() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("SKILL.md");
-    fs::write(&path,"---\u{2028}name: first\u{2028}description:\u{1f}Use when testing.\u{1c}---").unwrap();
+    fs::write(
+        &path,
+        "---\u{2028}name: first\u{2028}description:\u{1f}Use when testing.\u{1c}---",
+    )
+    .unwrap();
     let metadata = s::frontmatter(&path).unwrap().unwrap();
     assert_eq!(metadata["name"], "first");
     assert_eq!(metadata["description"], "Use when testing.");
@@ -244,11 +248,7 @@ fn repeated_frontmatter_fields_are_refused_whatever_their_values() {
             }
         }
     }
-    fs::write(
-        &path,
-        "---\nname: a\nother: 1\nother: 2\n---\nname: c\n",
-    )
-    .unwrap();
+    fs::write(&path, "---\nname: a\nother: 1\nother: 2\n---\nname: c\n").unwrap();
     assert_eq!(s::frontmatter(&path).unwrap().unwrap()["name"], "a");
 }
 
@@ -272,7 +272,11 @@ fn indented_and_keyless_frontmatter_lines_are_refused() {
         fs::write(&path, format!("---\n{body}---\n")).unwrap();
         assert_eq!(s::frontmatter(&path).unwrap(), Err(error), "{body:?}");
     }
-    fs::write(&path, "---\nname: a\n\n# a comment\n \ndescription: b\n---\n").unwrap();
+    fs::write(
+        &path,
+        "---\nname: a\n\n# a comment\n \ndescription: b\n---\n",
+    )
+    .unwrap();
     let metadata = s::frontmatter(&path).unwrap().unwrap();
     assert_eq!(metadata["name"], "a");
     assert_eq!(metadata["description"], "b");
@@ -477,6 +481,9 @@ fn strict_validation_requires_one_scenario_per_skill() {
         );
     }
     assert!(s::sync(root.path()).unwrap().is_empty());
+    for directory in s::RUN_DIRECTORIES {
+        fs::create_dir_all(root.path().join(directory)).unwrap();
+    }
     let output = cli(root.path(), &["validate-skills", "--strict"]);
     assert_eq!(output.status.code(), Some(1));
     let missing: Vec<_> = s::APPROVED_NAMES
@@ -498,9 +505,6 @@ fn strict_validation_requires_one_scenario_per_skill() {
         );
     }
     write(root.path(), "tests/scenarios/notes.txt", b"not a scenario");
-    for directory in s::RUN_DIRECTORIES {
-        fs::create_dir_all(root.path().join(directory)).unwrap();
-    }
     let output = cli(root.path(), &["validate-skills", "--strict"]);
     assert_eq!(output.status.code(), Some(0));
     assert!(output.stderr.is_empty());
@@ -797,8 +801,12 @@ fn recorded_runs_are_checked_against_the_current_skill() {
     let run = format!("validation/forward/{name}.txt");
     let skill = root.path().join(s::CANONICAL).join(name);
     write(&skill, "SKILL.md", b"---\nname: x\n---\n");
-    let missing = s::RUN_DIRECTORIES.map(|directory| format!("{directory}: run directory is missing"));
-    assert_eq!(s::check_runs(root.path()).unwrap(), (missing.to_vec(), vec![]));
+    let missing =
+        s::RUN_DIRECTORIES.map(|directory| format!("{directory}: run directory is missing"));
+    assert_eq!(
+        s::check_runs(root.path()).unwrap(),
+        (missing.to_vec(), vec![])
+    );
     let digest = s::skill_digest(&skill).unwrap();
     record(
         root.path(),
