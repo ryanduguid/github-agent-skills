@@ -64,9 +64,10 @@ stderr.
 
 ## Compatibility and limits
 
-The checks keep the Python originals' semantics, with 2 additions: the metadata
-reader refuses an indented line and a line with no key, which the original
-ignored, and `--strict` fails when a recorded run directory is missing.
+The checks keep the Python originals' semantics, with 3 additions: the
+hidden-character refusal under Commands, the metadata reader's refusal of an
+indented line and a line with no key, which the original ignored, and `--strict`
+failing when a recorded run directory is missing.
 Otherwise the reader keeps the original line parser, including duplicate-key
 handling and literal values.
 It does not interpret YAML quoting or block values. Text parsing preserves
