@@ -22,8 +22,11 @@ change GitHub settings, or make any other remote mutation.
 ## Install
 
 - [Repository checks](https://github.com/ryanduguid/github-agent-skills#repository-checks): clone the repository, run the unit suite, then run the strict validator.
-- Codex: copy `.agents/skills/<skill>` into the Codex skill discovery path of the project you are working in.
-- Claude Code: copy `skills/<skill>` into that project's Claude Code skill discovery path.
+- Claude Code plugin: `claude plugin marketplace add ryanduguid/github-agent-skills`, then `claude plugin install github-agent-skills@ryanduguid-github-skills`. It installs `main`; the version comes from `.claude-plugin/plugin.json`.
+- Codex plugin: `codex plugin marketplace add ryanduguid/github-agent-skills`, then `codex plugin add github-agent-skills@ryanduguid-github-skills`.
+- One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot.
+- Copy instead: `.agents/skills/<skill>` into a project's Codex skill discovery path, or `skills/<skill>` into its Claude Code path.
+- These skills are not automated pull request reviewers; for a review of a diff, use Copilot code review or the agent's own review command.
 - Install only the runtime you use, and keep `skills/` as the source of truth for any local edit.
 
 ## Recorded runs
