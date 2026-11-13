@@ -11,7 +11,7 @@
 
 [![validate](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/validate.yml) [![Codecov](https://codecov.io/gh/ryanduguid/github-agent-skills/graph/badge.svg)](https://codecov.io/gh/ryanduguid/github-agent-skills) [![CodeQL](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/ryanduguid/github-agent-skills/actions/workflows/github-code-scanning/codeql) [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ryanduguid_github-agent-skills&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ryanduguid_github-agent-skills) [![Codacy code quality](https://app.codacy.com/project/badge/Grade/d1745a44b9934138ab60eb717cb99281)](https://app.codacy.com/gh/ryanduguid/github-agent-skills/dashboard)<br> [![OpenSSF Scorecard](https://raw.githubusercontent.com/ryanduguid/.github/badges/ryanduguid/github-agent-skills.svg)](https://scorecard.dev/viewer/?uri=github.com/ryanduguid/github-agent-skills) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15424/badge)](https://www.bestpractices.dev/projects/15424)<br> [![release](https://badgen.net/github/release/ryanduguid/github-agent-skills/stable?label=release&color=66023C&labelColor=000000)](https://github.com/ryanduguid/github-agent-skills/releases/latest) [![licence: Ryan Duguid Public Attribution Licence 1.0](.github/assets/badges/licence.svg)](LICENSE)
 
-[Skills](#skills) · [First use](#first-use) · [Repository checks](#repository-checks) · [Runtimes and installation](#runtimes-and-installation) · [Validation](#validation) · [Boundary](#boundary) · [Licence](#licence)
+[Skills](#skills) · [Runtimes and installation](#runtimes-and-installation) · [First use](#first-use) · [Repository checks](#repository-checks) · [Validation](#validation) · [Boundary](#boundary) · [Licence](#licence)
 
 </div>
 
@@ -26,45 +26,6 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 - `github-profile-curator`: select and present a coherent profile portfolio.
 - `github-release-prep`: prepare an evidence-backed release handoff.
 - `github-issue-to-pr`: turn an issue into a narrow, tested local change.
-
-## Requirements
-
-The skills are Markdown and need no installation. The repository checks need
-[rustup](https://rustup.rs/), which installs the Rust release pinned in
-`rust-toolchain.toml`, and Python 3.14+ for the unit tests, which use only the
-standard library.
-
-## First use
-
-From a clone, ask Claude Code to apply a skill to the sample README in
-`tests/fixtures/`:
-
-```shell
-claude --plugin-dir . -p "Use the github-readme-polish skill to review tests/fixtures/readme-polish-repository/README.md. Propose a diff only; change no files."
-```
-
-On 1 November 2026 (Claude Code 2.1.312, Sonnet 5.5, read-only tools) the
-skill read the README, `scripts/demo.ps1` and `LICENSE`, then reported that the
-opening line claims a Markdown summary the demo script never produces (it
-prints one fixed line), that the PowerShell 7 requirement is unverified, and
-that the demo command is listed twice. It returned a diff that corrects those
-claims, kept the legal boundary unchanged, added no badges or readiness claims
-and changed no files.
-
-## Repository checks
-
-```shell
-git clone https://github.com/ryanduguid/github-agent-skills.git
-cd github-agent-skills
-python -m unittest discover -s tests -v
-rustup toolchain install
-cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
-cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-public-files
-```
-
-These are the checks the Validate workflow runs, in the same order. The Codex
-copy is tracked, so a fresh clone needs no synchronising step. The checker is
-the Rust command in [`tools/github-skills`](tools/github-skills/README.md).
 
 ## Runtimes and installation
 
@@ -108,7 +69,34 @@ claude plugin install github-agent-skills@ryanduguid-github-skills
 
 Inside a session, `/plugin marketplace add ryanduguid/github-agent-skills` then
 `/plugin install github-agent-skills@ryanduguid-github-skills` do the same. The
-plugin reads `main` and grants no remote authority.
+marketplace installs the files on `main` as they stand when you add or update
+it, not a tagged release. The version it reports comes from
+`.claude-plugin/plugin.json`, so between releases `main` can hold changes that
+version does not include. The plugin grants no remote authority.
+
+### Codex plugin
+
+To install all 5 skills as a Codex plugin from the same repository:
+
+```shell
+codex plugin marketplace add ryanduguid/github-agent-skills
+codex plugin add github-agent-skills@ryanduguid-github-skills
+```
+
+Codex reads `.agents/plugins/marketplace.json` and installs `skills/` from
+`main` in the same way; the version comes from `.codex-plugin/plugin.json`.
+
+### GitHub Copilot
+
+`gh skill install` also installs a skill for Copilot:
+
+```shell
+gh skill install ryanduguid/github-agent-skills github-readme-polish --agent github-copilot
+```
+
+In a project it places the skill in `.agents/skills/`. These skills inspect and
+prepare local work; they are not automated pull request reviewers. For a review
+of a diff, use Copilot code review or your agent's own review command.
 
 ### Local plugin package
 
@@ -123,13 +111,49 @@ from the repository root with:
 claude --plugin-dir .
 ```
 
-The Claude marketplace file lists every canonical skill explicitly. The Codex
-marketplace at `.agents/plugins/marketplace.json` points to this local package,
-whose `.codex-plugin/plugin.json` also reads `skills/`. A host with local
-plugin support can register that marketplace; the project-local copy route
-above remains available. These manifests add no MCP server or credentials.
-Installation grants no authority for remote mutations. Run the repository's
+The Claude marketplace file lists every canonical skill explicitly, and both
+plugin manifests read `skills/`. They add no MCP server or credentials, and
+installation grants no authority for remote mutations. Run the repository's
 checks before using a changed checkout. No registry submission is made here.
+
+## Requirements
+
+The skills are Markdown and need no installation. The repository checks need
+[rustup](https://rustup.rs/), which installs the Rust release pinned in
+`rust-toolchain.toml`, and Python 3.14+ for the unit tests, which use only the
+standard library.
+
+## First use
+
+From a clone, ask Claude Code to apply a skill to the sample README in
+`tests/fixtures/`:
+
+```shell
+claude --plugin-dir . -p "Use the github-readme-polish skill to review tests/fixtures/readme-polish-repository/README.md. Propose a diff only; change no files."
+```
+
+On 1 November 2026 (Claude Code 2.1.312, Sonnet 5.5, read-only tools) the
+skill read the README, `scripts/demo.ps1` and `LICENSE`, then reported that the
+opening line claims a Markdown summary the demo script never produces (it
+prints one fixed line), that the PowerShell 7 requirement is unverified, and
+that the demo command is listed twice. It returned a diff that corrects those
+claims, kept the legal boundary unchanged, added no badges or readiness claims
+and changed no files.
+
+## Repository checks
+
+```shell
+git clone https://github.com/ryanduguid/github-agent-skills.git
+cd github-agent-skills
+python -m unittest discover -s tests -v
+rustup toolchain install
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
+cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-public-files
+```
+
+These are the checks the Validate workflow runs, in the same order. The Codex
+copy is tracked, so a fresh clone needs no synchronising step. The checker is
+the Rust command in [`tools/github-skills`](tools/github-skills/README.md).
 
 ## Validation
 
