@@ -12,7 +12,8 @@ cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- check-publi
 rustup, `rustup toolchain install` installs it. The executable needs Git for
 `check-public-files`; it needs no Python runtime. It replaced
 `scripts/validate_skills.py` and `scripts/check_public_files.py`, whose checks
-and failure messages it keeps.
+and failure messages it keeps, with the additions listed under Compatibility and
+limits.
 
 ## Commands
 
@@ -21,8 +22,8 @@ require all 5 canonical skills and exact generated-tree parity. Add `--sync` to
 replace the contents of `.agents/skills` from approved canonical skill trees
 before validation. Synchronisation copies complete file bytes and nested
 directories. It refuses missing or invalid roots and links throughout both trees
-before changing generated files. With `--strict`, recorded runs under
-`validation/baselines` and `validation/forward` must name an approved skill, a
+before changing generated files. With `--strict`, `validation/baselines` and
+`validation/forward` must exist, recorded runs under them must name an approved skill, a
 run that records a skill digest must match the current skill, and
 `tests/scenarios` must hold one `.md` scenario per approved skill and no other.
 Add `--skill-digest NAME` to print the digest line for a new run file after
@@ -63,8 +64,11 @@ stderr.
 
 ## Compatibility and limits
 
-The checks keep the Python originals' semantics. The metadata reader preserves
-the original line parser, including duplicate-key handling and literal values.
+The checks keep the Python originals' semantics, with 2 additions: the metadata
+reader refuses an indented line and a line with no key, which the original
+ignored, and `--strict` fails when a recorded run directory is missing.
+Otherwise the reader keeps the original line parser, including duplicate-key
+handling and literal values.
 It does not interpret YAML quoting or block values. Text parsing preserves
 Python whitespace, line separators, alphanumeric word boundaries and the dotted
 and dotless Turkish letters in the fixed case-insensitive patterns. Generated

@@ -272,6 +272,8 @@ fn indented_and_keyless_frontmatter_lines_are_refused() {
         fs::write(&path, format!("---\n{body}---\n")).unwrap();
         assert_eq!(s::frontmatter(&path).unwrap(), Err(error), "{body:?}");
     }
+    fs::write(&path, "---\u{2028}name: a\u{2028} name: b\u{2028}---").unwrap();
+    assert_eq!(s::frontmatter(&path).unwrap(), Err(indented(3)));
     fs::write(
         &path,
         "---\nname: a\n\n# a comment\n \ndescription: b\n---\n",
@@ -962,6 +964,13 @@ fn cli_strict_checks_runs_and_prints_the_digest_line() {
     assert!(s::sync(root.path()).unwrap().is_empty());
     let run = format!("validation/baselines/{name}.txt");
     record(root.path(), &run, "");
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("validation/forward: run directory is missing\n")
+    );
     fs::create_dir_all(root.path().join("validation/forward")).unwrap();
     let output = cli(root.path(), &["validate-skills", "--strict"]);
     assert_eq!(output.status.code(), Some(0));

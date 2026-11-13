@@ -164,7 +164,8 @@ that resolve inside the skill directory. It splits frontmatter on colons rather
 than parsing YAML, so it refuses a value a parser could read differently, such
 as a block scalar, a quoted value, `true`, `123` or one containing `: `. For
 the same reason it refuses an indented frontmatter line, which a parser would
-join to the field above it or read as a nested value, and a line with no key.
+join to the field above it or read as a nested value (such as the
+specification's indented `metadata` example), and a line with no key.
 It also refuses a `SKILL.md` containing an
 invisible or bidirectional control character, such as a right-to-left override,
 zero-width space or Unicode tag, which can show a reviewer different text from

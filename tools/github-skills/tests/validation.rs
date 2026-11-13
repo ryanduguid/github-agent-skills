@@ -84,7 +84,7 @@ fn frontmatter_needs_both_delimiters_and_ignores_other_lines() {
     }
     let text = skill_text(NAME, "assessing a repository").replacen(
         "---\nname:",
-        "---\nlicence: MIT\nno separator here\nname:",
+        "---\nlicence: MIT\nname:",
         1,
     );
     write(root.path(), SKILL_FILE, text.as_bytes());
@@ -524,6 +524,7 @@ fn recorded_runs_go_stale_on_any_byte_change() {
     write(&skill, "SKILL.md", b"---\nname: x\n---\n");
     write(&skill, "references/checklist.md", b"check\n");
     let run = format!("validation/forward/{NAME}.txt");
+    fs::create_dir_all(root.path().join("validation/baselines")).unwrap();
     // A run without a digest is a notice, and needs no assessor.
     write(
         root.path(),
