@@ -244,7 +244,8 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
         }
         let Some((key, value)) = line
             .split_once(':')
-            .filter(|(key, _)| !key.trim_matches(crate::python_whitespace).is_empty())
+            .map(|(key, value)| (key.trim_matches(crate::python_whitespace), value))
+            .filter(|(key, _)| !key.is_empty())
         else {
             return Ok(Err(format!(
                 "frontmatter line {number} is not a 'key: value' line"

@@ -253,6 +253,30 @@ fn repeated_frontmatter_fields_are_refused_whatever_their_values() {
 }
 
 #[test]
+fn space_before_the_colon_names_the_same_field() {
+    // YAML ends a plain key at its last non-space character, so `name : b` is
+    // the field `name`, as a YAML loader reading the skill would see it.
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("SKILL.md");
+    for key in ["name", "description", "compatibility"] {
+        for spaced in [format!("{key} "), format!("{key}\t"), format!("{key}  ")] {
+            fs::write(&path, format!("---\n{key}: a\n{spaced}: b\n---\n")).unwrap();
+            assert_eq!(
+                s::frontmatter(&path).unwrap(),
+                Err(format!("duplicate frontmatter field '{key}'")),
+                "{spaced:?}"
+            );
+            fs::write(&path, format!("---\n{spaced}: b\n---\n")).unwrap();
+            assert_eq!(
+                s::frontmatter(&path).unwrap().unwrap()[key],
+                "b",
+                "{spaced:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn indented_and_keyless_frontmatter_lines_are_refused() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("SKILL.md");
