@@ -1,5 +1,17 @@
 # Release notes
 
+## Unreleased
+
+- The README puts installation first and names each route: the Claude Code
+  and Codex plugin marketplaces, `gh skill install` (with
+  `--agent github-copilot`), `npx skills add` and a project-local copy (#122).
+- The validator refuses an indented or keyless frontmatter line and names it,
+  and `--strict` reports a missing `validation/baselines/` or
+  `validation/forward/` directory (#125).
+- A frontmatter key with spaces before the colon counts as its field, so
+  `name : b` after `name: a` is a duplicate, as a YAML parser reads it (#127).
+- `rustix` 1.1.6 in the validator's lockfile fixes RUSTSEC-2026-0486 (#124).
+
 ## v0.1.1
 
 The canonical skills moved from `.claude/skills/` to `skills/`, so
