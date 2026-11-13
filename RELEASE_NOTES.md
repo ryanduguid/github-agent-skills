@@ -9,8 +9,10 @@ marketplace (see README).
 
 ### Licence
 
-Relicensed from Apache-2.0 to FSL-1.1-ALv2 (Functional Source License, with
-Apache-2.0 as the future licence). Released versions keep their licence.
+Relicensed from Apache-2.0 to the Ryan Duguid Public Attribution Licence 1.0,
+the FSL-1.1-ALv2 text with a public attribution condition (see LICENSE). Each
+version becomes available under Apache-2.0 2 years after it is made available.
+Released versions keep their licence.
 
 ### Plugin manifests
 
