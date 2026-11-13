@@ -58,7 +58,8 @@ def literal_name(text: str) -> str | None:
     if text.startswith("'"):
         match = re.fullmatch(r"'((?:[^']|'')*)'\s*(?:#.*)?", text)
         return match[1].replace("''", "'") if match and match[1] else None
-    text = re.split(r"\s+#", text, maxsplit=1)[0].strip()
+    comment = re.search(r"\s#", text)
+    text = text[: comment.start()].strip() if comment else text
     if (not text or text[0] in "!&*[]{}>|%@`#" or re.search(r":\s|[\r\n]", text)
             or text.lower() in {"null", "true", "false", "~"}
             or re.fullmatch(r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", text)):
