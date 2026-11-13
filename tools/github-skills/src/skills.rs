@@ -231,10 +231,26 @@ pub fn frontmatter(path: &Path) -> io::Result<Result<BTreeMap<String, String>, S
         return Ok(Err("missing YAML frontmatter delimiters".into()));
     };
     let mut metadata = BTreeMap::new();
-    for line in &lines[1..end] {
-        if let Some((key, value)) = line.split_once(':')
-            && matches!(key, "name" | "description" | "compatibility")
-        {
+    for (number, line) in lines[1..end].iter().enumerate().map(|(i, l)| (i + 2, l)) {
+        if line.trim_matches(crate::python_whitespace).is_empty() || line.starts_with('#') {
+            continue;
+        }
+        // A YAML parser would join an indented line to the field above it, or
+        // read it as a nested value, which this line-by-line reader never sees.
+        if line.starts_with([' ', '\t']) {
+            return Ok(Err(format!(
+                "frontmatter line {number} is indented; continuation lines and nested values are not supported"
+            )));
+        }
+        let Some((key, value)) = line
+            .split_once(':')
+            .filter(|(key, _)| !key.trim_matches(crate::python_whitespace).is_empty())
+        else {
+            return Ok(Err(format!(
+                "frontmatter line {number} is not a 'key: value' line"
+            )));
+        };
+        if matches!(key, "name" | "description" | "compatibility") {
             let value = value.trim_matches(crate::python_whitespace).to_owned();
             if metadata.insert(key.to_owned(), value).is_some() {
                 return Ok(Err(format!("duplicate frontmatter field '{key}'")));
@@ -575,6 +591,10 @@ pub fn check_runs(root: &Path) -> io::Result<(Vec<String>, Vec<String>)> {
     let mut notices = Vec::new();
     let mut current = BTreeMap::new();
     for directory in RUN_DIRECTORIES {
+        if !root.join(directory).is_dir() {
+            failures.push(format!("{directory}: run directory is missing"));
+            continue;
+        }
         for run in with_suffix(&root.join(directory), ".txt") {
             let name = relative(&run, root);
             let stem = run.file_stem().unwrap().to_string_lossy().into_owned();

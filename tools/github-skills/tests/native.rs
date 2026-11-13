@@ -212,7 +212,11 @@ fn skills_are_held_to_the_agent_skills_specification() {
 fn metadata_is_literal_and_uses_python_line_separators() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("SKILL.md");
-    fs::write(&path,"---\u{2028}name: first\u{2028} name: ignored\u{2028}description:\u{1f}Use when testing.\u{1c}---").unwrap();
+    fs::write(
+        &path,
+        "---\u{2028}name: first\u{2028}description:\u{1f}Use when testing.\u{1c}---",
+    )
+    .unwrap();
     let metadata = s::frontmatter(&path).unwrap().unwrap();
     assert_eq!(metadata["name"], "first");
     assert_eq!(metadata["description"], "Use when testing.");
@@ -244,12 +248,40 @@ fn repeated_frontmatter_fields_are_refused_whatever_their_values() {
             }
         }
     }
+    fs::write(&path, "---\nname: a\nother: 1\nother: 2\n---\nname: c\n").unwrap();
+    assert_eq!(s::frontmatter(&path).unwrap().unwrap()["name"], "a");
+}
+
+#[test]
+fn indented_and_keyless_frontmatter_lines_are_refused() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("SKILL.md");
+    let indented = |line: usize| {
+        format!(
+            "frontmatter line {line} is indented; continuation lines and nested values are not supported"
+        )
+    };
+    let keyless = |line: usize| format!("frontmatter line {line} is not a 'key: value' line");
+    for (body, error) in [
+        ("name: a\n name: b\n", indented(3)),
+        ("name: a\ndescription: Use when\n  testing.\n", indented(4)),
+        ("name: a\nmetadata:\n\tauthor: b\n", indented(4)),
+        ("name: a\njust words\n", keyless(3)),
+        ("name: a\n: value\n", keyless(3)),
+    ] {
+        fs::write(&path, format!("---\n{body}---\n")).unwrap();
+        assert_eq!(s::frontmatter(&path).unwrap(), Err(error), "{body:?}");
+    }
+    fs::write(&path, "---\u{2028}name: a\u{2028} name: b\u{2028}---").unwrap();
+    assert_eq!(s::frontmatter(&path).unwrap(), Err(indented(3)));
     fs::write(
         &path,
-        "---\nname: a\n name: b\nother: 1\nother: 2\n---\nname: c\n",
+        "---\nname: a\n\n# a comment\n \ndescription: b\n---\n",
     )
     .unwrap();
-    assert_eq!(s::frontmatter(&path).unwrap().unwrap()["name"], "a");
+    let metadata = s::frontmatter(&path).unwrap().unwrap();
+    assert_eq!(metadata["name"], "a");
+    assert_eq!(metadata["description"], "b");
 }
 
 #[test]
@@ -451,6 +483,9 @@ fn strict_validation_requires_one_scenario_per_skill() {
         );
     }
     assert!(s::sync(root.path()).unwrap().is_empty());
+    for directory in s::RUN_DIRECTORIES {
+        fs::create_dir_all(root.path().join(directory)).unwrap();
+    }
     let output = cli(root.path(), &["validate-skills", "--strict"]);
     assert_eq!(output.status.code(), Some(1));
     let missing: Vec<_> = s::APPROVED_NAMES
@@ -768,7 +803,12 @@ fn recorded_runs_are_checked_against_the_current_skill() {
     let run = format!("validation/forward/{name}.txt");
     let skill = root.path().join(s::CANONICAL).join(name);
     write(&skill, "SKILL.md", b"---\nname: x\n---\n");
-    assert_eq!(s::check_runs(root.path()).unwrap(), (vec![], vec![]));
+    let missing =
+        s::RUN_DIRECTORIES.map(|directory| format!("{directory}: run directory is missing"));
+    assert_eq!(
+        s::check_runs(root.path()).unwrap(),
+        (missing.to_vec(), vec![])
+    );
     let digest = s::skill_digest(&skill).unwrap();
     record(
         root.path(),
@@ -854,6 +894,7 @@ fn a_recorded_run_with_a_digest_names_one_assessor() {
     let run = format!("validation/forward/{name}.txt");
     let skill = root.path().join(s::CANONICAL).join(name);
     write(&skill, "SKILL.md", b"---\nname: x\n---\n");
+    fs::create_dir_all(root.path().join("validation/baselines")).unwrap();
     let digest = s::skill_digest(&skill).unwrap();
     for assessor in [
         "",
@@ -923,6 +964,14 @@ fn cli_strict_checks_runs_and_prints_the_digest_line() {
     assert!(s::sync(root.path()).unwrap().is_empty());
     let run = format!("validation/baselines/{name}.txt");
     record(root.path(), &run, "");
+    let output = cli(root.path(), &["validate-skills", "--strict"]);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("validation/forward: run directory is missing\n")
+    );
+    fs::create_dir_all(root.path().join("validation/forward")).unwrap();
     let output = cli(root.path(), &["validate-skills", "--strict"]);
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(
