@@ -469,7 +469,10 @@ fn strict_mode_requires_the_complete_generated_tree() {
     assert_eq!(
         s::validate(root.path(), true).unwrap(),
         [
+            "skills: missing required skill 'github-branch-review'",
+            "skills: missing required skill 'github-issue-draft'",
             "skills: missing required skill 'github-issue-to-pr'",
+            "skills: missing required skill 'github-pr-description'",
             "skills: missing required skill 'github-profile-curator'",
             "skills: missing required skill 'github-readme-polish'",
             "skills: missing required skill 'github-release-prep'",

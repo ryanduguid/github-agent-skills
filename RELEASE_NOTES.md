@@ -1,5 +1,14 @@
 # Release notes
 
+## Unreleased
+
+- Three new skills, each a local preparation step that changes nothing on GitHub:
+  `github-branch-review` reviews your own branch against its base and issue
+  before you push it, `github-pr-description` writes a pull request title and
+  body from the branch, and `github-issue-draft` drafts issues from a report or
+  plan for a person to file. Each has a scenario in `tests/scenarios/` and 2
+  activation evals; none has recorded runs or activation results yet.
+
 ## v0.1.2
 
 The 5 skills are unchanged from v0.1.1. This release fixes how the validator
