@@ -1,6 +1,7 @@
 ---
 name: github-issue-draft
 description: Use when turning a bug report, feature request or plan into GitHub issue drafts with reproduction steps or acceptance criteria, ready for a person to review and file.
+metadata: {author: Ryan Duguid}
 ---
 
 # Issue drafting

@@ -1,6 +1,7 @@
 ---
 name: github-pr-description
 description: Use when writing or revising a pull request title and description for an existing local branch from its commits, diff, check results, linked issue and the repository's pull request template.
+metadata: {author: Ryan Duguid}
 ---
 
 # Pull request description

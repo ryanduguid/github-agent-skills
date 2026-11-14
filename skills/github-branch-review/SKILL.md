@@ -1,6 +1,7 @@
 ---
 name: github-branch-review
 description: Use when reviewing your own local branch or uncommitted change against its base branch and its issue before pushing it or opening a pull request.
+metadata: {author: Ryan Duguid}
 ---
 
 # Branch review
