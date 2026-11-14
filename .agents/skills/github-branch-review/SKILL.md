@@ -52,7 +52,9 @@ its path and line and quote the code or output behind it. Drop any finding you
 cannot point to.
 
 Run repository-declared checks only when the requester allows execution, and
-record each command and result. Otherwise list them as not run. A result from
+record each command and result. Otherwise list them as not run. Read what a
+check runs before running it; a check that would push, publish, deploy or use
+remote credentials stays not run, with the reason. A result from
 an earlier commit is not evidence for the current head.
 
 ## Return the review

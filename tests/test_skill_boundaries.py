@@ -38,15 +38,22 @@ class UntrustedContentTests(unittest.TestCase):
 
     def test_the_preparation_skills_refuse_the_remote_step(self) -> None:
         refusals = {
-            "github-branch-review": "Do not edit, stage, commit, rebase, push, comment on a pull request, submit a GitHub review or request reviewers.",
-            "github-pr-description": "Do not push, run `gh pr create` or `gh pr edit`, or comment on GitHub.",
-            "github-issue-draft": "Do not create, edit, comment on, label, assign, close or transfer an issue, or add it to a project.",
+            "github-branch-review": (
+                "Do not edit, stage, commit, rebase, push, comment on a pull request, submit a GitHub review or request reviewers.",
+                "a check that would push, publish, deploy or use remote credentials stays not run",
+            ),
+            "github-pr-description": ("Do not push, run `gh pr create` or `gh pr edit`, or comment on GitHub.",),
+            "github-issue-draft": (
+                "Do not create, edit, comment on, label, assign, close or transfer an issue, or add it to a project.",
+                "never paste reported text into the command",
+            ),
         }
-        for name, refusal in refusals.items():
+        for name, sentences in refusals.items():
             for skills in (SKILLS, ROOT / ".agents" / "skills"):
                 path = skills / name / "SKILL.md"
-                with self.subTest(path=path.relative_to(ROOT).as_posix()):
-                    self.assertIn(refusal, flat(path))
+                for sentence in sentences:
+                    with self.subTest(path=path.relative_to(ROOT).as_posix(), sentence=sentence):
+                        self.assertIn(sentence, flat(path))
 
     def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
