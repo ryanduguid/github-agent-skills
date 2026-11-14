@@ -1,6 +1,6 @@
 # Portable GitHub skills
 
-> Five focused Agent Skills for evidence-based GitHub work, portable between
+> Eight focused Agent Skills for evidence-based GitHub work, portable between
 > Codex and Claude Code. They are Markdown, so a clone is the whole
 > installation; the repository checks are a Rust command in `tools/github-skills`.
 
@@ -18,6 +18,9 @@ change GitHub settings, or make any other remote mutation.
 - [github-profile-curator](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-profile-curator/SKILL.md): select profile projects, refine the profile README narrative, review pins, and prepare portfolio-facing copy.
 - [github-release-prep](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-release-prep/SKILL.md): assess release readiness, reconcile version drift, and prepare an evidence-backed tag, release, or publication handoff.
 - [github-issue-to-pr](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-to-pr/SKILL.md): turn an issue into a narrow, tested local change with a commit and pull-request handoff.
+- [github-branch-review](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-branch-review/SKILL.md): review your own local branch or uncommitted change against its base and issue before pushing it; posts nothing to GitHub.
+- [github-pr-description](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-pr-description/SKILL.md): write a pull request title and body from the branch's commits, diff, checks, linked issue and the repository's template.
+- [github-issue-draft](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-draft/SKILL.md): turn a bug report, feature request or plan into issue drafts that follow the repository's templates, ready for a person to file.
 
 ## Install
 
@@ -26,12 +29,12 @@ change GitHub settings, or make any other remote mutation.
 - Codex plugin: `codex plugin marketplace add ryanduguid/github-agent-skills`, then `codex plugin add github-agent-skills@ryanduguid-github-skills`.
 - One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot.
 - Copy instead: `.agents/skills/<skill>` into a project's Codex skill discovery path, or `skills/<skill>` into its Claude Code path.
-- These skills are not automated pull request reviewers; for a review of a diff, use Copilot code review or the agent's own review command.
+- These skills are not automated pull request reviewers: `github-branch-review` reviews a local branch and posts nothing; for a review of a pull request on GitHub, use Copilot code review.
 - Install only the runtime you use, and keep `skills/` as the source of truth for any local edit.
 
 ## Recorded runs
 
-- [validation/baselines](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/baselines): the no-skill control run for each of the five scenarios.
+- [validation/baselines](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/baselines): the no-skill control run for the scenarios of the first 5 skills; the 3 newer skills have scenarios but no recorded runs yet.
 - [validation/forward](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/forward): the named-skill run for the same scenarios.
 - [tests/scenarios](https://github.com/ryanduguid/github-agent-skills/tree/main/tests/scenarios): the scenario prompt and evaluator rubric behind each pair.
 

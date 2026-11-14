@@ -62,7 +62,10 @@ fn scanner_can_check_the_full_encoded_corpus_without_an_exemption() {
 fn strict_tree_parity_and_incremental_subset() {
     let root = tempfile::tempdir().unwrap();
     assert!(s::validate(root.path(), false).unwrap().is_empty());
-    assert_eq!(s::validate(root.path(), true).unwrap().len(), 5);
+    assert_eq!(
+        s::validate(root.path(), true).unwrap().len(),
+        s::APPROVED_NAMES.len()
+    );
     for name in s::APPROVED_NAMES {
         write(
             root.path(),
@@ -617,7 +620,10 @@ fn cli_uses_explicit_root_and_reports_failures_without_stdout() {
         .unwrap();
     assert_eq!(output.status.code(), Some(1));
     assert!(output.stdout.is_empty());
-    assert_eq!(String::from_utf8(output.stderr).unwrap().lines().count(), 5);
+    assert_eq!(
+        String::from_utf8(output.stderr).unwrap().lines().count(),
+        s::APPROVED_NAMES.len()
+    );
     let output = Command::new(env!("CARGO_BIN_EXE_github-skills"))
         .args(["check-public-files", "--sync"])
         .output()

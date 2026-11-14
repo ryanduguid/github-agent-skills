@@ -26,7 +26,7 @@ def flat(path: Path) -> str:
 class UntrustedContentTests(unittest.TestCase):
     def test_every_skill_and_its_codex_copy_carry_the_boundary(self) -> None:
         skills = sorted(SKILLS.glob("*/SKILL.md"))
-        self.assertEqual(len(skills), 5)
+        self.assertEqual(len(skills), 8)
         for skill in skills:
             for path in (skill, ROOT / ".agents" / "skills" / skill.parent.name / "SKILL.md"):
                 with self.subTest(path=path.relative_to(ROOT).as_posix()):
@@ -35,6 +35,18 @@ class UntrustedContentTests(unittest.TestCase):
     def test_the_audit_does_not_run_the_repository_it_assesses(self) -> None:
         text = flat(SKILLS / "github-repository-audit" / "SKILL.md")
         self.assertIn("Do not run the repository's own scripts, hooks, tests or install steps", text)
+
+    def test_the_preparation_skills_refuse_the_remote_step(self) -> None:
+        refusals = {
+            "github-branch-review": "Do not edit, stage, commit, rebase, push, comment on a pull request, submit a GitHub review or request reviewers.",
+            "github-pr-description": "Do not push, run `gh pr create` or `gh pr edit`, or comment on GitHub.",
+            "github-issue-draft": "Do not create, edit, comment on, label, assign, close or transfer an issue, or add it to a project.",
+        }
+        for name, refusal in refusals.items():
+            for skills in (SKILLS, ROOT / ".agents" / "skills"):
+                path = skills / name / "SKILL.md"
+                with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                    self.assertIn(refusal, flat(path))
 
     def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
