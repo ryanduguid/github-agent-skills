@@ -30,6 +30,10 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 - `github-pr-description`: write a pull request title and body from what the branch contains.
 - `github-issue-draft`: draft issues from a report or plan, ready for a person to file.
 
+The last 3 are new since v0.1.2. They have no recorded runs and no activation
+eval results yet, and an installation from a tagged release
+(`gh skill install`) includes them only from the next release.
+
 ## Runtimes and installation
 
 `skills/` is the only canonical source, and Claude Code loads it through the
@@ -55,7 +59,7 @@ project and records it in `skills-lock.json`. It grants no remote authority.
 Review the copy before you use it.
 
 The GitHub CLI's `gh skill` command installs from the latest tagged release
-instead:
+instead, which does not yet include the 3 newest skills:
 
 ```shell
 gh skill install ryanduguid/github-agent-skills github-readme-polish

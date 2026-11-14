@@ -12,10 +12,12 @@ request review.
 ## Fix the comparison
 
 Take the base branch from the requester or repository guidance. Otherwise use
-the remote's default branch as the clone recorded it
-(`git symbolic-ref --short refs/remotes/origin/HEAD`); that ref is optional
-and reflects the last fetch, so say which base you used and its commit. Do not
-fetch to refresh it unless the requester agrees.
+the remote's default branch as this clone records it
+(`git symbolic-ref --short refs/remotes/origin/HEAD`). That ref is optional,
+and by default a fetch does not update it when the remote's default branch
+changes; the branch it names is only as current as the last fetch. Say which
+base you used and its commit. Do not fetch to refresh it unless the requester
+agrees.
 
 Review what a pull request would show. `git diff <base>...HEAD` compares the
 branch tip with the merge base, the three-dot comparison GitHub shows on a
@@ -23,8 +25,8 @@ pull request; `git log <base>..HEAD` lists the branch's commits. Report
 uncommitted work (`git status --short`, `git diff`, `git diff --staged`)
 separately and say whether it belongs in the change.
 
-Read repository instructions, the originating issue or specification when one
-is supplied, and the code around each hunk, including callers of every changed
+Read repository instructions, the issue or specification behind the change
+when one is supplied, and the code around each hunk, including callers of every changed
 symbol. With no issue or specification, review against the commit messages and
 say so. If reads are denied, use only explicit supplied evidence and mark
 everything else **unverified**.

@@ -19,8 +19,9 @@ uncommitted changes are not part of the pull request.
 
 Look for a pull request template: GitHub fills a new pull request's body from
 `pull_request_template.md` in the repository root, `docs/` or `.github/` (the
-name is not case sensitive and can end `.txt`), or from a
-`PULL_REQUEST_TEMPLATE/` folder holding several. GitHub uses only templates on
+name is not case sensitive and can end `.txt`). A `PULL_REQUEST_TEMPLATE/`
+folder in one of those places holds several, and one of them fills the body
+only when a `template` query parameter names it. GitHub uses only templates on
 the default branch. Keep the template's headings and checklist, and leave
 unticked any box the evidence does not support. Read the contributing guide
 for title or sign-off rules.
@@ -50,7 +51,9 @@ A closing keyword (`close`, `closes`, `closed`, `fix`, `fixes`, `fixed`,
 issue, and merging into the default branch closes it. GitHub ignores the
 keyword when the pull request targets another branch. Use one only when the
 change resolves the whole issue; otherwise write a plain reference such as
-`Part of #12`.
+`Part of #12`. A closing keyword in a commit message also closes the issue
+when that commit reaches the default branch, so report any you find in the
+branch's commits.
 
 ## Return the handoff
 
@@ -63,7 +66,7 @@ Use this order:
 4. **Confirm before publishing**: each statement marked unverified, and any
    template box left unticked with the reason.
 5. **Publication checkpoint**: the head and base branches and the command the
-   requester could run, such as
+   requester could run once the branch is pushed, such as
    `gh pr create --base <base> --head <branch> --title "<title>" --body-file <file>`,
    marked as not run.
 
