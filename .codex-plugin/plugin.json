@@ -1,6 +1,6 @@
 {
   "name": "github-agent-skills",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "LicenseRef-Duguid-Public-Attribution-1.0",
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "author": { "name": "Ryan Duguid" },

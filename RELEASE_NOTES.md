@@ -1,16 +1,45 @@
 # Release notes
 
-## Unreleased
+## v0.1.2
+
+The 5 skills are unchanged from v0.1.1. This release fixes how the validator
+reads frontmatter and documents every installation route.
+
+### Changed
 
 - The README puts installation first and names each route: the Claude Code
   and Codex plugin marketplaces, `gh skill install` (with
   `--agent github-copilot`), `npx skills add` and a project-local copy (#122).
-- The validator refuses an indented or keyless frontmatter line and names it,
-  and `--strict` reports a missing `validation/baselines/` or
-  `validation/forward/` directory (#125).
+- The validator refuses an indented or keyless frontmatter line and names it
+  (#125). A nested value, such as the indented `metadata` map in the Agent
+  Skills specification's example, now fails validation. No skill here uses
+  one.
+
+### Fixed
+
 - A frontmatter key with spaces before the colon counts as its field, so
   `name : b` after `name: a` is a duplicate, as a YAML parser reads it (#127).
+- `--strict` passed when `validation/baselines/` or `validation/forward/` was
+  missing; it now fails and names each missing directory (#125).
 - `rustix` 1.1.6 in the validator's lockfile fixes RUSTSEC-2026-0486 (#124).
+  `rustix` reaches the validator only through `tempfile`, a test dependency,
+  so the built validator never included it.
+- CI: the gate check finds a trailing comment in linear time (#123), and a
+  merge to `main` no longer cancels the previous merge's run (#126).
+
+### Known issues
+
+- The `github-release-prep` pair in `validation/` does not show that the
+  skill improves on no skill: both runs pass every criterion. No recorded run
+  has a skill digest, so none is tied to the current skill files.
+- CI runs no `cargo audit` over the validator's 2 lockfiles. Dependabot
+  checks both weekly.
+- The required CodeQL check could report before the Rust analysis finished,
+  so a pull request could merge before its Rust code was scanned. A code
+  scanning ruleset added on 14 November 2026 requires the results; it has not
+  yet been seen holding a merge.
+- The contributor guides give no local command for the 96% Rust line
+  coverage floor that the Validate workflow enforces.
 
 ## v0.1.1
 

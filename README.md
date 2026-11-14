@@ -102,7 +102,7 @@ of a diff, use Copilot code review or your agent's own review command.
 
 This checkout also contains Claude Code and Codex plugin manifests for the
 same 5 canonical skills, following the Australian accounting skills package.
-The manifests read version `0.1.1`, the latest tagged release.
+The manifests read version `0.1.2`, the latest tagged release.
 
 After cloning and checking out the revision you reviewed, start Claude Code
 from the repository root with:
