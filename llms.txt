@@ -27,6 +27,8 @@ change GitHub settings, or make any other remote mutation.
 - [Repository checks](https://github.com/ryanduguid/github-agent-skills#repository-checks): clone the repository, run the unit suite, then run the strict validator.
 - Claude Code plugin: `claude plugin marketplace add ryanduguid/github-agent-skills`, then `claude plugin install github-agent-skills@ryanduguid-github-skills`. It installs `main`; the version comes from `.claude-plugin/plugin.json`.
 - Codex plugin: `codex plugin marketplace add ryanduguid/github-agent-skills`, then `codex plugin add github-agent-skills@ryanduguid-github-skills`.
+- Gemini CLI (tested with 0.68.0 on 15 November 2026): `gemini skills install https://github.com/ryanduguid/github-agent-skills.git --path skills` installs all 8 from `main` into `~/.gemini/skills/`; add `--scope workspace` for the current project.
+- Cursor, Windsurf and other agents (tested with the skills CLI 1.8.1 on 15 November 2026): `npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y` copies all 8 from `main` into the project; replace `cursor` with another agent name.
 - One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot. The 3 newest skills reach it only at the next release.
 - Copy instead: `.agents/skills/<skill>` into a project's Codex skill discovery path, or `skills/<skill>` into its Claude Code path.
 - These skills are not automated pull request reviewers: `github-branch-review` reviews a local branch and posts nothing; for a review of a pull request on GitHub, use Copilot code review.

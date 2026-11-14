@@ -58,6 +58,18 @@ It asks which runtimes to install for, copies the skill from `main` into the
 project and records it in `skills-lock.json`. It grants no remote authority.
 Review the copy before you use it.
 
+To install all 8 skills for one agent without prompts, name the agent with
+`-a`. Tested with skills 1.8.1 on 15 November 2026 for `cursor` and `windsurf`:
+
+```shell
+npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y
+```
+
+For Cursor it copies the skills into `.agents/skills/`; for Windsurf, into
+`.windsurf/skills/`. The CLI's
+[supported agents](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)
+page lists the other agent names.
+
 The GitHub CLI's `gh skill` command installs from the latest tagged release
 instead, which does not yet include the 3 newest skills:
 
@@ -92,6 +104,20 @@ codex plugin add github-agent-skills@ryanduguid-github-skills
 
 Codex reads `.agents/plugins/marketplace.json` and installs `skills/` from
 `main` in the same way; the version comes from `.codex-plugin/plugin.json`.
+
+### Gemini CLI
+
+To install all 8 skills for Gemini CLI from `main` (tested with Gemini CLI
+0.68.0 on 15 November 2026):
+
+```shell
+gemini skills install https://github.com/ryanduguid/github-agent-skills.git --path skills
+```
+
+It lists the skills and asks you to confirm, then copies them into
+`~/.gemini/skills/`. Add `--scope workspace` to install them into the current
+project's `.gemini/skills/` instead. Installing needs no sign-in, and
+`gemini skills list` shows the result.
 
 ### GitHub Copilot
 
