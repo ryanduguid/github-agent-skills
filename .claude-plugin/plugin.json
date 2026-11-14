@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "github-agent-skills",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Five evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
   "author": { "name": "Ryan Duguid" },
   "repository": "https://github.com/ryanduguid/github-agent-skills",
