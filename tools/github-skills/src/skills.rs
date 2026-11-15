@@ -10,15 +10,17 @@ use std::{
     sync::LazyLock,
 };
 
-pub const APPROVED_NAMES: [&str; 8] = [
+pub const APPROVED_NAMES: [&str; 10] = [
     "github-branch-review",
     "github-issue-draft",
     "github-issue-to-pr",
+    "github-issue-triage",
     "github-pr-description",
     "github-profile-curator",
     "github-readme-polish",
     "github-release-prep",
     "github-repository-audit",
+    "github-spec-to-issues",
 ];
 pub const CANONICAL: &str = "skills";
 pub const RUNTIME: &str = ".agents/skills";

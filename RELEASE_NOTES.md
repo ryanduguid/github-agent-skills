@@ -8,6 +8,13 @@
   body from the branch, and `github-issue-draft` drafts issues from a report or
   plan for a person to file. Each has a scenario in `tests/scenarios/` and 2
   activation evals; none has recorded runs or activation results yet.
+- Two more local preparation skills: `github-issue-triage` decides the next
+  step for each filed issue (duplicate, already fixed, needs information,
+  ready to work or a maintainer's decision) and prepares labels and replies
+  for a maintainer to apply, and `github-spec-to-issues` breaks a
+  specification into dependency-ordered issue drafts that cover every
+  requirement it states. Each has a scenario in `tests/scenarios/` and 2
+  activation evals; neither has recorded runs or activation results yet.
 
 ## v0.1.2
 
