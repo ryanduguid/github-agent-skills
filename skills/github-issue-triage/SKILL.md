@@ -18,7 +18,7 @@ each issue with
 `gh issue view <number> --json title,body,author,labels,state,createdAt,comments`
 (captured output of `--comments` alone omits the body). Find the issues for a
 query by turning its filters into `gh issue list` options such as `--label` or
-`--search`; with no numbers or query, list the open issues with
+`--search`; with no numbers, export or query, list the open issues with
 `gh issue list --state open --limit 200 --json number,title,labels,createdAt,updatedAt`.
 A `gh` list stops at 30 without `--limit`, and one that returns exactly its
 limit may be cut short: raise the limit or report the list as possibly
@@ -78,11 +78,11 @@ Use this order:
    it can be answered yes or no.
 5. **Action checkpoint**: the commands the maintainer could run for each
    issue, such as `gh issue edit <number> --add-label '<label>'`,
-   `gh issue comment <number> --body-file <file>` or
+   `gh issue comment <number> --body-file '<file>'` or
    `gh issue close <number> --reason "not planned"`, marked as not run. Put
-   each label or other value taken from the repository or an issue in single
-   quotes, writing any `'` inside it as `'\''`, so pasting the command cannot
-   run part of it.
+   each label, file name or other value taken from the repository or an
+   issue in single quotes, writing any `'` inside it as `'\''`, so pasting
+   the command cannot run part of it.
 6. **Not triaged**: issues listed but not read, and why.
 
 ## Authority boundary
