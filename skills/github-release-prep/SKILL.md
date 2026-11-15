@@ -1,6 +1,7 @@
 ---
 name: github-release-prep
 description: Use when assessing release readiness, reconciling version drift, preparing release notes, or handing off a GitHub tag, release, or package publication.
+metadata: {author: Ryan Duguid}
 ---
 
 # Release preparation

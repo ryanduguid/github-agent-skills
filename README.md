@@ -121,7 +121,20 @@ project's `.gemini/skills/` instead. Installing needs no sign-in, and
 
 ### GitHub Copilot
 
-`gh skill install` also installs a skill for Copilot:
+To install all 8 skills as a Copilot CLI plugin from this repository's
+marketplace (tested with Copilot CLI 1.0.112 on 16 November 2026):
+
+```shell
+copilot plugin marketplace add ryanduguid/github-agent-skills
+copilot plugin install github-agent-skills@ryanduguid-github-skills
+```
+
+Copilot CLI reads the same `.claude-plugin/marketplace.json` as Claude Code and
+installs the files on `main` into `~/.copilot/installed-plugins/`, reporting
+the version in the plugin manifests. Installing needs no sign-in, and
+`copilot plugin list` shows the result.
+
+`gh skill install` also installs one skill for Copilot:
 
 ```shell
 gh skill install ryanduguid/github-agent-skills github-readme-polish --agent github-copilot

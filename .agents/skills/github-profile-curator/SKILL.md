@@ -1,6 +1,7 @@
 ---
 name: github-profile-curator
 description: Use when selecting GitHub profile projects, refining a profile README narrative, reviewing pins, or preparing portfolio-facing profile copy.
+metadata: {author: Ryan Duguid}
 ---
 
 # Coherent GitHub profile curation

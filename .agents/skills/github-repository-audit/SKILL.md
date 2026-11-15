@@ -1,6 +1,7 @@
 ---
 name: github-repository-audit
 description: Use when assessing whether a GitHub repository, including an open source dependency under consideration, is trustworthy, maintainable, presentable, or ready to feature.
+metadata: {author: Ryan Duguid}
 ---
 
 # Repository audit
