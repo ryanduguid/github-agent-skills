@@ -236,8 +236,8 @@ runs behind the first 5 skills: for each of their scenarios in
 `tests/scenarios/`, one no-skill control run and one named-skill run.
 `github-branch-review`, `github-pr-description`, `github-issue-draft`,
 `github-issue-triage` and `github-spec-to-issues` have scenarios but no
-recorded runs yet. Each file records the scenario
-and rubric revision, the Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
+recorded runs yet. Each file records the scenario and rubric revision, the
+Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
 isolation flags, a PASS or FAIL against each rubric criterion, the SHA-256
 digest of the retained raw output, and the run exit status.
 
@@ -275,8 +275,7 @@ The recorded runs name the skill, so they do not test whether a task selects
 it. `evals/` holds 25 `claude plugin eval` cases that never name a skill: 2 or
 3 per skill, each with a `tool_used: Skill` grader for the expected skill and
 at least one that fails if a skill with an overlapping description fires
-instead, plus
-2 prompts where no skill should fire.
+instead, plus 2 prompts where no skill should fire.
 
 ```shell
 claude plugin eval . --runs 1 --ablation none --no-publish
@@ -289,8 +288,9 @@ fired. After the `github-repository-audit` and `github-readme-polish`
 descriptions were widened to cover those tasks, all 15 passed. One run per
 case is a small sample, so a repeat can differ. The 10 cases for
 `github-branch-review`, `github-pr-description`, `github-issue-draft`,
-`github-issue-triage` and `github-spec-to-issues` have not been run. Each run is a full Claude Code session billed to the operator's
-account; the 2 runs reported US$1.18 and US$1.22.
+`github-issue-triage` and `github-spec-to-issues` have not been run. Each run
+is a full Claude Code session billed to the operator's account; the 2 runs
+reported US$1.18 and US$1.22.
 
 ## Boundary
 
