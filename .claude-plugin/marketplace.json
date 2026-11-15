@@ -5,7 +5,7 @@
   "plugins": [
     {
       "name": "github-agent-skills",
-      "description": "Eight evidence-based GitHub inspection and preparation workflows.",
+      "description": "Ten evidence-based GitHub inspection and preparation workflows.",
       "author": { "name": "Ryan Duguid" },
       "category": "productivity",
       "tags": ["github", "agent-skills", "claude-code", "codex"],
@@ -15,11 +15,13 @@
         "./skills/github-branch-review",
         "./skills/github-issue-draft",
         "./skills/github-issue-to-pr",
+        "./skills/github-issue-triage",
         "./skills/github-pr-description",
         "./skills/github-profile-curator",
         "./skills/github-readme-polish",
         "./skills/github-release-prep",
-        "./skills/github-repository-audit"
+        "./skills/github-repository-audit",
+        "./skills/github-spec-to-issues"
       ],
       "license": "LicenseRef-Duguid-Public-Attribution-1.0"
     }

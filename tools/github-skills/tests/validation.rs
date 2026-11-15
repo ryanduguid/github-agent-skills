@@ -472,10 +472,12 @@ fn strict_mode_requires_the_complete_generated_tree() {
             "skills: missing required skill 'github-branch-review'",
             "skills: missing required skill 'github-issue-draft'",
             "skills: missing required skill 'github-issue-to-pr'",
+            "skills: missing required skill 'github-issue-triage'",
             "skills: missing required skill 'github-pr-description'",
             "skills: missing required skill 'github-profile-curator'",
             "skills: missing required skill 'github-readme-polish'",
             "skills: missing required skill 'github-release-prep'",
+            "skills: missing required skill 'github-spec-to-issues'",
         ]
     );
     valid_skill_set(root.path());
