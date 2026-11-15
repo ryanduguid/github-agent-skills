@@ -1,6 +1,7 @@
 ---
 name: github-issue-to-pr
 description: Use when implementing a GitHub issue and preparing a local commit and pull-request handoff from repository code, tests, and guidance.
+metadata: {author: Ryan Duguid}
 ---
 
 # Issue-to-PR delivery

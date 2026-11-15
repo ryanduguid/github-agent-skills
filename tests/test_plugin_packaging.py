@@ -42,6 +42,14 @@ class PluginPackagingTests(unittest.TestCase):
         self.assertEqual(len(discovered), 8)
         self.assertEqual(sorted(plugin["skills"]), discovered)
 
+    def test_every_skill_names_the_plugin_author(self):
+        author = read_manifest(".claude-plugin/plugin.json")["author"]["name"]
+        line = f"metadata: {{author: {author}}}"
+        for skill in sorted((ROOT / "skills").glob("*/SKILL.md")):
+            frontmatter = skill.read_text(encoding="utf-8").split("---")[1]
+            with self.subTest(skill=skill.parent.name):
+                self.assertIn(line, frontmatter.splitlines())
+
     def test_codex_marketplace_is_local_and_skill_copies_match(self):
         marketplace = read_manifest(".agents/plugins/marketplace.json")
         self.assertEqual(len(marketplace["plugins"]), 1)

@@ -1,7 +1,8 @@
 # Portable GitHub skills
 
-> Eight focused Agent Skills for evidence-based GitHub work, portable between
-> Codex and Claude Code. They are Markdown, so a clone is the whole
+> Eight focused Agent Skills for evidence-based GitHub work, with install routes
+> for Claude Code, Codex, GitHub Copilot CLI and Gemini CLI, and for Cursor and
+> Windsurf through the skills CLI. They are Markdown, so a clone is the whole
 > installation; the repository checks are a Rust command in `tools/github-skills`.
 
 `skills/` is the canonical source, loaded by Claude Code through the plugin
@@ -29,6 +30,7 @@ change GitHub settings, or make any other remote mutation.
 - Codex plugin: `codex plugin marketplace add ryanduguid/github-agent-skills`, then `codex plugin add github-agent-skills@ryanduguid-github-skills`.
 - Gemini CLI (tested with 0.68.0 on 15 November 2026): `gemini skills install https://github.com/ryanduguid/github-agent-skills.git --path skills` installs all 8 from `main` into `~/.gemini/skills/`; add `--scope workspace` for the current project.
 - Cursor, Windsurf and other agents (tested with the skills CLI 1.8.1 on 15 November 2026): `npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y` copies all 8 from `main` into the project; replace `cursor` with another agent name.
+- GitHub Copilot CLI plugin (tested with Copilot CLI 1.0.112 on 16 November 2026): `copilot plugin marketplace add ryanduguid/github-agent-skills`, then `copilot plugin install github-agent-skills@ryanduguid-github-skills`. It installs all 8 from `main` into `~/.copilot/installed-plugins/` and needs no sign-in.
 - One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot. The 3 newest skills reach it only at the next release.
 - Copy instead: `.agents/skills/<skill>` into a project's Codex skill discovery path, or `skills/<skill>` into its Claude Code path.
 - These skills are not automated pull request reviewers: `github-branch-review` reviews a local branch and posts nothing; for a review of a pull request on GitHub, use Copilot code review.
