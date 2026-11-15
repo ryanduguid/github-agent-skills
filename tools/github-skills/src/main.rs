@@ -51,6 +51,10 @@ fn run() -> Result<u8, String> {
         println!("github-skills {}", env!("CARGO_PKG_VERSION"));
         return Ok(0);
     }
+    if command == "--codecov-gate-probe" {
+        println!("probe: not for merge");
+        return Ok(0);
+    }
     if command != "validate-skills" && command != "check-public-files" {
         return Err("unknown command".into());
     }
