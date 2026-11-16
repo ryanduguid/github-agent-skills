@@ -70,7 +70,8 @@ Use this order:
    `gh issue create --title '<title>' --body-file '<file>'`, marked as not run,
    with a note to replace each `draft <n>` with the issue number it gets. Put
    each title, label and file name in single quotes, writing any `'` inside
-   it as `'\''`, so pasting the command cannot run part of it.
+   it as `'\''` in bash or zsh and as `''` in PowerShell, so pasting the
+   command cannot run part of it.
 
 ## Authority boundary
 

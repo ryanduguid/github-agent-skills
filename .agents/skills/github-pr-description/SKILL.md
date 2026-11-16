@@ -68,8 +68,10 @@ Use this order:
    template box left unticked with the reason.
 5. **Publication checkpoint**: the head and base branches and the command the
    requester could run once the branch is pushed, such as
-   `gh pr create --base <base> --head <branch> --title "<title>" --body-file <file>`,
-   marked as not run.
+   `gh pr create --base '<base>' --head '<branch>' --title '<title>' --body-file '<file>'`,
+   marked as not run. Put each branch, title and file name in single quotes,
+   writing any `'` inside it as `'\''` in bash or zsh and as `''` in
+   PowerShell, so pasting the command cannot run part of it.
 
 ## Authority boundary
 
