@@ -81,8 +81,9 @@ Use this order:
    `gh issue comment <number> --body-file '<file>'` or
    `gh issue close <number> --reason "not planned"`, marked as not run. Put
    each label, file name or other value taken from the repository or an
-   issue in single quotes, writing any `'` inside it as `'\''`, so pasting
-   the command cannot run part of it.
+   issue in single quotes, writing any `'` inside it as `'\''` in bash or
+   zsh and as `''` in PowerShell, so pasting the command cannot run part of
+   it.
 6. **Not triaged**: issues listed but not read, and why.
 
 ## Authority boundary

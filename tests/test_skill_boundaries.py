@@ -86,6 +86,7 @@ class UntrustedContentTests(unittest.TestCase):
                 search,
             ),
             "github-spec-to-issues": ("`gh label list --limit 200`", search),
+            "github-issue-draft": (search, "a search that returns exactly its limit may be cut short"),
         }
         for name, commands in required.items():
             for skills in (SKILLS, ROOT / ".agents" / "skills"):
@@ -93,6 +94,28 @@ class UntrustedContentTests(unittest.TestCase):
                 for command in commands:
                     with self.subTest(path=path.relative_to(ROOT).as_posix(), command=command):
                         self.assertIn(command, flat(path))
+
+    def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
+        # Double quotes let `$(...)` and backticks expand in both shells, and
+        # PowerShell cannot parse bash's '\'' escape.
+        escape = "writing any `'` inside it as `'\\''` in bash or zsh and as `''` in PowerShell"
+        required = {
+            "github-issue-draft": "`gh issue create --title '<title>' --body-file '<file>'`",
+            "github-pr-description": (
+                "`gh pr create --base '<base>' --head '<branch>' --title '<title>' --body-file '<file>'`"
+            ),
+            "github-issue-triage": "`gh issue edit <number> --add-label '<label>'`",
+            "github-spec-to-issues": "`gh issue create --title '<title>' --body-file '<file>'`",
+        }
+        for name, command in required.items():
+            for skills in (SKILLS, ROOT / ".agents" / "skills"):
+                path = skills / name / "SKILL.md"
+                text = flat(path)
+                for expected in (command, escape):
+                    with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                        self.assertIn(expected, text)
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), forbidden='--title "'):
+                    self.assertNotIn('--title "', text)
 
     def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
