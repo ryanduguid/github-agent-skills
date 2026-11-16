@@ -1,6 +1,9 @@
 # Release notes
 
-## Unreleased
+## v0.2.0
+
+Five new local preparation skills bring the package to 10. None changes
+anything on GitHub by itself.
 
 - Three new skills, each a local preparation step that changes nothing on GitHub:
   `github-branch-review` reviews your own branch against its base and issue
@@ -15,6 +18,13 @@
   specification into dependency-ordered issue drafts that cover every
   requirement it states. Each has a scenario in `tests/scenarios/` and 2
   activation evals; neither has recorded runs or activation results yet.
+- `github-issue-draft` reads up to 100 duplicate matches and reports a full
+  page as incomplete. Its publication commands and those of
+  `github-pr-description` single-quote every value, and the 4 skills with
+  such a command say how to write a `'` inside a value in bash or zsh and in
+  PowerShell (#136).
+- The README adds tested Gemini CLI, skills CLI and Copilot CLI plugin
+  install routes and names every skill's author (#131, #134).
 
 ## v0.1.2
 

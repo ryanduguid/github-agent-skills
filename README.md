@@ -152,7 +152,7 @@ review.
 
 This checkout also contains Claude Code and Codex plugin manifests for the
 same 10 canonical skills, following the Australian accounting skills package.
-The manifests read version `0.1.2`, the latest tagged release.
+The manifests read version `0.2.0`, the latest tagged release.
 
 After cloning and checking out the revision you reviewed, start Claude Code
 from the repository root with:
