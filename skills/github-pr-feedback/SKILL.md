@@ -18,9 +18,9 @@ branch's pull request. Read it with
 Take `<owner>` and `<repo>` from its `url`
 (`https://github.com/<owner>/<repo>/pull/<number>`): that is the repository
 the pull request was opened in, also when its branch lives in a fork, and the
-one every `gh api` call below needs. In a clone of a fork,
-`gh repo set-default --view` shows where `gh` looks up numbers; add
-`--repo '<owner>/<repo>'` when it is another repository. A closed or merged
+one every `gh api` call below needs. In a clone of a fork, a bare number
+can resolve in the wrong repository: check that the `url` names the one the
+requester means, and otherwise repeat the read with `--repo '<owner>/<repo>'`. A closed or merged
 pull request takes no fixes: say so and stop.
 
 Compare `headRefOid` with `git rev-parse HEAD`, and record `git status --short`
