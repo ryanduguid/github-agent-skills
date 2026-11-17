@@ -120,6 +120,24 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_review_skill_encodes_the_authors_file_names(self) -> None:
+        # A file name such as `a';id;'.md` closes the single-quoted URL and runs `id`;
+        # a closing issue can live in another repository; a bare number can resolve
+        # in a fork.
+        required = (
+            "In the `contents/<path>` URL, percent-encode every byte of the path other than letters, digits, "
+            "`/`, `-`, `.`, `_` and `~` (`'` as `%27`).",
+            "`git show 'FETCH_HEAD:<path>'`",
+            "`gh issue view '<url>' --json title,body`",
+            "pass the same `--repo` to each `gh pr` command below",
+            "at the root or in `.github/` or `docs/`",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-pr-review" / "SKILL.md"
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, flat(path))
+
     def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
         # Double quotes let `$(...)` and backticks expand in both shells, and
         # PowerShell cannot parse bash's '\'' escape.
@@ -130,7 +148,7 @@ class UntrustedContentTests(unittest.TestCase):
                 "`gh pr create --base '<base>' --head '<branch>' --title '<title>' --body-file '<file>'`"
             ),
             "github-issue-triage": "`gh issue edit <number> --add-label '<label>'`",
-            "github-pr-review": "`gh pr review <number> --comment --body-file '<file>'`",
+            "github-pr-review": "`gh pr review <number> --repo '<owner>/<repo>' --comment --body-file '<file>'`",
             "github-spec-to-issues": "`gh issue create --title '<title>' --body-file '<file>'`",
         }
         for name, command in required.items():

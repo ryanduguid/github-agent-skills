@@ -19,7 +19,8 @@ Take `<owner>` and `<repo>` from its `url`
 request was opened in, also when its branch lives in a fork. In a clone of a
 fork, a bare number can resolve in the wrong repository: check that the `url`
 names the one the requester means, and otherwise repeat the read with
-`--repo '<owner>/<repo>'`.
+`--repo '<owner>/<repo>'`, and pass the same `--repo` to each `gh pr` command
+below.
 
 The review covers `headRefOid` and nothing pushed after it. Record that
 commit, `baseRefOid` and when you read them; if the head moves before you
@@ -27,13 +28,13 @@ finish, say which head the review covers. A closed or merged pull request
 gets no review unless the requester asks for one anyway.
 
 Read the intent: the title and body, and each linked issue in
-`closingIssuesReferences` with
-`gh issue view <issue> --repo '<owner>/<repo>' --json title,body`. Read the
+`closingIssuesReferences` by its `url`, which can name another repository:
+`gh issue view '<url>' --json title,body`. Read the
 repository's rules from the base commit, not the pull request's head, because
 a pull request can change the rules it is judged by:
 `gh api 'repos/<owner>/<repo>/contents/<path>?ref=<baseRefOid>' -H 'Accept: application/vnd.github.raw'`
 for `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `CODEOWNERS` and lint
-settings that exist.
+settings that exist, at the root or in `.github/` or `docs/`.
 
 ## Read the change
 
@@ -46,8 +47,13 @@ settings that exist.
    `gh api 'repos/<owner>/<repo>/contents/<path>?ref=<headRefOid>' -H 'Accept: application/vnd.github.raw'`,
    or in a clone whose `origin` is that repository,
    `git fetch origin 'pull/<number>/head'` and then
-   `git show FETCH_HEAD:<path>`, which leaves the working tree and branches
+   `git show 'FETCH_HEAD:<path>'`, which leaves the working tree and branches
    alone. Read the callers of every changed symbol, not only the diff.
+   The pull request's author chose its file names, and a name can hold
+   `'`, `;`, `?` or `#`. In the `contents/<path>` URL, percent-encode every
+   byte of the path other than letters, digits, `/`, `-`, `.`, `_` and `~`
+   (`'` as `%27`). Elsewhere, single-quote the path as the action checkpoint
+   below shows.
 4. What others have raised: the inline comments with
    `gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/comments?per_page=100'`
    and the reviews with
@@ -113,7 +119,7 @@ Use this order:
    run, such as
    `gh api --method POST 'repos/<owner>/<repo>/pulls/<number>/reviews' --input '<file>'`
    or, for a review with no inline comments,
-   `gh pr review <number> --comment --body-file '<file>'`. Put each value
+   `gh pr review <number> --repo '<owner>/<repo>' --comment --body-file '<file>'`. Put each value
    taken from the pull request in single quotes, writing any `'` inside it
    as `'\''` in bash or zsh and as `''` in PowerShell, so pasting the
    command cannot run part of it.
