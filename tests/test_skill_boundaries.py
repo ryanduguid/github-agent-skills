@@ -116,7 +116,7 @@ class UntrustedContentTests(unittest.TestCase):
             "Never print a whole log to a terminal.",
             "`HEAD is now at <sha> Merge <head> into <base>`",
             "Except for `GITHUB_TOKEN`, Actions passes no secrets to a `pull_request` run triggered from a fork; a "
-            "`pull_request_target` run uses the base branch's workflow and does get them",
+            "`pull_request_target` run uses the base branch's workflow and can use the base repository's secrets",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-ci-failure" / "SKILL.md"
@@ -131,8 +131,9 @@ class UntrustedContentTests(unittest.TestCase):
         required = (
             "`gh api --paginate 'repos/<owner>/<repo>/actions/runs?head_sha=<sha>&per_page=100' --jq "
             "'.workflow_runs[] | {id, name, event, status, conclusion, run_attempt, path}'`",
-            "`startup_failure`, or `failure` with no jobs (the workflow file did not load)",
-            "`gh api 'repos/<owner>/<repo>/check-runs/<job-id>/annotations' --jq "
+            "`startup_failure`, or `failure` with no jobs (it never started; `gh run view` gives the likely reason",
+            "which stays a hypothesis until the run page or the file confirms it",
+            "`gh api --paginate 'repos/<owner>/<repo>/check-runs/<job-id>/annotations?per_page=100' --jq "
             "'.[] | {annotation_level, message, path, start_line}'`",
             "The file keeps those raw sequences, which a terminal acts on: never print it to a terminal, and "
             "never tell the requester to `cat`, `type` or `Get-Content` it.",
@@ -144,6 +145,9 @@ class UntrustedContentTests(unittest.TestCase):
             "Pass that `--repo` to each `gh pr` and `gh run` command below.",
             'select(.conclusion == "failure" or .conclusion == "timed_out")',
             "a run whose workflow file did not load fails again until the file is fixed",
+            "`git ls-remote origin 'refs/heads/<branch>'`",
+            "do not report an older commit's runs as current",
+            "A `path` under `dynamic/`, as for Dependabot and Copilot runs, names no file in the repository.",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-ci-failure" / "SKILL.md"
