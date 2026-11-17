@@ -15,6 +15,13 @@
   never runs a command from a log, and reruns, cancels and pushes nothing. It
   has a scenario in `tests/scenarios/` and 2 activation evals; neither has
   been run.
+- `github-pr-review` reviews an open pull request by number, your own or
+  another author's, against the rules on its base commit, reads the code
+  around each hunk at the head without checking it out, and drafts
+  findings and inline comments for a person to post. It never runs the
+  pull request's code and approves, comments on and posts nothing. It has a
+  scenario in `tests/scenarios/` and 2 activation evals; neither has been
+  run.
 
 ## v0.2.0
 

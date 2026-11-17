@@ -10,7 +10,7 @@ use std::{
     sync::LazyLock,
 };
 
-pub const APPROVED_NAMES: [&str; 12] = [
+pub const APPROVED_NAMES: [&str; 13] = [
     "github-branch-review",
     "github-ci-failure",
     "github-issue-draft",
@@ -18,6 +18,7 @@ pub const APPROVED_NAMES: [&str; 12] = [
     "github-issue-triage",
     "github-pr-description",
     "github-pr-feedback",
+    "github-pr-review",
     "github-profile-curator",
     "github-readme-polish",
     "github-release-prep",
