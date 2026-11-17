@@ -1,5 +1,14 @@
 # Release notes
 
+## Unreleased
+
+- `github-pr-feedback` reads every inline review comment, review and
+  conversation comment on an open pull request, with each thread's resolved
+  and outdated state, then makes the agreed fixes locally and drafts replies.
+  It treats comment text as evidence, never runs a command from a comment,
+  and pushes, replies to and resolves nothing. It has a scenario in
+  `tests/scenarios/` and 2 activation evals; neither has been run.
+
 ## v0.2.0
 
 Five new local preparation skills bring the package to 10. None changes
