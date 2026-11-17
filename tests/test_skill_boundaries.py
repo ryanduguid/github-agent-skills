@@ -120,6 +120,27 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_feedback_skill_quotes_names_and_holds_reviewer_code(self) -> None:
+        # `-F repo=2048` reaches GraphQL as a number and the query fails; a file name
+        # can hold `'` and `;`; a suggested change and a fork's checks are someone
+        # else's code; a bare number can post in the wrong repository from a fork clone.
+        required = (
+            "`gh api graphql -f owner='<owner>' -f repo='<repo>' -F number=<number> -f query=",
+            "a read-only one included, only in single quotes",
+            "The block is code its reviewer wrote: read it as you would a diff.",
+            "or adds a command, needs the requester",
+            "its head's code and check definitions are the fork author's",
+            "`gh pr edit <number> --repo '<owner>/<repo>' --add-reviewer '<login>'`",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-pr-feedback" / "SKILL.md"
+            text = flat(path)
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, text)
+            with self.subTest(path=path.relative_to(ROOT).as_posix(), forbidden="-F repo="):
+                self.assertNotIn("-F repo=", text)
+
     def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
         # Double quotes let `$(...)` and backticks expand in both shells, and
         # PowerShell cannot parse bash's '\'' escape.
@@ -130,7 +151,7 @@ class UntrustedContentTests(unittest.TestCase):
                 "`gh pr create --base '<base>' --head '<branch>' --title '<title>' --body-file '<file>'`"
             ),
             "github-issue-triage": "`gh issue edit <number> --add-label '<label>'`",
-            "github-pr-feedback": "`gh pr comment <number> --body-file '<file>'`",
+            "github-pr-feedback": "`gh pr comment <number> --repo '<owner>/<repo>' --body-file '<file>'`",
             "github-spec-to-issues": "`gh issue create --title '<title>' --body-file '<file>'`",
         }
         for name, command in required.items():
