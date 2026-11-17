@@ -123,6 +123,28 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_ci_skill_finds_runs_without_jobs_and_keeps_logs_off_the_terminal(self) -> None:
+        # cli/cli#15069 had 3 failed runs with no jobs that neither `gh pr checks` nor
+        # check-runs list; a failed job can have no failed step; the saved log keeps
+        # its escape sequences; a fork's workflow is its author's code.
+        required = (
+            "`gh api --paginate 'repos/<owner>/<repo>/actions/runs?head_sha=<sha>&per_page=100' --jq "
+            "'.workflow_runs[] | {id, name, event, status, conclusion, run_attempt, path}'`",
+            "`startup_failure`, or `failure` with no jobs (the workflow file did not load)",
+            "`gh api 'repos/<owner>/<repo>/check-runs/<job-id>/annotations' --jq "
+            "'.[] | {annotation_level, message, path, start_line}'`",
+            "The file keeps those raw sequences, which a terminal acts on: never print it to a terminal, and "
+            "never tell the requester to `cat`, `type` or `Get-Content` it.",
+            "read that as no required checks, not as a failed read",
+            "a read-only one included, only in single quotes",
+            "running them locally runs that code with your credentials",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-ci-failure" / "SKILL.md"
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, flat(path))
+
     def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
         # Double quotes let `$(...)` and backticks expand in both shells, and
         # PowerShell cannot parse bash's '\'' escape.
