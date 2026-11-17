@@ -470,6 +470,7 @@ fn strict_mode_requires_the_complete_generated_tree() {
         s::validate(root.path(), true).unwrap(),
         [
             "skills: missing required skill 'github-branch-review'",
+            "skills: missing required skill 'github-ci-failure'",
             "skills: missing required skill 'github-issue-draft'",
             "skills: missing required skill 'github-issue-to-pr'",
             "skills: missing required skill 'github-issue-triage'",

@@ -1,5 +1,15 @@
 # Release notes
 
+## Unreleased
+
+- `github-ci-failure` reads the check runs on a pull request's head commit,
+  saves each failing GitHub Actions job log, quotes the lines that show the
+  failure and classifies its cause, including runs from forks that get no
+  secrets and failures that come from the base. It treats logs as evidence,
+  never runs a command from a log, and reruns, cancels and pushes nothing. It
+  has a scenario in `tests/scenarios/` and 2 activation evals; neither has
+  been run.
+
 ## v0.2.0
 
 Five new local preparation skills bring the package to 10. None changes
