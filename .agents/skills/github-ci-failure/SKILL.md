@@ -65,8 +65,8 @@ check as pending; do not wait in a loop unless the requester asks.
 2. The failed jobs and steps: `gh api --paginate 'repos/<owner>/<repo>/actions/runs/<run-id>/jobs?per_page=100' --jq '.jobs[] | select(.conclusion == "failure") | {id, name, failed_steps: [.steps[] | select(.conclusion == "failure") | .name]}'`.
 3. The log, saved to a file: `gh api 'repos/<owner>/<repo>/actions/jobs/<job-id>/logs' --allow-escape-sequences > '<file>'`.
    Since `gh` 2.97.0, `gh api` refuses to print a response that holds
-   terminal escape sequences, and job logs often do: without the flag it
-   exits 1 and the file is empty. Never print a whole log to a terminal.
+   terminal escape sequences, and a job log can hold them: without the flag
+   it exits 1 and the file is empty. Never print a whole log to a terminal.
    Search the file for `##[error]`, the failing step's `##[group]Run` line
    and the test runner's failure markers, and quote only the lines that
    show the failure, with their line numbers in the file.
@@ -74,7 +74,9 @@ check as pending; do not wait in a loop unless the requester asks.
    lines `UNKNOWN STEP` when it cannot match them to steps.
 4. The workflow as it ran: `git show <head_sha>:<path>` for the run's
    `path`, and the scripts the failing step calls, at that commit rather
-   than the current default branch.
+   than the current default branch. When the commit is not local, as for a
+   pull request from a fork, `git fetch origin 'pull/<number>/head'` first,
+   with `origin` pointing at the pull request's repository.
 
 A `pull_request` run tests a merge of the head into the base as the base
 stood then, not the head alone. The checkout step's log line
