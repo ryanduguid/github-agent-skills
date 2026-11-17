@@ -131,6 +131,7 @@ class UntrustedContentTests(unittest.TestCase):
             "`gh issue view '<url>' --json title,body`",
             "pass the same `--repo` to each `gh pr` command below",
             "at the root or in `.github/` or `docs/`",
+            "The files list, the diff and the checks show the head as it is when each read runs, not `headRefOid`.",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-pr-review" / "SKILL.md"

@@ -62,6 +62,11 @@ settings that exist, at the root or in `.github/` or `docs/`.
 5. The checks: `gh pr checks <number> --json name,state,bucket,link`. Report
    their state; a check result is evidence only for the commit it ran on.
 
+The files list, the diff and the checks show the head as it is when each
+read runs, not `headRefOid`. Once they are done, read
+`gh pr view <number> --json headRefOid` again; if it moved, read the change
+again at the new head, or say which reads cover which head.
+
 If reads are denied, use only explicit supplied evidence and mark everything
 else **unverified**.
 
