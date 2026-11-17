@@ -115,7 +115,8 @@ class UntrustedContentTests(unittest.TestCase):
             "`gh pr checks <number> --required --json name,bucket`",
             "Never print a whole log to a terminal.",
             "`HEAD is now at <sha> Merge <head> into <base>`",
-            "Except for `GITHUB_TOKEN`, Actions passes no secrets to a workflow triggered from a fork",
+            "Except for `GITHUB_TOKEN`, Actions passes no secrets to a `pull_request` run triggered from a fork; a "
+            "`pull_request_target` run uses the base branch's workflow and does get them",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-ci-failure" / "SKILL.md"
@@ -138,6 +139,11 @@ class UntrustedContentTests(unittest.TestCase):
             "read that as no required checks, not as a failed read",
             "a read-only one included, only in single quotes",
             "running them locally runs that code with your credentials",
+            "show each control character, such as ESC, as visible text",
+            "`git show '<head_sha>:<path>'`",
+            "Pass that `--repo` to each `gh pr` and `gh run` command below.",
+            'select(.conclusion == "failure" or .conclusion == "timed_out")',
+            "a run whose workflow file did not load fails again until the file is fixed",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-ci-failure" / "SKILL.md"

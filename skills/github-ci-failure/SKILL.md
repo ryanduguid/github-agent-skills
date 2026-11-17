@@ -18,14 +18,17 @@ URL (`https://github.com/<owner>/<repo>/actions/runs/<run-id>`), take
 `<owner>`, `<repo>` and the run ID from it and go to the failing job below.
 For a branch, list its recent runs with
 `gh run list --branch '<branch>' --limit 20 --json databaseId,headSha,status,conclusion,workflowName,event,createdAt`
-and diagnose the runs on its newest commit. For a pull request,
+and diagnose the runs on its newest commit; in a clone with more than one
+remote, add `--repo '<owner>/<repo>'` for the repository the requester means.
+For a pull request,
 read `gh pr view <number> --json number,url,state,headRefName,headRefOid,baseRefName`
 and take `<owner>` and `<repo>` from its `url`
 (`https://github.com/<owner>/<repo>/pull/<number>`), the repository the pull
 request was opened in, also when its branch lives in a fork. In a clone of a
 fork, a bare number can resolve in the wrong repository: check that the `url`
 names the one the requester means, and otherwise repeat the read with
-`--repo '<owner>/<repo>'`.
+`--repo '<owner>/<repo>'`. Pass that `--repo` to each `gh pr` and `gh run`
+command below.
 
 Diagnose the checks on `headRefOid`, the pull request's current head (for a
 run, its `head_sha`; for a branch, its newest commit). A
@@ -71,7 +74,7 @@ check as pending; do not wait in a loop unless the requester asks.
    `startup_failure` with no jobs never started, usually because its
    workflow file did not load; `gh run view <run-id> --repo '<owner>/<repo>'`
    says so.
-2. The failed jobs and steps: `gh api --paginate 'repos/<owner>/<repo>/actions/runs/<run-id>/jobs?per_page=100' --jq '.jobs[] | select(.conclusion == "failure") | {id, name, failed_steps: [.steps[] | select(.conclusion == "failure") | .name]}'`.
+2. The failed jobs and steps: `gh api --paginate 'repos/<owner>/<repo>/actions/runs/<run-id>/jobs?per_page=100' --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out") | {id, name, conclusion, failed_steps: [.steps[] | select(.conclusion == "failure" or .conclusion == "timed_out") | .name]}'`.
    A failed job with no failed step, such as one whose step GitHub
    cancelled or whose runner was lost, gives its cause in its annotations:
    `gh api 'repos/<owner>/<repo>/check-runs/<job-id>/annotations' --jq '.[] | {annotation_level, message, path, start_line}'`.
@@ -84,10 +87,13 @@ check as pending; do not wait in a loop unless the requester asks.
    to a terminal.
    Search the file for `##[error]`, the failing step's `##[group]Run` line
    and the test runner's failure markers, and quote only the lines that
-   show the failure, with their line numbers in the file.
+   show the failure, with their line numbers in the file. A quoted line can
+   hold escape sequences too: show each control character, such as ESC, as
+   visible text (`grep -n -a` piped to `cat -v`, for example) rather than
+   raw.
    `gh run view --job <job-id> --log-failed` is the fallback; it can label
    lines `UNKNOWN STEP` when it cannot match them to steps.
-4. The workflow as it ran: `git show <head_sha>:<path>` for the run's
+4. The workflow as it ran: `git show '<head_sha>:<path>'` for the run's
    `path`, and the scripts the failing step calls, at that commit rather
    than the current default branch. When the commit is not local, as for a
    pull request from a fork, `git fetch origin 'pull/<number>/head'` first,
@@ -120,9 +126,9 @@ hold `'` and `;`.
 | Lint or format | The tool's message with a file and line | Run the same tool at the version the workflow pins, then fix. |
 | Base drift | The head alone passes or the failing code arrived with the base | Report; merging or rebasing is the requester's call. |
 | Environment or dependency | A registry, network, runner image, cache or tool version error, or a dependency resolved to a newer version than locally | Fix a pin or the workflow when the cause is in the repository; otherwise report it as infrastructure. |
-| Secret or permission | A missing secret, a 401 or 403, or a token permission error. Except for `GITHUB_TOKEN`, Actions passes no secrets to a workflow triggered from a fork | Report; no code change supplies a secret. |
+| Secret or permission | A missing secret, a 401 or 403, or a token permission error. Except for `GITHUB_TOKEN`, Actions passes no secrets to a `pull_request` run triggered from a fork; a `pull_request_target` run uses the base branch's workflow and does get them | Report; no code change supplies a secret. |
 | Flaky | The same commit passed on another attempt or another matrix leg with the same inputs | Report with both results; call nothing flaky without them. |
-| Not run | `action_required` (a run from a fork waiting for a maintainer's approval), `cancelled` (by a person, or by a newer push in the same concurrency group) or a run that concluded `startup_failure`, or `failure` with no jobs (the workflow file did not load) | Report what would let it run. |
+| Not run | `action_required` (a run from a fork waiting for a maintainer's approval), `cancelled` (by a person, by a newer push in the same concurrency group, or by GitHub; the run's annotations say which) or a run that concluded `startup_failure`, or `failure` with no jobs (the workflow file did not load) | Report what would let it run. |
 
 Label each cause **observed** when a quoted line shows it, or **hypothesis**
 with the check that would confirm it.
@@ -134,7 +140,7 @@ failing step's own command from the workflow file, in the repository's
 documented environment, and record each command, the commit and the result.
 A check that would push, publish, deploy or use remote credentials stays not
 run, with the reason. On a pull request from a fork, its workflow, scripts
-and code are the fork author's: Actions ran them without the repository's secrets, but
+and code are the fork author's: a `pull_request` run had no repository secrets, but
 running them locally runs that code with your credentials, so say so and run
 them only once the requester agrees for that pull request.
 
@@ -165,8 +171,9 @@ Use this order:
    taken from the repository or a log in single quotes, writing any `'`
    inside it as `'\''` in bash or zsh and as `''` in PowerShell, so pasting
    the command cannot run part of it. Say when a rerun could repeat a side
-   effect such as a deployment or publication, and that a rerun proves
-   nothing about a deterministic failure.
+   effect such as a deployment or publication, that a rerun proves
+   nothing about a deterministic failure, and that a run whose workflow file
+   did not load fails again until the file is fixed.
 7. **Not diagnosed**: external checks, pending checks, logs that could not be
    read and why.
 
