@@ -39,8 +39,8 @@ settings that exist.
 
 1. The changed files:
    `gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/files?per_page=100' --jq '.[] | {filename, status, additions, deletions, previous_filename, has_patch: (.patch != null)}'`.
-   GitHub returns at most 3,000 files, and a file without a `patch` (binary
-   or too large) has no diff to review here: list it as not reviewed.
+   GitHub returns at most 3,000 files, and a file without a `patch`, such as a
+   binary file, has no diff to review here: list it as not reviewed.
 2. The diff, saved to a file: `gh pr diff <number> > '<file>'`.
 3. The code around each hunk at the head commit, without checking it out:
    `gh api 'repos/<owner>/<repo>/contents/<path>?ref=<headRefOid>' -H 'Accept: application/vnd.github.raw'`,
