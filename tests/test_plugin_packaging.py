@@ -1,7 +1,7 @@
 # Copyright 2026 Ryan Duguid
 # SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
 
-"""Local manifests discover the canonical eleven skills without adding runtime tools."""
+"""Local manifests discover the canonical twelve skills without adding runtime tools."""
 
 import json
 import unittest
@@ -39,7 +39,7 @@ class PluginPackagingTests(unittest.TestCase):
             "./" + path.parent.relative_to(ROOT).as_posix()
             for path in (ROOT / "skills").glob("*/SKILL.md")
         )
-        self.assertEqual(len(discovered), 11)
+        self.assertEqual(len(discovered), 12)
         self.assertEqual(sorted(plugin["skills"]), discovered)
 
     def test_every_skill_names_the_plugin_author(self):
