@@ -132,6 +132,7 @@ class UntrustedContentTests(unittest.TestCase):
             "pass the same `--repo` to each `gh pr` command below",
             "at the root or in `.github/` or `docs/`",
             "The files list, the diff and the checks show the head as it is when each read runs, not `headRefOid`.",
+            "a finding on a deleted line takes `\"side\": \"LEFT\"` and the base file's line number",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-pr-review" / "SKILL.md"

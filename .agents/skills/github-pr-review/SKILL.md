@@ -118,7 +118,9 @@ Use this order:
    `{"commit_id": "<headRefOid>", "event": "COMMENT", "body": "<summary>", "comments": [{"path": "<path>", "line": <line>, "side": "RIGHT", "body": "<finding>"}]}`.
    GitHub's REST reference defines an inline comment's `line` as a line in
    the pull request diff, so put a finding on a line outside every hunk in
-   the body instead. Leaving out `event` creates a pending review, which
+   the body instead. `RIGHT` with the head's line number marks an added or
+   unchanged line; a finding on a deleted line takes `"side": "LEFT"` and
+   the base file's line number. Leaving out `event` creates a pending review, which
    stays unsubmitted until someone submits it.
 8. **Action checkpoint**: the commands the requester could run, marked as not
    run, such as
