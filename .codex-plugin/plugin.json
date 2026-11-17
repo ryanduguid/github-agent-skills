@@ -4,14 +4,14 @@
   "license": "LicenseRef-Duguid-Public-Attribution-1.0",
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "author": { "name": "Ryan Duguid" },
-  "description": "Ten evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
+  "description": "Eleven evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",
   "skills": "./skills/",
   "keywords": ["github", "agent-skills", "codex", "claude-code"],
   "interface": {
     "displayName": "GitHub agent skills",
     "developerName": "Ryan Duguid",
     "shortDescription": "Inspect GitHub evidence and prepare local changes",
-    "longDescription": "Ten workflows for repository audits, README editing, profile curation, release preparation, issue drafting, issue triage, breaking a specification into issues, issue implementation, branch review and pull request descriptions. Remote actions need explicit human authorisation.",
+    "longDescription": "Eleven workflows for repository audits, README editing, profile curation, release preparation, issue drafting, issue triage, breaking a specification into issues, issue implementation, branch review, pull request descriptions and addressing pull request review feedback. Remote actions need explicit human authorisation.",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
     "defaultPrompt": ["Inspect this repository and prepare an evidence-based local release handoff."]

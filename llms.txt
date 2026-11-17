@@ -1,6 +1,6 @@
 # Portable GitHub skills
 
-> Ten focused Agent Skills for evidence-based GitHub work, with install routes
+> Eleven focused Agent Skills for evidence-based GitHub work, with install routes
 > for Claude Code, Codex, GitHub Copilot CLI and Gemini CLI, and for Cursor and
 > Windsurf through the skills CLI. They are Markdown, so a clone is the whole
 > installation; the repository checks are a Rust command in `tools/github-skills`.
@@ -24,23 +24,24 @@ change GitHub settings, or make any other remote mutation.
 - [github-issue-draft](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-draft/SKILL.md): turn a bug report, feature request or plan into issue drafts that follow the repository's templates, ready for a person to file.
 - [github-issue-triage](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-issue-triage/SKILL.md): decide whether each filed issue is a duplicate, already fixed, missing facts, ready to work on or a maintainer's decision, and prepare its labels and reply for a maintainer to apply.
 - [github-spec-to-issues](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-spec-to-issues/SKILL.md): break a specification into dependency-ordered issue drafts that cover every requirement it states, ready for a person to file.
+- [github-pr-feedback](https://github.com/ryanduguid/github-agent-skills/blob/main/skills/github-pr-feedback/SKILL.md): read every review comment, review and conversation comment on an open pull request, then make the agreed fixes locally and draft replies, without pushing, replying or resolving threads.
 
 ## Install
 
 - [Repository checks](https://github.com/ryanduguid/github-agent-skills#repository-checks): clone the repository, run the unit suite, then run the strict validator.
 - Claude Code plugin: `claude plugin marketplace add ryanduguid/github-agent-skills`, then `claude plugin install github-agent-skills@ryanduguid-github-skills`. It installs `main`; the version comes from `.claude-plugin/plugin.json`.
 - Codex plugin: `codex plugin marketplace add ryanduguid/github-agent-skills`, then `codex plugin add github-agent-skills@ryanduguid-github-skills`.
-- Gemini CLI (tested with 0.68.0 on 15 November 2026): `gemini skills install https://github.com/ryanduguid/github-agent-skills.git --path skills` installs all 10 from `main` into `~/.gemini/skills/`; add `--scope workspace` for the current project.
-- Cursor, Windsurf and other agents (tested with the skills CLI 1.8.1 on 15 November 2026): `npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y` copies all 10 from `main` into the project; replace `cursor` with another agent name.
-- GitHub Copilot CLI plugin (tested with Copilot CLI 1.0.112 on 16 November 2026): `copilot plugin marketplace add ryanduguid/github-agent-skills`, then `copilot plugin install github-agent-skills@ryanduguid-github-skills`. It installs all 10 from `main` into `~/.copilot/installed-plugins/` and needs no sign-in.
-- One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot. The 5 newest skills reach it only at the next release.
+- Gemini CLI (tested with 0.68.0 on 15 November 2026): `gemini skills install https://github.com/ryanduguid/github-agent-skills.git --path skills` installs all 11 from `main` into `~/.gemini/skills/`; add `--scope workspace` for the current project.
+- Cursor, Windsurf and other agents (tested with the skills CLI 1.8.1 on 15 November 2026): `npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y` copies all 11 from `main` into the project; replace `cursor` with another agent name.
+- GitHub Copilot CLI plugin (tested with Copilot CLI 1.0.112 on 16 November 2026): `copilot plugin marketplace add ryanduguid/github-agent-skills`, then `copilot plugin install github-agent-skills@ryanduguid-github-skills`. It installs all 11 from `main` into `~/.copilot/installed-plugins/` and needs no sign-in.
+- One skill from the latest tagged release: `gh skill install ryanduguid/github-agent-skills <skill>`; add `--agent github-copilot` for GitHub Copilot. `github-pr-feedback` reaches it only at the next release.
 - Copy instead: `.agents/skills/<skill>` into a project's Codex skill discovery path, or `skills/<skill>` into its Claude Code path.
 - These skills are not automated pull request reviewers: `github-branch-review` reviews a local branch and posts nothing; for a review of a pull request on GitHub, use Copilot code review.
 - Install only the runtime you use, and keep `skills/` as the source of truth for any local edit.
 
 ## Recorded runs
 
-- [validation/baselines](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/baselines): the no-skill control run for the scenarios of the first 5 skills; the 5 newer skills have scenarios but no recorded runs yet.
+- [validation/baselines](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/baselines): the no-skill control run for the scenarios of the first 5 skills; the 6 newer skills have scenarios but no recorded runs yet.
 - [validation/forward](https://github.com/ryanduguid/github-agent-skills/tree/main/validation/forward): the named-skill run for the same scenarios.
 - [tests/scenarios](https://github.com/ryanduguid/github-agent-skills/tree/main/tests/scenarios): the scenario prompt and evaluator rubric behind each pair.
 
