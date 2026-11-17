@@ -19,7 +19,10 @@ URL (`https://github.com/<owner>/<repo>/actions/runs/<run-id>`), take
 For a branch, take its newest commit from
 `git ls-remote origin 'refs/heads/<branch>'`, with `origin` pointing at the
 repository the requester means, and diagnose the runs on that commit, which
-read 5 below lists. A commit with no runs has no checks to diagnose: say so,
+read 5 below lists with `&branch=<branch>` added to its URL: another branch
+at the same commit has its own runs. In that URL, percent-encode every byte
+of the branch name other than letters, digits, `/`, `-`, `.`, `_` and `~`.
+A commit with no runs has no checks to diagnose: say so,
 and do not report an older commit's runs as current.
 For a pull request,
 read `gh pr view <number> --json number,url,state,headRefName,headRefOid,baseRefName`
@@ -34,7 +37,9 @@ command below.
 Diagnose the checks on `headRefOid`, the pull request's current head (for a
 run, its `head_sha`; for a branch, the commit `git ls-remote` gave). A
 failure on an earlier commit is history, not the current state; say so when
-the requester points at one. Record when you read each list.
+the requester points at one. Record when you read each list. Before
+reporting, read the head again the same way; if it moved, say the results
+are for the earlier commit, not the current one.
 
 ## Read the checks
 
@@ -53,7 +58,7 @@ All 5 reads are read-only:
    `gh api 'repos/<owner>/<repo>/commits/<sha>/status' --jq '{state, total_count, statuses: [.statuses[] | {context, state, target_url}]}'`.
    With a `total_count` of 0 the `state` reads `pending` and means nothing.
 5. Every workflow run on the head:
-   `gh api --paginate 'repos/<owner>/<repo>/actions/runs?head_sha=<sha>&per_page=100' --jq '.workflow_runs[] | {id, name, event, status, conclusion, run_attempt, path}'`.
+   `gh api --paginate 'repos/<owner>/<repo>/actions/runs?head_sha=<sha>&per_page=100' --jq '.workflow_runs[] | {id, name, event, head_branch, status, conclusion, run_attempt, path}'`.
    A run that failed before any job started has no check run, so reads 1
    to 3 show nothing for it, and only this read finds it.
 

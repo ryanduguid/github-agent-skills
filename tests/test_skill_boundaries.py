@@ -130,7 +130,7 @@ class UntrustedContentTests(unittest.TestCase):
         # its escape sequences; a fork's workflow is its author's code.
         required = (
             "`gh api --paginate 'repos/<owner>/<repo>/actions/runs?head_sha=<sha>&per_page=100' --jq "
-            "'.workflow_runs[] | {id, name, event, status, conclusion, run_attempt, path}'`",
+            "'.workflow_runs[] | {id, name, event, head_branch, status, conclusion, run_attempt, path}'`",
             "`startup_failure`, or `failure` with no jobs (it never started; `gh run view` gives the likely reason",
             "which stays a hypothesis until the run page or the file confirms it",
             "`gh api --paginate 'repos/<owner>/<repo>/check-runs/<job-id>/annotations?per_page=100' --jq "
@@ -147,6 +147,8 @@ class UntrustedContentTests(unittest.TestCase):
             "a run whose workflow file did not load fails again until the file is fixed",
             "`git ls-remote origin 'refs/heads/<branch>'`",
             "do not report an older commit's runs as current",
+            "with `&branch=<branch>` added to its URL: another branch at the same commit has its own runs",
+            "Before reporting, read the head again the same way; if it moved, say the results are for the earlier commit",
             "A `path` under `dynamic/`, as for Dependabot and Copilot runs, names no file in the repository.",
         )
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
