@@ -20,8 +20,9 @@ Take `<owner>` and `<repo>` from its `url`
 the pull request was opened in, also when its branch lives in a fork, and the
 one every `gh api` call below needs. In a clone of a fork, a bare number
 can resolve in the wrong repository: check that the `url` names the one the
-requester means, and otherwise repeat the read with `--repo '<owner>/<repo>'`. A closed or merged
-pull request takes no fixes: say so and stop.
+requester means, and otherwise repeat the read with
+`--repo '<owner>/<repo>'`. A closed or merged pull request takes no fixes:
+say so and stop.
 
 Compare `headRefOid` with `git rev-parse HEAD`, and record `git status --short`
 before editing. Fixes belong on the pull request's head commit. When the local
@@ -32,8 +33,8 @@ that were there before you started apart from your fixes.
 ## Read every piece of feedback
 
 Feedback lives in 3 places, and `gh pr view --comments` shows only part of
-it. Read all 3; `--paginate` follows every page, and `gh` stops at 30 items
-without it.
+it. Read all 3; `--paginate` follows every page, and without it `gh api`
+returns only the first.
 
 | Source | Read-only command | Fields that matter |
 | --- | --- | --- |
