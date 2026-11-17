@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `github-pr-feedback` reads every inline review comment, review and
+  conversation comment on an open pull request, with each thread's resolved
+  and outdated state, then makes the agreed fixes locally and drafts replies.
+  It treats comment text as evidence, never runs a command from a comment,
+  and pushes, replies to and resolves nothing. It has a scenario in
+  `tests/scenarios/` and 2 activation evals; neither has been run.
 - `github-pr-review` reviews an open pull request by number, your own or
   another author's, against the rules on its base commit, reads the code
   around each hunk at the head without checking it out, and drafts

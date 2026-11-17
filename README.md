@@ -15,7 +15,7 @@
 
 </div>
 
-Eleven focused, portable Agent Skills for evidence-based GitHub work. The
+Twelve focused, portable Agent Skills for evidence-based GitHub work. The
 canonical source is `skills/`, which Claude Code loads through the plugin
 manifest; a generated copy in `.agents/skills/` serves Codex.
 
@@ -31,11 +31,12 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 - `github-issue-draft`: draft issues from a report or plan, ready for a person to file.
 - `github-issue-triage`: decide the next step for each filed issue and prepare its labels and reply for a maintainer.
 - `github-spec-to-issues`: break a specification into dependency-ordered issue drafts that cover every requirement.
+- `github-pr-feedback`: turn the review comments on an open pull request into local fixes and drafted replies.
 - `github-pr-review`: review an open pull request by number and draft the review for a person to post.
 
-The last 6 have no recorded runs and no activation eval results yet.
-`github-pr-review` is new since v0.2.0, so an installation from a tagged
-release (`gh skill install`) includes it only from the next release.
+The last 7 have no recorded runs and no activation eval results yet.
+`github-pr-feedback` and `github-pr-review` are new since v0.2.0, so an installation from a tagged
+release (`gh skill install`) includes them only from the next release.
 
 ## Runtimes and installation
 
@@ -61,7 +62,7 @@ It asks which runtimes to install for, copies the skill from `main` into the
 project and records it in `skills-lock.json`. It grants no remote authority.
 Review the copy before you use it.
 
-To install all 11 skills for one agent without prompts, name the agent with
+To install all 12 skills for one agent without prompts, name the agent with
 `-a`. Tested with skills 1.8.1 on 15 November 2026 for `cursor` and `windsurf`:
 
 ```shell
@@ -74,7 +75,7 @@ For Cursor it copies the skills into `.agents/skills/`; for Windsurf, into
 page lists the other agent names.
 
 The GitHub CLI's `gh skill` command installs from the latest tagged release
-instead, which does not yet include `github-pr-review`:
+instead, which does not yet include `github-pr-feedback` or `github-pr-review`:
 
 ```shell
 gh skill install ryanduguid/github-agent-skills github-readme-polish
@@ -82,7 +83,7 @@ gh skill install ryanduguid/github-agent-skills github-readme-polish
 
 ### Claude Code plugin
 
-To install all 11 skills as a Claude Code plugin from this repository's marketplace:
+To install all 12 skills as a Claude Code plugin from this repository's marketplace:
 
 ```shell
 claude plugin marketplace add ryanduguid/github-agent-skills
@@ -98,7 +99,7 @@ version does not include. The plugin grants no remote authority.
 
 ### Codex plugin
 
-To install all 11 skills as a Codex plugin from the same repository:
+To install all 12 skills as a Codex plugin from the same repository:
 
 ```shell
 codex plugin marketplace add ryanduguid/github-agent-skills
@@ -110,7 +111,7 @@ Codex reads `.agents/plugins/marketplace.json` and installs `skills/` from
 
 ### Gemini CLI
 
-To install all 11 skills for Gemini CLI from `main` (tested with Gemini CLI
+To install all 12 skills for Gemini CLI from `main` (tested with Gemini CLI
 0.68.0 on 15 November 2026):
 
 ```shell
@@ -124,7 +125,7 @@ project's `.gemini/skills/` instead. Installing needs no sign-in, and
 
 ### GitHub Copilot
 
-To install all 11 skills as a Copilot CLI plugin from this repository's
+To install all 12 skills as a Copilot CLI plugin from this repository's
 marketplace (tested with Copilot CLI 1.0.112 on 16 November 2026):
 
 ```shell
@@ -153,7 +154,7 @@ request itself, use Copilot code review.
 ### Local plugin package
 
 This checkout also contains Claude Code and Codex plugin manifests for the
-same 11 canonical skills, following the Australian accounting skills package.
+same 12 canonical skills, following the Australian accounting skills package.
 The manifests read version `0.2.0`, the latest tagged release.
 
 After cloning and checking out the revision you reviewed, start Claude Code
@@ -237,7 +238,7 @@ repository gate. CI also lints the Python tests with a hash-pinned Ruff;
 runs behind the first 5 skills: for each of their scenarios in
 `tests/scenarios/`, one no-skill control run and one named-skill run.
 `github-branch-review`, `github-pr-description`, `github-issue-draft`,
-`github-issue-triage`, `github-spec-to-issues` and `github-pr-review` have
+`github-issue-triage`, `github-spec-to-issues`, `github-pr-feedback` and `github-pr-review` have
 scenarios but no recorded runs yet. Each file records the scenario and rubric revision, the
 Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
 isolation flags, a PASS or FAIL against each rubric criterion, the SHA-256
@@ -274,7 +275,7 @@ skill digest recorded' without failing.
 ## Activation evals
 
 The recorded runs name the skill, so they do not test whether a task selects
-it. `evals/` holds 27 `claude plugin eval` cases that never name a skill: 2 or
+it. `evals/` holds 29 `claude plugin eval` cases that never name a skill: 2 or
 3 per skill, each with a `tool_used: Skill` grader for the expected skill and
 at least one that fails if a skill with an overlapping description fires
 instead, plus 2 prompts where no skill should fire.
@@ -288,9 +289,9 @@ the 15 cases then in `evals/` chose the expected skill; in the other 3, about
 adopting a dependency, a README badge and a getting-started section, no skill
 fired. After the `github-repository-audit` and `github-readme-polish`
 descriptions were widened to cover those tasks, all 15 passed. One run per
-case is a small sample, so a repeat can differ. The 12 cases for
+case is a small sample, so a repeat can differ. The 14 cases for
 `github-branch-review`, `github-pr-description`, `github-issue-draft`,
-`github-issue-triage`, `github-spec-to-issues` and `github-pr-review` have
+`github-issue-triage`, `github-spec-to-issues`, `github-pr-feedback` and `github-pr-review` have
 not been run. Each run
 is a full Claude Code session billed to the operator's account; the 2 runs
 reported US$1.18 and US$1.22.
