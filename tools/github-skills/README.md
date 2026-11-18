@@ -18,7 +18,7 @@ limits.
 ## Commands
 
 `validate-skills` checks the discovered approved skill subset. Add `--strict` to
-require all 12 canonical skills and exact generated-tree parity. Add `--sync` to
+require all 13 canonical skills and exact generated-tree parity. Add `--sync` to
 replace the contents of `.agents/skills` from approved canonical skill trees
 before validation. Synchronisation copies complete file bytes and nested
 directories. It refuses missing or invalid roots and links throughout both trees
