@@ -164,6 +164,8 @@ class UntrustedContentTests(unittest.TestCase):
             "`git ls-remote origin 'refs/heads/<branch>'`",
             "do not report an older commit's runs as current",
             "with `&branch=<branch>` added to its URL: another branch at the same commit has its own runs",
+            "Read 3 lists the check runs of every branch at that commit, so for a branch take the GitHub Actions "
+            "jobs from those runs' jobs (the failing job below), not from read 3",
             "Before reporting, read the head again the same way; if it moved, say the results are for the earlier commit",
             "A `path` under `dynamic/`, as for Dependabot and Copilot runs, names no file in the repository.",
         )

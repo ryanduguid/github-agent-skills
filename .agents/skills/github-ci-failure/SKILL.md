@@ -22,7 +22,10 @@ repository the requester means, and diagnose the runs on that commit, which
 read 5 below lists with `&branch=<branch>` added to its URL: another branch
 at the same commit has its own runs. In that URL, percent-encode every byte
 of the branch name other than letters, digits, `/`, `-`, `.`, `_` and `~`.
-A commit with no runs has no checks to diagnose: say so,
+Read 3 lists the check runs of every branch at that commit, so for a branch
+take the GitHub Actions jobs from those runs' jobs (the failing job below),
+not from read 3, and report another app's check run as the commit's, not
+the branch's. A commit with no runs has no checks to diagnose: say so,
 and do not report an older commit's runs as current.
 For a pull request,
 read `gh pr view <number> --json number,url,state,headRefName,headRefOid,baseRefName`
