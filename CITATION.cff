@@ -9,7 +9,6 @@ abstract: "GitHub workflow skills for Codex and Claude Code that require inspect
 repository-code: "https://github.com/ryanduguid/github-agent-skills"
 url: "https://duguid.com.au/#adopt"
 license: Apache-2.0
-license-url: "https://github.com/ryanduguid/github-agent-skills/blob/main/LICENSE"
 keywords:
   - agent-skills
   - claude-code
