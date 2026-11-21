@@ -60,7 +60,9 @@ npx skills add ryanduguid/github-agent-skills --skill github-readme-polish
 ```
 
 It asks which runtimes to install for, copies the skill from `main` into the
-project and records it in `skills-lock.json`. It grants no remote authority.
+project and records it in `skills-lock.json`. The copied folder includes
+`LICENSE` and `NOTICE`. Keep both when redistributing it. It grants no remote
+authority.
 Review the copy before you use it.
 
 To install all 13 skills for one agent without prompts, name the agent with

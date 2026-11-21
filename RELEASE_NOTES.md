@@ -102,9 +102,10 @@ marketplace (see README).
 ### Licence
 
 Relicensed from Apache-2.0 to the Ryan Duguid Public Attribution Licence 1.0,
-the FSL-1.1-ALv2 text with a public attribution condition (see LICENSE). Each
-version becomes available under Apache-2.0 2 years after it is made available.
-Released versions keep their licence.
+the FSL-1.1-ALv2 text with a public attribution condition.
+[The v0.1.1 licence](https://github.com/ryanduguid/github-agent-skills/blob/v0.1.1/LICENSE)
+permits use under Apache-2.0 2 years after v0.1.1 became available.
+Earlier releases keep their terms.
 
 ### Plugin manifests
 

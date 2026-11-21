@@ -50,6 +50,12 @@ class PluginPackagingTests(unittest.TestCase):
             with self.subTest(skill=skill.parent.name):
                 self.assertIn(line, frontmatter.splitlines())
 
+    def test_every_individually_installed_skill_carries_the_root_notices(self):
+        for manifest in (ROOT / "skills").glob("*/SKILL.md"):
+            for name in ("LICENSE", "NOTICE"):
+                with self.subTest(skill=manifest.parent.name, file=name):
+                    self.assertEqual((manifest.parent / name).read_bytes(), (ROOT / name).read_bytes())
+
     def test_codex_marketplace_is_local_and_skill_copies_match(self):
         marketplace = read_manifest(".agents/plugins/marketplace.json")
         self.assertEqual(len(marketplace["plugins"]), 1)

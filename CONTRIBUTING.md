@@ -1,7 +1,9 @@
 # Contributing
 
 Keep each skill focused, evidence-based, and explicit about its authority
-boundary. Edit only `skills/`, then regenerate the Codex copy:
+boundary. Each canonical skill folder carries byte-identical copies of the
+root `LICENSE` and `NOTICE` for individual installation. Refresh the copies
+when editing either root file. Edit only `skills/`, then regenerate the Codex copy:
 
 ```shell
 cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --sync
