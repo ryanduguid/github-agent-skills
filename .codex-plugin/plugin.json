@@ -1,7 +1,7 @@
 {
   "name": "github-agent-skills",
   "version": "0.2.0",
-  "license": "LicenseRef-Duguid-Public-Attribution-1.0",
+  "license": "Apache-2.0",
   "repository": "https://github.com/ryanduguid/github-agent-skills",
   "author": { "name": "Ryan Duguid" },
   "description": "Thirteen evidence-based GitHub workflows for inspection and local preparation with human authorisation for remote actions.",

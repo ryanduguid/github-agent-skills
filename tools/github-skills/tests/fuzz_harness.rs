@@ -1,5 +1,5 @@
 // Copyright 2026 Ryan Duguid
-// SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! The fuzz target's invariants on its seed corpus, and proof that a failed
 //! invariant or an unexpected scanner error reaches the caller. Ported from
