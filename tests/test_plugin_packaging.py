@@ -1,5 +1,5 @@
 # Copyright 2026 Ryan Duguid
-# SPDX-License-Identifier: LicenseRef-Duguid-Public-Attribution-1.0
+# SPDX-License-Identifier: Apache-2.0
 
 """Local manifests discover the canonical thirteen skills without adding runtime tools."""
 
@@ -22,7 +22,7 @@ class PluginPackagingTests(unittest.TestCase):
             self.assertEqual(claude[field], codex[field], field)
         for plugin in (claude, codex):
             self.assertEqual(plugin["name"], "github-agent-skills")
-            self.assertEqual(plugin["license"], "LicenseRef-Duguid-Public-Attribution-1.0")
+            self.assertEqual(plugin["license"], "Apache-2.0")
             self.assertEqual(plugin["skills"].rstrip("/"), "./skills")
             self.assertTrue((ROOT / plugin["skills"]).is_dir())
             self.assertNotIn("mcpServers", plugin)

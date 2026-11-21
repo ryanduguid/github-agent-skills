@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Relicensed Ryan Duguid's original work under Apache-2.0. Earlier releases keep their original terms.
+
 - `github-pr-feedback` reads every inline review comment, review and
   conversation comment on an open pull request, with each thread's resolved
   and outdated state, then makes the agreed fixes locally and drafts replies.
