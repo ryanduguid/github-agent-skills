@@ -4,8 +4,7 @@
 
 During incremental authoring, run `cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`; it validates the discovered approved subset and any existing generated copy. Before release, run the same command with `--strict` to require all 13 skills, the Codex copy and a scenario for each skill.
 
-Before changing a skill, read [CONTRIBUTING.md](CONTRIBUTING.md). Edit the canonical
-`skills/` source, then synchronise; the Codex copy is generated.
+Before changing a skill, read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Before handoff, run the contributor guide's unittest suite and strict validation,
 and inspect the generated copy for parity. The incremental subset check alone

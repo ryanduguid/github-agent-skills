@@ -119,5 +119,5 @@ list and the check together.
 
 [`fuzz/`](fuzz/README.md) holds a cargo-fuzz target for the scanner.
 
-the Apache License, Version 2.0, as the repository. Retain its `LICENSE` and `NOTICE` when
+Licensed under the Apache License, Version 2.0, as the repository. Retain its `LICENSE` and `NOTICE` when
 redistributing.

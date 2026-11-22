@@ -47,6 +47,10 @@ plugin manifest (`claude --plugin-dir .`). After changing a skill, run
 it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
 validates the result. Do not edit the generated directory directly.
 
+The Claude Code and Codex plugin manifests read version `0.2.0`, the latest
+tagged release, and add no MCP server or credentials. Run the repository's
+checks before using a changed checkout.
+
 For a project-local installation, copy the directory for the runtime you use
 into that project's corresponding discovery path. To keep a local clone as the
 source of truth, update `skills/`, rerun the synchroniser and copy the
@@ -154,24 +158,6 @@ prepare local work; they are not automated pull request reviewers.
 neither posts anything to GitHub. For a review that GitHub posts on the pull
 request itself, use Copilot code review.
 
-### Local plugin package
-
-This checkout also contains Claude Code and Codex plugin manifests for the
-same 13 canonical skills, following the Australian accounting skills package.
-The manifests read version `0.2.0`, the latest tagged release.
-
-After cloning and checking out the revision you reviewed, start Claude Code
-from the repository root with:
-
-```shell
-claude --plugin-dir .
-```
-
-The Claude marketplace file lists every canonical skill explicitly, and both
-plugin manifests read `skills/`. They add no MCP server or credentials, and
-installation grants no authority for remote mutations. Run the repository's
-checks before using a changed checkout. No registry submission is made here.
-
 ## Requirements
 
 The skills are Markdown and need no installation. The repository checks need
@@ -227,12 +213,8 @@ invisible or bidirectional control character, such as a right-to-left override,
 zero-width space or Unicode tag, which can show a reviewer different text from
 what an agent reads, and names the file, line, column and code point.
 
-During authoring, run
-`cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills`.
-Before sharing a change, run the Repository checks: the unit suite, the strict
-validator and the public-file check. Strict validation also requires one
-scenario in `tests/scenarios/` for each skill. `GATES.md` lists the same
-repository gate. CI also lints the Python tests with a hash-pinned Ruff;
+Strict validation also requires one scenario in `tests/scenarios/` for each
+skill. CI also lints the Python tests with a hash-pinned Ruff;
 [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run it locally.
 
 ## Recorded runs
@@ -240,9 +222,7 @@ repository gate. CI also lints the Python tests with a hash-pinned Ruff;
 `validation/baselines/` and `validation/forward/` hold the recorded A/B Codex
 runs behind the first 5 skills: for each of their scenarios in
 `tests/scenarios/`, one no-skill control run and one named-skill run.
-`github-branch-review`, `github-pr-description`, `github-issue-draft`,
-`github-issue-triage`, `github-spec-to-issues`, `github-pr-feedback`, `github-ci-failure` and `github-pr-review` have
-scenarios but no recorded runs yet. Each file records the scenario and rubric revision, the
+The last 8 skills have scenarios but no recorded runs yet. Each file records the scenario and rubric revision, the
 Codex CLI version (`codex-cli 0.151.0-alpha.7.2`), the
 isolation flags, a PASS or FAIL against each rubric criterion, the SHA-256
 digest of the retained raw output, and the run exit status.
@@ -293,9 +273,7 @@ adopting a dependency, a README badge and a getting-started section, no skill
 fired. After the `github-repository-audit` and `github-readme-polish`
 descriptions were widened to cover those tasks, all 15 passed. One run per
 case is a small sample, so a repeat can differ. The 16 cases for
-`github-branch-review`, `github-pr-description`, `github-issue-draft`,
-`github-issue-triage`, `github-spec-to-issues`, `github-pr-feedback`, `github-ci-failure` and `github-pr-review` have
-not been run. Each run
+the last 8 skills have not been run. Each run
 is a full Claude Code session billed to the operator's account; the 2 runs
 reported US$1.18 and US$1.22.
 
