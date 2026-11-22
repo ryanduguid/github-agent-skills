@@ -66,5 +66,4 @@ matches. The current files predate the digest and are listed as having none.
 
 - [AGENTS.md](https://github.com/ryanduguid/github-agent-skills/blob/main/AGENTS.md): repository instructions for agents.
 - [CONTRIBUTING.md](https://github.com/ryanduguid/github-agent-skills/blob/main/CONTRIBUTING.md): how to change a skill and what to verify.
-- [GATES.md](https://github.com/ryanduguid/github-agent-skills/blob/main/GATES.md): the local and repository gates.
 - [SECURITY.md](https://github.com/ryanduguid/github-agent-skills/blob/main/SECURITY.md): how to report a vulnerability.
