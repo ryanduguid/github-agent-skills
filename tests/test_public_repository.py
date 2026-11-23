@@ -139,5 +139,18 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("- run: cargo test --locked", native_job)
 
 
+class PublicTextTests(unittest.TestCase):
+    def test_posted_review_pointer_names_no_product(self):
+        # Readers who want a review posted on the pull request get a generic
+        # pointer; public text names no vendor's review product.
+        for name in ("README.md", "llms.txt"):
+            text = " ".join((ROOT / name).read_text(encoding="utf-8").split())
+            with self.subTest(name=name):
+                self.assertIn(
+                    "For a review posted on the pull request itself, use a hosted review service.",
+                    text,
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
