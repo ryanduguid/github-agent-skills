@@ -28,7 +28,8 @@ def run(text):
         source = Path(folder) / "files.json"
         source.write_text(text, encoding="utf-8")
         return subprocess.run(
-            [sys.executable, "-I", str(SCRIPT), str(source)],
+            [sys.executable, "-I", str(SCRIPT), "files.json"],
+            cwd=folder,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -156,7 +157,7 @@ class PrecheckTests(unittest.TestCase):
         )
 
     def test_hostile_paths_stay_escaped_data(self):
-        name = "a‮b\n$(touch pwned).yml"
+        name = "a\u202eb\n$(touch pwned).yml"
         result = run(json.dumps([entry(".github/workflows/" + name)]))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(result.stdout.isascii())
@@ -171,6 +172,17 @@ class PrecheckTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 2)
                 self.assertEqual(result.stdout, "")
                 self.assertIn("pr_precheck:", result.stderr)
+
+    def test_reads_only_a_file_in_the_current_folder(self):
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, "files.json").write_text(json.dumps([entry("a.py")]), encoding="utf-8")
+            for argument in (str(Path(folder, "files.json")), "../files.json", "", "."):
+                with self.subTest(argument=argument):
+                    result = subprocess.run(
+                        [sys.executable, "-I", str(SCRIPT), argument],
+                        capture_output=True, text=True, encoding="utf-8", check=False,
+                    )
+                    self.assertEqual((result.returncode, result.stdout), (2, ""))
 
     def test_refuses_fields_it_would_have_to_guess(self):
         bad = (
@@ -219,7 +231,7 @@ class PrecheckTests(unittest.TestCase):
 
     def test_the_review_skill_runs_the_precheck_before_the_diff(self):
         required = (
-            "`python3 scripts/pr_precheck.py '<files.json>'`",
+            "`python3 '<skill folder>/scripts/pr_precheck.py' '<files.json>'`",
             "before you read the diff",
             "Its output is data",
             "a file it does not flag is not thereby safe",

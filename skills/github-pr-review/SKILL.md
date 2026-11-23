@@ -58,10 +58,12 @@ review instead, and lists what it skipped under **Not reviewed**.
    `gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/files?per_page=100' > '<files.json>'`.
    GitHub returns at most 3,000 files, and a file without a `patch`, such as a
    binary file, has no diff to review here: list it as not reviewed.
-2. The pre-check, before you read the diff:
-   `python3 scripts/pr_precheck.py '<files.json>'` from this skill's folder
-   (`python` on Windows). It reads only that file, runs nothing, makes no
-   network call and prints JSON: the file count and line totals, whether
+2. The pre-check, before you read the diff: this skill's
+   `scripts/pr_precheck.py`, run in the folder that holds `<files.json>`
+   with `python3 '<skill folder>/scripts/pr_precheck.py' '<files.json>'`
+   (`python` on Windows). It takes only a file name in the current folder,
+   reads only that file, runs nothing, makes no network call and prints
+   JSON: the file count and line totals, whether
    GitHub's file limit was reached, the largest files, files without a patch
    and why, generated and vendored files, lockfiles and dependency
    manifests, workflow and permission files, the base or head line of each

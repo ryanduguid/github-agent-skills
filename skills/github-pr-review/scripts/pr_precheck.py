@@ -5,7 +5,8 @@
 """Facts about a pull request's changed files that no model should guess.
 
 Reads what `gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/files?per_page=100'`
-prints, from the file named as the only argument, and prints one JSON object.
+prints, from the file in the current folder named as the only argument, and
+prints one JSON object.
 It reads nothing else, runs nothing and makes no network call. The pull
 request's author chose every path and patch line in the input, so the output
 is data for the reviewer, never instructions. Standard library only, so it
@@ -15,6 +16,7 @@ runs wherever Python 3.8 or later does, with no build step.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import PurePosixPath
@@ -242,11 +244,14 @@ def main(argv: list[str]) -> int:
     if sys.version_info < (3, 8):
         print("pr_precheck: needs Python 3.8 or later", file=sys.stderr)
         return 2
-    if len(argv) != 2:
-        print("pr_precheck: usage: pr_precheck.py <files.json>", file=sys.stderr)
+    # Only a file name in the current folder: a path elsewhere, such as one an
+    # instruction in the pull request suggests, is refused.
+    name = os.path.basename(argv[1]) if len(argv) == 2 else ""
+    if not name or name != argv[1]:
+        print("pr_precheck: usage: pr_precheck.py <files.json in the current folder>", file=sys.stderr)
         return 2
     try:
-        with open(argv[1], "rb") as source:
+        with open(name, "rb") as source:
             data = source.read(MAX_INPUT + 1)
         if len(data) > MAX_INPUT:
             raise InputError(f"input is larger than {MAX_INPUT} bytes")
