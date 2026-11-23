@@ -1,0 +1,19 @@
+# cargo-deny checks the external dependency graph of each locked Rust component.
+[graph]
+all-features = true
+
+[licenses]
+confidence-threshold = 0.9
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "NCSA", # Permissive licence for libFuzzer.
+]
+
+[licenses.private]
+ignore = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = []
