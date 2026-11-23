@@ -1,6 +1,6 @@
 ---
 name: github-readme-polish
-description: Use when reviewing or improving a GitHub README, including its opening, quick start or getting-started steps, badges, readiness claims, or project presentation, without overstating repository evidence.
+description: Use when reviewing, improving or advising on a repository README, including whether to add badges or readiness claims, or how to write its opening, quick start, getting-started steps or project presentation without overstating repository evidence.
 metadata: {author: Ryan Duguid}
 ---
 
