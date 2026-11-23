@@ -36,6 +36,22 @@ a pull request can change the rules it is judged by:
 for `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `CODEOWNERS` and lint
 settings that exist, at the root or in `.github/` or `docs/`.
 
+## Choose the depth
+
+Each depth trades cost against coverage.
+
+| Depth | Reads | Reviews |
+| --- | --- | --- |
+| **quick** | Steps 1, 2 and 5 below: the files list, the diff and the checks. Not the code around each hunk, callers or earlier comments. | Intent, Security and Tests, from the diff alone. |
+| **standard** | Steps 1 to 5 below. | Every area in the table under 'Review each change'. |
+| **deep** | Standard, plus each changed file whole at the head, every caller of each changed public symbol across the repository, the linked issues' comments, and each added or updated dependency's source and version. | Every area, tracing each untrusted input from where it enters to where it is used, and giving for each blocking finding the input or state that triggers it. |
+
+Use **standard** unless the requester names another depth. At every depth,
+the instruction-file rule and the review-only boundary apply in full. A
+**quick** review never recommends **approve** for a change to a workflow, a
+dependency, permissions or an instruction file; it recommends a standard
+review instead, and lists what it skipped under **Not reviewed**.
+
 ## Read the change
 
 1. The changed files:
@@ -128,9 +144,9 @@ change is not a finding against it: list it apart as pre-existing.
 
 Use this order:
 
-1. **Pull request**: `<owner>/<repo>#<number>`, title, author, the head and
-   base commits reviewed, files reviewed out of `changedFiles`, and when you
-   read them.
+1. **Pull request**: `<owner>/<repo>#<number>`, title, author, the depth
+   reviewed, the head and base commits reviewed, files reviewed out of
+   `changedFiles`, and when you read them.
 2. **Recommendation**: **approve**, **request changes** or **comment**, with
    the reason. It is advice to the requester, not a review state.
 3. **Findings**: a table of severity, `path:line`, quoted evidence, problem
