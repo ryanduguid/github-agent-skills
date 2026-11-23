@@ -1,6 +1,6 @@
 ---
 name: github-pr-feedback
-description: Use when addressing, applying or answering the review comments, requested changes and suggested changes on an open GitHub pull request, turning each into a local fix, an answer or a reasoned decline without pushing, replying or resolving threads.
+description: Use when addressing, applying or answering the review comments, requested changes and suggested changes on an open GitHub pull request, or drafting replies to them without changing code, turning each into a local fix, an answer or a reasoned decline without pushing, replying or resolving threads.
 metadata: {author: Ryan Duguid}
 ---
 
@@ -99,6 +99,24 @@ outcome is a reply with the evidence, not a change. Where branch protection
 requires reviews, a review in the `CHANGES_REQUESTED` state can block merging
 until its reviewer approves or someone dismisses it, so list which of its
 items remain.
+
+## Replies only
+
+When the requester asks only for replies, or for replies before any fix,
+work read-only: change no file, and stage, commit and run nothing. Skip
+'Apply the agreed fixes'. The local branch need not be at the pull request's
+head: read each file there with
+`gh api 'repos/<owner>/<repo>/contents/<path>?ref=<headRefOid>' -H 'Accept: application/vnd.github.raw'`,
+percent-encoding every byte of the path other than letters, digits, `/`,
+`-`, `.`, `_` and `~`.
+
+Check each reviewer's claim against the code at `headRefOid` before drafting
+its reply, and mark the reply **agree**, **disagree**, **answered** or
+**needs the requester**. A reply that agrees names the change still to make;
+one that disagrees quotes the code that shows why, with its `path:line`.
+Promise no fix or commit that does not exist. Return the work without
+**Changes**, and state 'replies only; no files changed' under **Pull
+request**.
 
 ## Apply the agreed fixes
 

@@ -31,7 +31,7 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 - `github-issue-draft`: draft issues from a report or plan, ready for a person to file.
 - `github-issue-triage`: decide the next step for each filed issue and prepare its labels and reply for a maintainer.
 - `github-spec-to-issues`: break a specification into dependency-ordered issue drafts that cover every requirement.
-- `github-pr-feedback`: turn the review comments on an open pull request into local fixes and drafted replies.
+- `github-pr-feedback`: turn the review comments on an open pull request into local fixes and drafted replies, or draft the replies alone without changing code.
 - `github-ci-failure`: find why a pull request's checks fail from the GitHub Actions logs and prepare the local fix.
 - `github-pr-review`: review an open pull request by number and draft the review for a person to post.
 
