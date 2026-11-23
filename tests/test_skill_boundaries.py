@@ -232,8 +232,7 @@ class UntrustedContentTests(unittest.TestCase):
     def test_the_review_skill_reads_the_head_without_checking_it_out(self) -> None:
         # The base commit's rules apply, and the head's files are read by ref, never checked out.
         required = (
-            "`gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/files?per_page=100' --jq '.[] | "
-            "{filename, status, additions, deletions, previous_filename, has_patch: (.patch != null)}'`",
+            "`gh api --paginate 'repos/<owner>/<repo>/pulls/<number>/files?per_page=100' > '<files.json>'`",
             "`gh api 'repos/<owner>/<repo>/contents/<path>?ref=<baseRefOid>' -H 'Accept: application/vnd.github.raw'`",
             "`gh api 'repos/<owner>/<repo>/contents/<path>?ref=<headRefOid>' -H 'Accept: application/vnd.github.raw'`",
             "`git fetch origin 'pull/<number>/head'`",
