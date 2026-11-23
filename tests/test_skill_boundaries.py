@@ -250,6 +250,22 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_delivery_skills_report_a_check_as_passed_only_with_a_receipt(self) -> None:
+        # A check's result comes from its exit code, never from the model's reading of its output.
+        required = (
+            "Report a check as passed only with a receipt from this run: the exact command, its exit code and a "
+            "digest of its output.",
+            "`<command> > '<log>' 2>&1; echo \"exit=$?\"; sha256sum '<log>'`",
+            "`<command> *> '<log>'; \"exit=$LASTEXITCODE\"; (Get-FileHash '<log>').Hash`",
+            "Exit 0 is **passed**; any other exit is **failed**, whatever the output says.",
+            "is **not verified**, never passed.",
+        )
+        for name in ("github-issue-to-pr", "github-release-prep"):
+            for skills in (SKILLS, ROOT / ".agents" / "skills"):
+                path = skills / name / "SKILL.md"
+                for expected in required:
+                    with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                        self.assertIn(expected, flat(path))
     def test_the_review_skill_reviews_changed_instruction_files_as_data(self) -> None:
         # A pull request can add or edit the files an agent reads as instructions
         # or tool configuration, and plant an instruction for the reviewer there.

@@ -43,6 +43,23 @@ An artefact is not verified merely because it exists. Where the repository
 requires a checksum, signature, SBOM, provenance, or attestation, identify the
 specific absent or unreadable evidence as a blocker. Do not fabricate it.
 
+## Check receipts
+
+Report a check as passed only with a receipt from this run: the exact command,
+its exit code and a digest of its output. Save the output to a file, take the
+exit code from the shell, not from the output's wording, and hash the file:
+
+- bash or zsh: `<command> > '<log>' 2>&1; echo "exit=$?"; sha256sum '<log>'`
+  (`shasum -a 256` where `sha256sum` is missing)
+- PowerShell: `<command> *> '<log>'; "exit=$LASTEXITCODE"; (Get-FileHash '<log>').Hash`
+
+Record each receipt as `` `<command>`: exit <code>, sha256 <first 12 hex
+digits>, '<the output's summary line>' ``. Exit 0 is **passed**; any other
+exit is **failed**, whatever the output says. Do not pipe the command into
+another before reading its exit code, which would then be the last command's.
+A check with no receipt, because it was not run, was run by someone else,
+could not run or has only a described result, is **not verified**, never passed.
+
 ## Return a decision-ready handoff
 
 Return these sections in order:
@@ -55,8 +72,10 @@ Return these sections in order:
    clears each blocker.
 4. **Proposed version and notes**: the declared SemVer result and the matching
    changelog entry without invented release claims.
-5. **Verification commands**: only commands declared by repository guidance;
-   record their results separately from the intended remote action.
+5. **Verification commands**: only commands declared by repository guidance,
+   each with its receipt or marked **not verified**, kept separate from the
+   intended remote action. A readiness verdict of ready needs a passed
+   receipt for every required check.
 6. **Publication checkpoint**: after readiness is rechecked, list the remote
    tag, GitHub Release, artefact upload, and registry publication actions that
    still need explicit user authority.
