@@ -192,6 +192,22 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_feedback_skill_drafts_replies_only_without_changing_anything(self) -> None:
+        # Answering review comments must not need a checkout or an edit.
+        required = (
+            "## Replies only",
+            "work read-only: change no file, and stage, commit and run nothing",
+            "`gh api 'repos/<owner>/<repo>/contents/<path>?ref=<headRefOid>' -H 'Accept: application/vnd.github.raw'`",
+            "Check each reviewer's claim against the code at `headRefOid` before drafting its reply",
+            "**agree**, **disagree**, **answered** or **needs the requester**",
+            "replies only; no files changed",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-pr-feedback" / "SKILL.md"
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, flat(path))
+
     def test_the_feedback_skill_quotes_names_and_holds_reviewer_code(self) -> None:
         # `-F repo=2048` reaches GraphQL as a number and the query fails; a file name
         # can hold `'` and `;`; a suggested change and a fork's checks are someone
