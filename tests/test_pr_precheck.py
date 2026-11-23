@@ -172,6 +172,51 @@ class PrecheckTests(unittest.TestCase):
                 self.assertEqual(result.stdout, "")
                 self.assertIn("pr_precheck:", result.stderr)
 
+    def test_refuses_fields_it_would_have_to_guess(self):
+        bad = (
+            {"additions": -1},
+            {"additions": True},
+            {"deletions": "3"},
+            {"status": "exploded"},
+            {"previous_filename": 7},
+            {"previous_filename": ""},
+            {"patch": ["+x"]},
+        )
+        for change in bad:
+            item = entry("a.py")
+            item.update(change)
+            with self.subTest(change=change):
+                result = run(json.dumps([item]))
+                self.assertEqual((result.returncode, result.stdout), (2, ""))
+                self.assertIn("pr_precheck: changed file 1:", result.stderr)
+        missing = entry("a.py")
+        del missing["deletions"]
+        self.assertEqual(run(json.dumps([missing])).returncode, 2)
+
+    def test_refuses_deep_nesting_and_huge_numbers_without_a_traceback(self):
+        for text in ("[" * 100000 + "]" * 100000, "[" + "9" * 100000 + "]"):
+            result = run(text)
+            self.assertEqual((result.returncode, result.stdout), (2, ""))
+            self.assertNotIn("Traceback", result.stderr)
+
+    def test_numbers_workflow_lines_across_hunks(self):
+        patch = "\n".join(
+            [
+                "@@ -1,2 +1,2 @@",
+                " on:",
+                "-  push:",
+                "+  pull_request_target:",
+                "@@ -20,1 +20,2 @@",
+                " jobs:",
+                "+  permissions: write-all",
+            ]
+        )
+        out = facts([entry(".github/workflows/a.yaml", patch=patch)])
+        self.assertEqual(
+            [(line["side"], line["line"], line["markers"]) for line in out["workflow_lines"]],
+            [("head", 2, ["pull_request_target"]), ("head", 21, ["permissions", "write-all", "write"])],
+        )
+
     def test_the_review_skill_runs_the_precheck_before_the_diff(self):
         required = (
             "`python3 scripts/pr_precheck.py '<files.json>'`",

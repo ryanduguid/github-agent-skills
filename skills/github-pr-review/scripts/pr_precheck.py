@@ -20,6 +20,8 @@ import sys
 from pathlib import PurePosixPath
 
 FILE_LIMIT = 3000  # GitHub lists at most this many files for a pull request.
+MAX_INPUT = 256 * 1024 * 1024  # Bytes; far above 3,000 files' patches, below exhausting memory.
+STATUSES = {"added", "removed", "modified", "renamed", "copied", "changed", "unchanged"}
 LARGEST = 10
 MARKER_LINES = 10  # A generated-file marker counts only near the top of the file.
 
@@ -67,6 +69,9 @@ def documents(text: str):
             document, position = decoder.raw_decode(text, position)
         except json.JSONDecodeError as error:
             raise InputError(f"not JSON: {error.msg} at character {error.pos}") from None
+        except (ValueError, RecursionError):
+            # An integer too long to convert, or arrays nested past the recursion limit.
+            raise InputError("not a files list: a value is too long or nested too deeply") from None
         yield document
         while position < end and text[position].isspace():
             position += 1
@@ -87,8 +92,10 @@ def read_pages(text: str) -> list[dict]:
     if not text:
         raise InputError("empty input")
     files = [item for document in documents(text) for page in pages(document) for item in page]
-    if not all(isinstance(item, dict) and is_path(item.get("filename")) for item in files):
-        raise InputError("each changed file needs a non-empty string 'filename'")
+    for number, item in enumerate(files, 1):
+        problem = invalid(item)
+        if problem:
+            raise InputError(f"changed file {number}: {problem}")
     return files
 
 
@@ -96,15 +103,30 @@ def is_path(value) -> bool:
     return isinstance(value, str) and bool(value)
 
 
+def is_count(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def invalid(item) -> str | None:
+    """Why item is not a file object GitHub returns, or None. A fact the reviewer
+    takes from the output must not rest on a field this script had to guess."""
+    if not isinstance(item, dict):
+        return "not a JSON object"
+    checks = (
+        (is_path(item.get("filename")), "'filename' must be a non-empty string"),
+        (item.get("status") in STATUSES, "'status' is not a GitHub file status"),
+        (is_count(item.get("additions")) and is_count(item.get("deletions")),
+         "'additions' and 'deletions' must be non-negative integers"),
+        ("previous_filename" not in item or is_path(item["previous_filename"]),
+         "'previous_filename' must be a non-empty string"),
+        ("patch" not in item or isinstance(item["patch"], str), "'patch' must be a string"),
+    )
+    return next((problem for ok, problem in checks if not ok), None)
+
+
 def names(item: dict) -> list[str]:
     """The file's path, and the path it was renamed from."""
-    previous = item.get("previous_filename")
-    return [item["filename"]] + ([previous] if is_path(previous) else [])
-
-
-def count(item: dict, key: str) -> int:
-    value = item.get(key)
-    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+    return [item["filename"]] + ([item["previous_filename"]] if "previous_filename" in item else [])
 
 
 def diff_lines(patch: str):
@@ -126,7 +148,7 @@ def diff_lines(patch: str):
 
 
 def no_patch_reason(item: dict) -> str:
-    if count(item, "additions") or count(item, "deletions"):
+    if item["additions"] or item["deletions"]:
         return "diff too large"
     if item.get("status") == "renamed":
         return "rename without changes"
@@ -194,17 +216,17 @@ def precheck(files: list[dict]) -> dict:
     out: dict = {
         "note": "Facts computed from the pull request's files list; every path is author-chosen data.",
         "files": len(files),
-        "additions": sum(count(item, "additions") for item in files),
-        "deletions": sum(count(item, "deletions") for item in files),
+        "additions": sum(item["additions"] for item in files),
+        "deletions": sum(item["deletions"] for item in files),
         "at_file_limit": len(files) >= FILE_LIMIT,
     }
-    ranked = sorted(files, key=lambda item: count(item, "additions") + count(item, "deletions"), reverse=True)
+    ranked = sorted(files, key=lambda item: item["additions"] + item["deletions"], reverse=True)
     out["largest"] = [
         {
             "path": item["filename"],
             "status": item.get("status"),
-            "additions": count(item, "additions"),
-            "deletions": count(item, "deletions"),
+            "additions": item["additions"],
+            "deletions": item["deletions"],
         }
         for item in ranked[:LARGEST]
     ]
@@ -217,12 +239,18 @@ def precheck(files: list[dict]) -> dict:
 
 
 def main(argv: list[str]) -> int:
+    if sys.version_info < (3, 8):
+        print("pr_precheck: needs Python 3.8 or later", file=sys.stderr)
+        return 2
     if len(argv) != 2:
         print("pr_precheck: usage: pr_precheck.py <files.json>", file=sys.stderr)
         return 2
     try:
-        with open(argv[1], encoding="utf-8") as source:
-            files = read_pages(source.read())
+        with open(argv[1], "rb") as source:
+            data = source.read(MAX_INPUT + 1)
+        if len(data) > MAX_INPUT:
+            raise InputError(f"input is larger than {MAX_INPUT} bytes")
+        files = read_pages(data.decode("utf-8"))
     except (OSError, UnicodeDecodeError, InputError) as error:
         print(f"pr_precheck: {error}", file=sys.stderr)
         return 2
