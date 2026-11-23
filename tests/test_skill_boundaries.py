@@ -378,6 +378,30 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), forbidden='--title "'):
                     self.assertNotIn('--title "', text)
 
+    def test_the_audit_adds_stack_checks_only_for_stacks_present(self) -> None:
+        # Each profile is chosen by a file the repository holds and stays a
+        # bounded list of file or search facts.
+        required = (
+            "## Stack checks",
+            "| Rust | `Cargo.toml` |",
+            "| Python | `pyproject.toml`, `setup.py` or `requirements*.txt` |",
+            "| GitHub Actions | a file in `.github/workflows/` |",
+            "Skip a profile whose file is absent, and name the profiles you applied under **Checks run**.",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-repository-audit" / "SKILL.md"
+            text = flat(path)
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, text)
+            raw = path.read_text(encoding="utf-8")
+            section = raw.split("## Stack checks", 1)[-1].split("\n## ", 1)[0]
+            rows = [line for line in section.splitlines() if line.startswith("| ")][2:]
+            with self.subTest(path=path.relative_to(ROOT).as_posix(), check="profile rows"):
+                self.assertEqual(len(rows), 3)
+                for row in rows:
+                    self.assertIn(row.split("|")[-2].count(";") + 1, range(5, 9))
+
     def test_the_audit_reports_its_coverage_and_quotes_its_findings(self) -> None:
         for skills in (SKILLS, ROOT / ".agents" / "skills"):
             path = skills / "github-repository-audit" / "SKILL.md"

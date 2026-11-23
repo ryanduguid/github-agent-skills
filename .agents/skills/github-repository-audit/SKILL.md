@@ -38,6 +38,20 @@ results, command exit status). They do not establish presentation quality,
 maintainability, or remote GitHub state. Make those judgements only from the
 evidence inspected; otherwise mark them **unverified**.
 
+## Stack checks
+
+Add a profile's checks when the repository holds the file that selects it,
+at the root or in a listed folder. Skip a profile whose file is absent, and
+name the profiles you applied under **Checks run**. Each check is a file or
+search fact: report it as **present**, **missing** or **unverified** with
+the rest of the audit.
+
+| Profile | Selected by | Checks |
+| --- | --- | --- |
+| Rust | `Cargo.toml` | `Cargo.lock` committed for a binary or workspace; the toolchain or `rust-version` pinned; CI runs `cargo test`; CI runs `cargo clippy` with warnings denied and `cargo fmt --check`; a dependency advisory or licence check such as `cargo deny` or `cargo audit`; each `unsafe` block carries a comment saying why it is sound |
+| Python | `pyproject.toml`, `setup.py` or `requirements*.txt` | supported Python versions declared; dependencies locked or hash-pinned; CI runs the tests on each declared version; CI runs a linter; no `eval`, `exec`, `pickle.load` or `shell=True` on input a user controls |
+| GitHub Actions | a file in `.github/workflows/` | each third-party action pinned to a full commit SHA; `permissions` set at the top level with write scopes granted per job; no `pull_request_target` or `workflow_run` job that checks out or runs the pull request's code; no `${{ github.event.* }}` text a user controls inside a `run:` script; an update configuration for actions; `timeout-minutes` on each job |
+
 ## Report
 
 Return this evidence table, keeping recommendations limited to demonstrated
