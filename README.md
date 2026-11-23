@@ -155,8 +155,8 @@ In a project it places the skill in `.agents/skills/`. These skills inspect and
 prepare local work; they are not automated pull request reviewers.
 `github-branch-review` reviews your own branch before you push it, and
 `github-pr-review` drafts a review of an open pull request for you to post;
-neither posts anything to GitHub. For a review that GitHub posts on the pull
-request itself, use Copilot code review.
+neither posts anything to GitHub. For a review posted on the pull request
+itself, use a hosted review service.
 
 ## Requirements
 
