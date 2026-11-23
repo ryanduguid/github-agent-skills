@@ -320,6 +320,24 @@ class UntrustedContentTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, rubric)
 
+    def test_the_review_skill_offers_named_depths_with_a_stated_scope(self) -> None:
+        # The requester trades cost against coverage; each depth says what it reads and skips.
+        required = (
+            "## Choose the depth",
+            "| **quick** |",
+            "| **standard** |",
+            "| **deep** |",
+            "Use **standard** unless the requester names another depth.",
+            "At every depth, the instruction-file rule and the review-only boundary apply in full.",
+            "A **quick** review never recommends **approve**",
+            "the depth reviewed",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-pr-review" / "SKILL.md"
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, flat(path))
+
     def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
         # Double quotes let `$(...)` and backticks expand in both shells, and
         # PowerShell cannot parse bash's '\'' escape.
