@@ -320,6 +320,22 @@ class UntrustedContentTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, rubric)
 
+    def test_the_review_returns_a_bounded_file_walkthrough(self) -> None:
+        # One row per changed file with its change and risk; a large pull
+        # request folds low-risk files by folder instead of dropping them.
+        required = (
+            "**Files**: a walkthrough table with one row per changed file",
+            "what changed and the risk it carries",
+            "Above 40 changed files,",
+            "fold the rest into one row per folder",
+            "say how many files you folded",
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            path = skills / "github-pr-review" / "SKILL.md"
+            for expected in required:
+                with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                    self.assertIn(expected, flat(path))
+
     def test_the_review_skill_offers_named_depths_with_a_stated_scope(self) -> None:
         # The requester trades cost against coverage; each depth says what it reads and skips.
         required = (
