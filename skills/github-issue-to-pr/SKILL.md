@@ -34,11 +34,29 @@ tests. Do not combine parser rewrites, formatting sweeps, documentation
 rewrites, dependency updates, or cleanup with the issue unless they are needed
 to meet a stated criterion.
 
-Run only repository-declared checks plus proportionate focused tests. Record
-the exact command and result; if execution is unavailable or fails, say so
-instead of inferring success. Review `git diff --check`, the final diff, and
+Run only repository-declared checks plus proportionate focused tests, each
+with a receipt as below; if execution is unavailable or fails, say so instead
+of inferring success. The expected failure before the change needs a receipt
+too. Review `git diff --check`, the final diff, and
 the staged set if preparing a commit. Never revert, stage, or include another
 person's unrelated work.
+
+## Check receipts
+
+Report a check as passed only with a receipt from this run: the exact command,
+its exit code and a digest of its output. Save the output to a file, take the
+exit code from the shell, not from the output's wording, and hash the file:
+
+- bash or zsh: `<command> > '<log>' 2>&1; echo "exit=$?"; sha256sum '<log>'`
+  (`shasum -a 256` where `sha256sum` is missing)
+- PowerShell: `<command> *> '<log>'; "exit=$LASTEXITCODE"; (Get-FileHash '<log>').Hash`
+
+Record each receipt as `` `<command>`: exit <code>, sha256 <first 12 hex
+digits>, '<the output's summary line>' ``. Exit 0 is **passed**; any other
+exit is **failed**, whatever the output says. Do not pipe the command into
+another before reading its exit code, which would then be the last command's.
+A check with no receipt, because it was not run, was run by someone else,
+could not run or has only a described result, is **not verified**, never passed.
 
 ## Return the handoff
 
@@ -46,8 +64,8 @@ Use this order:
 
 1. **Acceptance criteria and assumptions**: observable issue scope and any
    unverified interpretation.
-2. **Change and evidence**: files changed, test-first evidence, commands and
-   results, preserved unrelated changes, and remaining uncertainty.
+2. **Change and evidence**: files changed, test-first evidence, a receipt
+   for each check, preserved unrelated changes, and remaining uncertainty.
 3. **Commit summary**: a concise imperative subject and body matching only
    the reviewed local diff. Do not invent a hash, branch, or staged state.
 4. **PR body**: `## Summary`, `## Tests`, and `## Assumptions` (when needed),

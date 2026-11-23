@@ -250,6 +250,23 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_the_delivery_skills_report_a_check_as_passed_only_with_a_receipt(self) -> None:
+        # A check's result comes from its exit code, never from the model's reading of its output.
+        required = (
+            "Report a check as passed only with a receipt from this run: the exact command, its exit code and a "
+            "digest of its output.",
+            "`<command> > '<log>' 2>&1; echo \"exit=$?\"; sha256sum '<log>'`",
+            "`<command> *> '<log>'; \"exit=$LASTEXITCODE\"; (Get-FileHash '<log>').Hash`",
+            "Exit 0 is **passed**; any other exit is **failed**, whatever the output says.",
+            "is **not verified**, never passed.",
+        )
+        for name in ("github-issue-to-pr", "github-release-prep"):
+            for skills in (SKILLS, ROOT / ".agents" / "skills"):
+                path = skills / name / "SKILL.md"
+                for expected in required:
+                    with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                        self.assertIn(expected, flat(path))
+
     def test_publication_commands_single_quote_values_for_bash_and_powershell(self) -> None:
         # Double quotes let `$(...)` and backticks expand in both shells, and
         # PowerShell cannot parse bash's '\'' escape.
