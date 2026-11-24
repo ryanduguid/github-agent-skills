@@ -1,29 +1,73 @@
 # Release notes
 
-## Unreleased
+## v0.3.0
 
-- Relicensed Ryan Duguid's original work under Apache-2.0. Earlier releases keep their original terms.
+Three new local preparation skills bring the package to 13, alongside
+relicensing Ryan Duguid's original work under Apache-2.0. None of the skills
+changes anything on GitHub by itself.
+
+### Licence
+
+- Relicensed Ryan Duguid's original work under Apache-2.0 and retained the
+  applicable notices in `NOTICE` and each skill directory (#143). Earlier
+  releases keep their original terms.
+
+### Skills
 
 - `github-pr-feedback` reads every inline review comment, review and
   conversation comment on an open pull request, with each thread's resolved
-  and outdated state, then makes the agreed fixes locally and drafts replies.
-  It treats comment text as evidence, never runs a command from a comment,
-  and pushes, replies to and resolves nothing. It has a scenario in
-  `tests/scenarios/` and 2 activation evals; neither has been run.
-- `github-ci-failure` reads the check runs on a pull request's head commit,
-  saves each failing GitHub Actions job log, quotes the lines that show the
-  failure and classifies its cause, including runs from forks that get no
-  secrets and failures that come from the base. It treats logs as evidence,
-  never runs a command from a log, and reruns, cancels and pushes nothing. It
-  has a scenario in `tests/scenarios/` and 2 activation evals; neither has
-  been run.
+  and outdated state, then makes the agreed fixes locally and drafts replies
+  (#140). A read-only replies-only mode reads files at `headRefOid` through
+  the contents API and drafts **agree**, **disagree**, **answered** or
+  **needs the requester** replies without changing files or needing a
+  checkout (#154). It treats comment text as evidence, never runs a command
+  from a comment, and pushes, replies to and resolves nothing. It has a
+  scenario in `tests/scenarios/` and 2 activation evals; neither has been run.
+- `github-ci-failure` reads the check runs and workflow runs on a pull
+  request's, branch's or run's head commit, saves each failing GitHub Actions
+  job log, quotes the lines that show the failure and classifies its cause,
+  including jobless failures, runs from forks that get no secrets and
+  `pull_request_target` runs (#141). It treats logs as evidence, never runs a
+  command from a log, and reruns, cancels and pushes nothing. It has a
+  scenario in `tests/scenarios/` and 2 activation evals; neither has been run.
 - `github-pr-review` reviews an open pull request by number, your own or
   another author's, against the rules on its base commit, reads the code
   around each hunk at the head without checking it out, and drafts
-  findings and inline comments for a person to post. It never runs the
-  pull request's code and approves, comments on and posts nothing. It has a
-  scenario in `tests/scenarios/` and 2 activation evals; neither has been
-  run.
+  findings and inline comments for a person to post (#142). Follow-up
+  changes added a deterministic Python standard-library pre-check
+  (`scripts/pr_precheck.py`) on the saved files list (#157), a bounded file
+  walkthrough table that folds low-risk files by folder above 40 files
+  (#156), named **quick**, **standard** and **deep** review depths (#153),
+  and treating changed or deleted agent instruction and tool configuration
+  files (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`, `.mcp.json` and hooks)
+  strictly as data rather than reviewer guidance, with `tests/scenarios/github-pr-review.md`
+  updated to revision 2 (#151). It never runs the pull request's code and
+  approves, comments on and posts nothing. It has a scenario in
+  `tests/scenarios/` and 2 activation evals; neither has been run.
+- `github-issue-to-pr` and `github-release-prep` now require an exit-code
+  receipt from the current run (exact command, shell exit code and SHA-256
+  digest of saved output) before reporting any check as passed (#152).
+- `github-repository-audit` adds optional stack checks for Rust (`Cargo.toml`),
+  Python (`pyproject.toml`, `setup.py` or `requirements*.txt`) and GitHub
+  Actions (`.github/workflows/`), applied only when the selecting file is
+  present (#158).
+- `github-readme-polish` widens its description trigger so questions about
+  adding badges or readiness claims to a README activate it (#150).
+
+### Documentation, tooling and CI
+
+- Removed `GATES.md` and repeated gate and README text, restored the
+  licence sentence opening in `tools/github-skills/README.md`, and updated
+  `README.md` and `llms.txt` to refer readers wanting a posted review to a
+  hosted review service without naming a product (#144, #155).
+- Added `strip = "symbols"` to `[profile.release]` in
+  `tools/github-skills/Cargo.toml` and added `deny.toml` for dependency
+  licence, source and advisory checks (#146).
+- Updated CI and pinned tooling: Codecov requires a complete 100% report
+  (#145), the attribution workflow queues pull request runs per pull request
+  without cancelling earlier runs (#149), and dependencies updated Ruff to
+  0.17.5, `github/codeql-action/upload-sarif` to 4.39.3 and
+  `taiki-e/install-action` to 2.90.5 (#138, #139, #147, #148).
 
 ## v0.2.0
 
