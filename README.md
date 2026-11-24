@@ -36,8 +36,6 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 - `github-pr-review`: review an open pull request by number and draft the review for a person to post.
 
 The last 8 have no recorded runs and no activation eval results yet.
-`github-pr-feedback`, `github-ci-failure` and `github-pr-review` are new since v0.2.0, so an installation from a tagged
-release (`gh skill install`) includes them only from the next release.
 
 ## Runtimes and installation
 
@@ -47,7 +45,7 @@ plugin manifest (`claude --plugin-dir .`). After changing a skill, run
 it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
 validates the result. Do not edit the generated directory directly.
 
-The Claude Code and Codex plugin manifests read version `0.2.0`, the latest
+The Claude Code and Codex plugin manifests read version `0.3.0`, the latest
 tagged release, and add no MCP server or credentials. Run the repository's
 checks before using a changed checkout.
 
@@ -82,7 +80,7 @@ For Cursor it copies the skills into `.agents/skills/`; for Windsurf, into
 page lists the other agent names.
 
 The GitHub CLI's `gh skill` command installs from the latest tagged release
-instead, which does not yet include `github-pr-feedback`, `github-ci-failure` or `github-pr-review`:
+instead:
 
 ```shell
 gh skill install ryanduguid/github-agent-skills github-readme-polish
