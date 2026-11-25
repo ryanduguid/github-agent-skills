@@ -1,8 +1,9 @@
 // Copyright 2026 Ryan Duguid
 // SPDX-License-Identifier: Apache-2.0
 
-//! The repository's skill validator, synchroniser and public-file checker.
+//! The repository's skill validator, synchroniser, public-file checker and PR precheck.
 pub mod fuzz;
+pub mod pr_precheck;
 pub mod public_files;
 pub mod skills;
 

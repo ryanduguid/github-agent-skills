@@ -1,14 +1,14 @@
 // Copyright 2026 Ryan Duguid
 // SPDX-License-Identifier: Apache-2.0
 
-use github_skills::skills;
+use github_skills::{pr_precheck, skills};
 use std::{
     env, io,
     path::{Path, PathBuf},
     process::ExitCode,
 };
 
-const HELP: &str = "Usage: github-skills <validate-skills|check-public-files> [--root PATH] [--strict] [--sync] [--skill-digest NAME]\n\nChecks this repository's skills and public files. The root defaults to the\ncurrent directory.\n--strict, --sync and --skill-digest apply only to validate-skills.\n--skill-digest prints the skill digest line to record in a new run file\nfor approved skill NAME, after strict validation.\n";
+const HELP: &str = "Usage: github-skills <validate-skills|check-public-files|pr-precheck> [OPTIONS]\n\nChecks this repository's skills and public files, or prechecks a pull\nrequest's files list. For validate-skills and check-public-files, --root\nPATH defaults to the current directory.\n--strict, --sync and --skill-digest apply only to validate-skills.\n--skill-digest prints the skill digest line to record in a new run file\nfor approved skill NAME, after strict validation.\npr-precheck <files.json in the current folder> reads one file from the\ncurrent directory and prints JSON facts.\n";
 
 /// Run notices and the digest line use stdout; failures use stderr.
 fn validate_skills(
@@ -49,6 +49,15 @@ fn run() -> Result<u8, String> {
     }
     if command == "--version" {
         println!("github-skills {}", env!("CARGO_PKG_VERSION"));
+        return Ok(0);
+    }
+    if command == "pr-precheck" {
+        let rest: Vec<_> = args.collect();
+        if matches!(rest.as_slice(), [flag] if flag == "--help" || flag == "-h") {
+            print!("{HELP}");
+            return Ok(0);
+        }
+        println!("{}", pr_precheck::run_cli(&rest)?);
         return Ok(0);
     }
     if command != "validate-skills" && command != "check-public-files" {
