@@ -32,7 +32,7 @@ This document records the Wave 2 Rust port of `skills/github-pr-review/scripts/p
 ## Dependencies and `deny.toml`
 
 - `tools/github-skills/Cargo.toml`: promoted `serde_json = "1"` from `[dev-dependencies]` to `[dependencies]`. `tools/github-skills/Cargo.lock` adds `0` new crates; `deny.toml` is unchanged.
-- `tools/github-skills/fuzz/Cargo.lock`: updated to reflect `github-skills`'s promoted `serde_json` dependency (`1.0.154` and its already-allowed transitive crates from `tools/github-skills/Cargo.lock`).
+- `tools/github-skills/fuzz/Cargo.lock`: updated to reflect `github-skills`'s promoted `serde_json` dependency (`1.0.154` and its already-allowed transitive crates, resolving `itoa` `1.0.19` and `syn` `3.0.10`).
 
 ## Intended divergences
 
@@ -50,7 +50,7 @@ This document records the Wave 2 Rust port of `skills/github-pr-review/scripts/p
 
 ## Verification
 
-Verified on Linux (`ll`, `rustc 1.99.1`, `cargo 1.99.1`, `cargo-deny 0.22.0`, `cargo-llvm-cov 0.9.1`, Python `3.14.10`, Ruff `0.17.6`):
+Verified on Linux (`x86_64-unknown-linux-gnu`, `rustc 1.99.1`, `cargo 1.99.1`, `cargo-deny 0.22.0`, `cargo-llvm-cov 0.9.1`, Python `3.14.10`, Ruff `0.17.6`):
 
 - `cargo fmt --check`: passed (`0` diffs).
 - `cargo clippy --locked --all-targets -- -D warnings`: passed (`0` warnings); extra `-W clippy::too_many_lines -W clippy::ref_option` check produced `0` warnings in `pr_precheck.rs`, `main.rs` and `tests/pr_precheck.rs`.
@@ -66,7 +66,7 @@ Verified on Linux (`ll`, `rustc 1.99.1`, `cargo 1.99.1`, `cargo-deny 0.22.0`, `c
 - `python3 -m unittest discover -s tests -v`: `77` tests `OK`.
 - Differential parity harness (`diff_parity.py`): `50 cases compared, 0 failures`.
 
-Verified on Windows (PC, Python `3.15.0`, `rustc 1.99.1`):
+Verified on Windows (`x86_64-pc-windows-msvc`, Python `3.15.0`, `rustc 1.99.1`):
 
 - `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings`, `cargo build --locked --release`: passed.
 - `cargo test --locked`: `83` passed, `0` failed (`4` unit, `6` `fuzz_harness`, `25` `native`, `10` `pr_precheck`, `14` `public_checks`, `24` `validation`; Unix/Linux-only tests excluded via `#[cfg]`).
