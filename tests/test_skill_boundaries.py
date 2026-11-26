@@ -222,6 +222,27 @@ class UntrustedContentTests(unittest.TestCase):
                     self.assertIn(guard, text)
                     self.assertIn("so nothing posts once the head has moved", text)
 
+    def test_push_steps_explain_gh007_and_issue_reads_see_sub_issues(self) -> None:
+        # A GH007 refusal is fixed by rewriting commits, which stays with the requester;
+        # `gh issue view` does not show sub-issues or a parent.
+        sub_issues = "`gh api --paginate 'repos/<owner>/<repo>/issues/<number>/sub_issues?per_page=100'`"
+        required = {
+            "github-ci-failure": ("`GH007: Your push would publish a private email address`",),
+            "github-pr-feedback": ("`GH007: Your push would publish a private email address`",),
+            "github-issue-to-pr": (
+                "`GH007: Your push would publish a private email address`",
+                "do not rewrite the commits unasked",
+                sub_issues,
+            ),
+            "github-issue-triage": (sub_issues, "`gh api 'repos/<owner>/<repo>/issues/<number>/parent'`"),
+        }
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            for name, expected_texts in required.items():
+                path = skills / name / "SKILL.md"
+                for expected in expected_texts:
+                    with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
+                        self.assertIn(expected, flat(path))
+
     def test_the_feedback_skill_quotes_names_and_holds_reviewer_code(self) -> None:
         # `-F repo=2048` reaches GraphQL as a number and the query fails; a file name
         # can hold `'` and `;`; a suggested change and a fork's checks are someone

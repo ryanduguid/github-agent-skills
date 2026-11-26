@@ -174,7 +174,11 @@ Use this order:
    `if ((gh pr view <number> --repo '<owner>/<repo>' --json headRefOid --jq .headRefOid) -eq '<headRefOid>') { ... }`
    in PowerShell, so nothing posts once the head has moved. If it moved,
    the replies may describe code that is gone: read the new commits and
-   redo the affected items before posting.
+   redo the affected items before posting. A `git push` refused with
+   `GH007: Your push would publish a private email address` sent nothing: a
+   commit's author or committer email is one the account keeps private.
+   Re-authoring with the account's `noreply` address rewrites the commits
+   and stays with the requester.
 7. **Not handled**: items not read or not decided, and any list that may be
    incomplete.
 

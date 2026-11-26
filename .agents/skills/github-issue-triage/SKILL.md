@@ -16,7 +16,13 @@ Take the issues from the requester: numbers, a supplied export, or a query the
 requester names, and keep to that scope. With a read of GitHub allowed, read
 each issue with
 `gh issue view <number> --json title,body,author,labels,state,createdAt,comments`
-(captured output of `--comments` alone omits the body). Find the issues for a
+(captured output of `--comments` alone omits the body). That read does not
+show sub-issues: read them with
+`gh api --paginate 'repos/<owner>/<repo>/issues/<number>/sub_issues?per_page=100'`
+and the parent with `gh api 'repos/<owner>/<repo>/issues/<number>/parent'`,
+where HTTP 404 'No parent issue found' means it has none. An issue with
+sub-issues tracks them: judge it by their state, and do not propose closing
+it or calling it a duplicate whilst one is open. Find the issues for a
 query by turning its filters into `gh issue list` options such as `--label` or
 `--search`; with no numbers, export or query, list the open issues with
 `gh issue list --state open --limit 200 --json number,title,labels,createdAt,updatedAt`.

@@ -181,7 +181,11 @@ Use this order:
    `gh run rerun <run-id> --failed --repo '<owner>/<repo>'`. Put each value
    taken from the repository or a log in single quotes, writing any `'`
    inside it as `'\''` in bash or zsh and as `''` in PowerShell, so pasting
-   the command cannot run part of it. Say when a rerun could repeat a side
+   the command cannot run part of it. A `git push` refused with
+   `GH007: Your push would publish a private email address` sent nothing: a
+   commit's author or committer email is one the account keeps private.
+   Re-authoring with the account's `noreply` address rewrites the commits
+   and stays with the requester. Say when a rerun could repeat a side
    effect such as a deployment or publication, that a rerun proves
    nothing about a deterministic failure, and that a run whose workflow file
    did not load fails again until the file is fixed.
