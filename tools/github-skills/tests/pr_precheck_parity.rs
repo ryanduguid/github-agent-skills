@@ -60,7 +60,7 @@ const PLUS: Option<&str> = Some("@@ -1 +1 @@\n+x");
 /// Path, status, (additions, deletions) and patch.
 type Case = (&'static str, &'static str, (u64, u64), Option<&'static str>);
 
-const CLASSIFIED: [Case; 30] = [
+const CLASSIFIED: [Case; 32] = [
     (
         ".github/workflows/ci.yml",
         "modified",
@@ -121,6 +121,8 @@ const CLASSIFIED: [Case; 30] = [
         PLUS,
     ),
     ("big.bin", "modified", (u64::MAX, 1), None),
+    (".", "added", (1, 0), PLUS),
+    ("./", "added", (1, 0), PLUS),
 ];
 
 fn classified_files() -> Value {

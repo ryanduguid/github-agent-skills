@@ -43,7 +43,6 @@ Path confinement must never be bypassed, and hostile input must never panic or e
 3. **JSON limits.** `serde_json` follows RFC 8259: it refuses `NaN`, `Infinity`, unpaired surrogates, nesting deeper than 128 and counts outside 64-bit integers, where Python accepts some of them. Totals sum in `u128`.
 4. **Error text.** I/O and UTF-8 errors carry Rust's messages after the `pr_precheck:` prefix, not CPython's.
 5. **Hunk headers.** Only ASCII digits start a hunk, and a line number beyond 64 bits is refused (exit `2`). Python's `\d` also accepts other Unicode digits and has no size limit; GitHub writes only ASCII hunk headers.
-6. **A file named `.`.** Python raises `IndexError` (exit `1`, a traceback) on a path with no parts, such as `.` or `./`; the native command reports no classification for it. GitHub never lists such a path.
 
 ## Dependencies
 
