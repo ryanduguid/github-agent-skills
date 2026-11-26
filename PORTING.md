@@ -4,7 +4,7 @@
 
 ## What stays in Python
 
-- **`skills/github-pr-review/scripts/pr_precheck.py`** stays. `skills/github-pr-review/SKILL.md` runs the script installed with the skill folder, with no build step, on machines that may not have Rust; the native command is additive until prebuilt `github-skills` binaries ship. Changing the script also changes the skill's digest, which ties it to its recorded evaluation runs.
+- **`skills/github-pr-review/scripts/pr_precheck.py`** stays. `skills/github-pr-review/SKILL.md` runs the script installed with the skill folder, with no build step, on machines that may not have Rust; the native command is additive until prebuilt `github-skills` binaries ship.
 - **`.github/ci/check_gates.py`** stays: `validate.yml` runs it directly as a single standard-library check.
 - **`tests/`** keeps the Python suite for the retained scripts, plugin packaging, workflow pins and skill authority boundaries.
 
