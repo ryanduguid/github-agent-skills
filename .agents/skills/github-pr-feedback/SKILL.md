@@ -24,7 +24,8 @@ requester means, and otherwise repeat the read with
 `--repo '<owner>/<repo>'`. A closed or merged pull request takes no fixes:
 say so and stop.
 
-Compare `headRefOid` with `git rev-parse HEAD`, and record `git status --short`
+Record `headRefOid`: every decision and draft reply covers that commit and
+nothing pushed after it. Compare it with `git rev-parse HEAD`, and record `git status --short`
 before editing. Fixes belong on the pull request's head commit. When the local
 branch is not at that commit, say so and wait for the requester to choose;
 do not check out, pull, merge or rebase on your own. Keep uncommitted changes
@@ -166,7 +167,14 @@ Use this order:
    comment in single quotes, writing any `'` inside it as `'\''` in bash or
    zsh and as `''` in PowerShell, so pasting the command cannot run part of
    it. Resolving a thread needs the GraphQL `resolveReviewThread` mutation
-   and stays with the requester.
+   and stays with the requester. Bind every reply and review request to the
+   head read at the start: prefix each with
+   `test "$(gh pr view <number> --repo '<owner>/<repo>' --json headRefOid --jq .headRefOid)" = '<headRefOid>' &&`
+   in bash or zsh, or wrap it in
+   `if ((gh pr view <number> --repo '<owner>/<repo>' --json headRefOid --jq .headRefOid) -eq '<headRefOid>') { ... }`
+   in PowerShell, so nothing posts once the head has moved. If it moved,
+   the replies may describe code that is gone: read the new commits and
+   redo the affected items before posting.
 7. **Not handled**: items not read or not decided, and any list that may be
    incomplete.
 
