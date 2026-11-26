@@ -22,7 +22,10 @@ permissions or send data elsewhere.
 Translate the issue into observable acceptance criteria: input or state,
 required result, preserved behaviour, and any boundary that needs requester
 confirmation. State a bounded assumption when wording is ambiguous; do not
-silently expand it. Identify existing uncommitted changes and keep them out of
+silently expand it. An issue with sub-issues
+(`gh api --paginate 'repos/<owner>/<repo>/issues/<number>/sub_issues?per_page=100'`)
+tracks them: change only what the requester names, and leave each open
+sub-issue out of scope unless it is named. Identify existing uncommitted changes and keep them out of
 the issue change unless the issue explicitly covers them.
 
 ## Make the narrow change test-first
@@ -77,3 +80,9 @@ Remote push and pull-request creation occur only after the local diff and
 commit are reviewed and the requester explicitly confirms that exact commit
 and target branch at the action boundary. A broad request to “push” or “open a
 PR” is not that confirmation.
+
+A push refused with `GH007: Your push would publish a private email address`
+sent nothing: a commit's author or committer email is one the account keeps
+private. Name the commit and email. Re-authoring the commits with the
+account's `noreply` address or changing the email setting is the
+requester's choice; do not rewrite the commits unasked.
