@@ -1,0 +1,458 @@
+// Copyright 2026 Ryan Duguid
+// SPDX-License-Identifier: Apache-2.0
+
+//! Integration and contract tests for `github-skills pr-precheck`.
+
+use github_skills::pr_precheck as pre;
+use serde_json::{Value, json};
+use std::{fs, path::Path, process::Command};
+
+fn entry(path: &str, status: &str, additions: u64, deletions: u64, patch: Option<&str>) -> Value {
+    let mut map = serde_json::Map::new();
+    map.insert("filename".into(), json!(path));
+    map.insert("status".into(), json!(status));
+    map.insert("additions".into(), json!(additions));
+    map.insert("deletions".into(), json!(deletions));
+    map.insert("changes".into(), json!(additions.saturating_add(deletions)));
+    if let Some(text) = patch {
+        map.insert("patch".into(), json!(text));
+    }
+    Value::Object(map)
+}
+
+fn mod_entry(path: &str) -> Value {
+    entry(path, "modified", 1, 0, Some("@@ -1 +1 @@\n+x"))
+}
+
+fn run_cli_bytes(dir: &Path, filename: &str, bytes: &[u8]) -> std::process::Output {
+    fs::write(dir.join(filename), bytes).unwrap();
+    Command::new(env!("CARGO_BIN_EXE_github-skills"))
+        .args(["pr-precheck", filename])
+        .current_dir(dir)
+        .output()
+        .unwrap()
+}
+
+fn facts(files: Value) -> Value {
+    let dir = tempfile::tempdir().unwrap();
+    let out = run_cli_bytes(dir.path(), "files.json", files.to_string().as_bytes());
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(out.stderr.is_empty());
+    serde_json::from_slice(&out.stdout).unwrap()
+}
+
+#[test]
+fn counts_totals_and_largest_files_with_stable_ties() {
+    let files: Vec<Value> = (1..=12)
+        .map(|n| entry(&format!("src/{n}.py"), "modified", n, 1, Some("+x")))
+        .collect();
+    let out = facts(Value::Array(files));
+    assert_eq!(out["files"], 12);
+    assert_eq!(out["additions"], 78);
+    assert_eq!(out["deletions"], 12);
+    assert_eq!(out["at_file_limit"], false);
+    assert_eq!(out["largest"].as_array().unwrap().len(), 10);
+    assert_eq!(
+        out["largest"][0],
+        json!({"path": "src/12.py", "status": "modified", "additions": 12, "deletions": 1})
+    );
+
+    // Equal change counts keep original document order.
+    let tied = facts(json!([
+        entry("first.rs", "modified", 5, 0, Some("+a")),
+        entry("second.rs", "added", 2, 3, Some("+b")),
+    ]));
+    assert_eq!(tied["largest"][0]["path"], "first.rs");
+    assert_eq!(tied["largest"][1]["path"], "second.rs");
+}
+
+#[test]
+fn reads_empty_paginated_and_slurped_pages() {
+    let empty = facts(json!([]));
+    assert_eq!(empty["files"], 0);
+    assert_eq!(empty["largest"], json!([]));
+
+    let dir = tempfile::tempdir().unwrap();
+    let concatenated = format!(
+        "{}\u{00a0}\n{}",
+        json!([mod_entry("a.py")]),
+        json!([mod_entry("b.py")])
+    );
+    let out = run_cli_bytes(dir.path(), "pages.json", concatenated.as_bytes());
+    assert_eq!(out.status.code(), Some(0));
+    let parsed: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(parsed["files"], 2);
+
+    let slurped = facts(json!([
+        [mod_entry("a.py")],
+        [],
+        [mod_entry("b.py"), mod_entry("c.py")]
+    ]));
+    assert_eq!(slurped["files"], 3);
+}
+
+#[test]
+fn flags_the_api_file_limit() {
+    let below: Vec<Value> = (0..2999).map(|n| mod_entry(&format!("f{n}"))).collect();
+    assert_eq!(facts(Value::Array(below))["at_file_limit"], false);
+
+    let at_limit: Vec<Value> = (0..3000).map(|n| mod_entry(&format!("f{n}"))).collect();
+    assert_eq!(facts(Value::Array(at_limit))["at_file_limit"], true);
+}
+
+#[test]
+fn sorts_files_without_a_patch() {
+    let mut renamed = entry("new/name.txt", "renamed", 0, 0, None);
+    renamed["previous_filename"] = json!("old/name.txt");
+    let out = facts(json!([
+        entry("assets/logo.png", "modified", 0, 0, None),
+        entry("data/big.csv", "modified", 9000, 0, None),
+        renamed,
+        entry("empty/patch.txt", "modified", 0, 0, Some("")),
+    ]));
+    assert_eq!(
+        out["no_patch"],
+        json!([
+            {"path": "assets/logo.png", "reason": "binary"},
+            {"path": "data/big.csv", "reason": "diff too large"},
+            {"path": "new/name.txt", "reason": "rename without changes"},
+        ])
+    );
+}
+
+#[test]
+fn flags_lockfiles_manifests_generated_and_vendored_files() {
+    let out = facts(json!([
+        mod_entry("Cargo.lock"),
+        mod_entry("web/package-lock.json"),
+        mod_entry("web/package.json"),
+        mod_entry("requirements-dev.txt"),
+        mod_entry("app.csproj"),
+        mod_entry("vendor/lib/a.go"),
+        mod_entry("third-party/zihuatanejo/notes.txt"),
+        mod_entry("api/service_pb2.py"),
+        mod_entry("web/app.min.js"),
+        mod_entry("generated/types.rs"),
+        entry(
+            "src/schema.rs",
+            "modified",
+            2,
+            0,
+            Some("@@ -0,0 +1,2 @@\n+// @generated by a tool\n+fn x() {}")
+        ),
+        entry(
+            "src/notes.rs",
+            "modified",
+            1,
+            0,
+            Some("@@ -40,0 +41,1 @@\n+// do not edit the @generated marker below")
+        ),
+        entry(
+            "src/removed.rs",
+            "modified",
+            0,
+            1,
+            Some("@@ -1,1 +0,0 @@\n-// @generated old")
+        ),
+    ]));
+    assert_eq!(
+        out["lockfiles"],
+        json!(["Cargo.lock", "web/package-lock.json"])
+    );
+    assert_eq!(
+        out["manifests"],
+        json!(["web/package.json", "requirements-dev.txt", "app.csproj"])
+    );
+    assert_eq!(
+        out["vendored"],
+        json!(["vendor/lib/a.go", "third-party/zihuatanejo/notes.txt"])
+    );
+    assert_eq!(
+        out["generated"],
+        json!([
+            {"path": "api/service_pb2.py", "reason": "generated file name"},
+            {"path": "web/app.min.js", "reason": "generated file name"},
+            {"path": "generated/types.rs", "reason": "generated file name"},
+            {"path": "src/schema.rs", "reason": "generated marker at line 1"},
+        ])
+    );
+}
+
+#[test]
+fn reports_workflow_permission_and_hunk_lines() {
+    let patch = [
+        "@@ -1,6 +1,6 @@",
+        " name: ci",
+        " on:",
+        "-  pull_request:",
+        "+  pull_request_target:",
+        " permissions:",
+        "-  contents: read",
+        "+  contents: write",
+        " jobs:",
+        "@@ -20,1 +20,3 @@",
+        " jobs:",
+        "+  permissions: write-all",
+        "\\ No newline at end of file",
+        concat!("+  id-to", "ken: write"),
+    ]
+    .join("\n");
+    let out = facts(json!([
+        entry(".github/workflows/ci.yml", "modified", 3, 2, Some(&patch)),
+        mod_entry("tools/act/action.yml"),
+        mod_entry(".github/dependabot.yml"),
+        mod_entry(".github/workflows/.yml"),
+        mod_entry(".github/CODEOWNERS"),
+        mod_entry(".github/settings.yml"),
+        mod_entry("sub/.github/settings.yml"),
+        entry(
+            "docs/guide.md",
+            "modified",
+            1,
+            0,
+            Some("@@ -1 +1 @@\n+permissions: contents: write")
+        ),
+    ]));
+    assert_eq!(
+        out["workflows"],
+        json!([
+            ".github/workflows/ci.yml",
+            "tools/act/action.yml",
+            ".github/dependabot.yml"
+        ])
+    );
+    assert_eq!(
+        out["permission_files"],
+        json!([".github/CODEOWNERS", ".github/settings.yml"])
+    );
+    assert_eq!(
+        out["workflow_lines"],
+        json!([
+            {"path": ".github/workflows/ci.yml", "side": "base", "line": 3, "markers": ["pull_request"]},
+            {"path": ".github/workflows/ci.yml", "side": "head", "line": 3, "markers": ["pull_request_target"]},
+            {"path": ".github/workflows/ci.yml", "side": "head", "line": 5, "markers": ["write"]},
+            {"path": ".github/workflows/ci.yml", "side": "head", "line": 21, "markers": ["permissions", "write-all", "write"]},
+            {"path": ".github/workflows/ci.yml", "side": "head", "line": 22, "markers": ["id-token", "write"]},
+        ])
+    );
+}
+
+#[test]
+fn names_instruction_files_including_renamed_previous_filenames() {
+    let mut renamed = mod_entry("docs/agents.txt");
+    renamed["status"] = json!("renamed");
+    renamed["previous_filename"] = json!("AGENTS.md");
+    let out = facts(json!([
+        mod_entry("AGENTS.md"),
+        mod_entry("pkg/CLAUDE.md"),
+        entry(".mcp.json", "added", 1, 0, Some("+x")),
+        mod_entry(".claude/settings.json"),
+        mod_entry("skills/x/SKILL.md"),
+        renamed,
+        mod_entry("src/main.py"),
+    ]));
+    assert_eq!(
+        out["instruction_files"],
+        json!([
+            "AGENTS.md",
+            "pkg/CLAUDE.md",
+            ".mcp.json",
+            ".claude/settings.json",
+            "skills/x/SKILL.md",
+            "AGENTS.md",
+        ])
+    );
+}
+
+#[test]
+fn hostile_paths_stay_ascii_escaped_and_exact_format() {
+    let name =
+        "a\u{202e}b\n\r\t\u{0008}\u{000c}\u{0001}\x7f\"\\\u{00e9}\u{1f600}$(touch pwned).yml";
+    let dir = tempfile::tempdir().unwrap();
+    let payload = json!([
+        mod_entry(&format!(".github/workflows/{name}")),
+        mod_entry("sub/quote\"slash\\end.txt"),
+    ])
+    .to_string();
+    let out = run_cli_bytes(dir.path(), "files.json", payload.as_bytes());
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8(out.stdout).unwrap();
+    assert!(stdout.is_ascii(), "{stdout}");
+    assert!(stdout.contains("\\u202e"));
+    assert!(stdout.contains("\\b"));
+    assert!(stdout.contains("\\f"));
+    assert!(stdout.contains("\\u0001"));
+    assert!(stdout.contains("\\u007f"));
+    assert!(stdout.contains("\\u00e9"));
+    assert!(stdout.contains("\\ud83d\\ude00"));
+    assert!(!stdout.contains("\n$(touch"));
+    let parsed: Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(
+        parsed["workflows"],
+        json!([format!(".github/workflows/{name}")])
+    );
+    assert_eq!(parsed["largest"][1]["path"], "sub/quote\"slash\\end.txt");
+    assert!(
+        parsed["note"]
+            .as_str()
+            .unwrap()
+            .contains("author-chosen data")
+    );
+    // Exact top-level key order matches pr_precheck.py.
+    let expected_keys = [
+        "\"note\":",
+        "\"files\":",
+        "\"additions\":",
+        "\"deletions\":",
+        "\"at_file_limit\":",
+        "\"largest\":",
+        "\"no_patch\":",
+        "\"generated\":",
+        "\"vendored\":",
+        "\"lockfiles\":",
+        "\"manifests\":",
+        "\"workflows\":",
+        "\"permission_files\":",
+        "\"workflow_lines\":",
+        "\"instruction_files\":",
+    ];
+    let mut last_pos = 0;
+    for key in expected_keys {
+        let pos = stdout.find(key).unwrap_or_else(|| panic!("missing {key}"));
+        assert!(pos >= last_pos, "out-of-order key {key}");
+        last_pos = pos;
+    }
+}
+
+#[test]
+fn refuses_invalid_json_utf8_and_schemas() {
+    let dir = tempfile::tempdir().unwrap();
+    let cases: [&[u8]; 23] = [
+        b"",
+        b"   \n\t ",
+        b"\xff\xfe",
+        b"not json",
+        b"{\"filename\": \"a\"}",
+        b"[{\"status\": \"added\"}]",
+        b"[1]",
+        b"[{\"filename\": \"\"}]",
+        b"[{\"filename\": 123}]",
+        b"[{\"filename\": \"a.py\", \"status\": 123}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"exploded\", \"additions\": 0, \"deletions\": 0}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": -1, \"deletions\": 0}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": true, \"deletions\": 0}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 1.5, \"deletions\": 0}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": \"3\"}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0, \"previous_filename\": 7}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0, \"previous_filename\": \"\"}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0, \"patch\": [\"+x\"]}]",
+        b"[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0, \"patch\": null}]",
+        b"[[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0}], 1]",
+        b"[[[{\"filename\": \"a.py\", \"status\": \"added\", \"additions\": 0, \"deletions\": 0}]]]",
+        b"[] [1]",
+    ];
+    for (idx, payload) in cases.iter().enumerate() {
+        let out = run_cli_bytes(dir.path(), "bad.json", payload);
+        assert_eq!(out.status.code(), Some(2), "case {idx}");
+        assert!(out.stdout.is_empty(), "case {idx}");
+        let stderr = String::from_utf8(out.stderr).unwrap();
+        assert!(stderr.starts_with("pr_precheck:"), "case {idx}: {stderr}");
+    }
+    let nested = format!("{}{}", "[".repeat(100_000), "]".repeat(100_000));
+    let huge_int = format!("[{}]", "9".repeat(100_000));
+    for payload in [nested, huge_int] {
+        let out = run_cli_bytes(dir.path(), "adversarial.json", payload.as_bytes());
+        assert_eq!(out.status.code(), Some(2));
+        assert!(out.stdout.is_empty());
+        assert!(
+            String::from_utf8(out.stderr)
+                .unwrap()
+                .starts_with("pr_precheck:")
+        );
+    }
+}
+
+#[test]
+fn cli_enforces_current_dir_confinement_and_help() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(
+        dir.path().join("files.json"),
+        json!([mod_entry("a.py")]).to_string(),
+    )
+    .unwrap();
+
+    for help in ["--help", "-h"] {
+        let out = Command::new(env!("CARGO_BIN_EXE_github-skills"))
+            .args(["pr-precheck", help])
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(0));
+        assert!(
+            String::from_utf8(out.stdout)
+                .unwrap()
+                .starts_with("Usage: github-skills")
+        );
+        assert!(out.stderr.is_empty());
+    }
+
+    let abs = dir.path().join("files.json");
+    let abs_str = abs.to_string_lossy().into_owned();
+    let mut bad_args = vec![
+        vec![],
+        vec!["files.json", "extra.json"],
+        vec![""],
+        vec!["."],
+        vec![".."],
+        vec!["../files.json"],
+        vec!["./files.json"],
+        vec!["sub/files.json"],
+        vec!["sub\\files.json"],
+        vec!["--unknown"],
+        vec!["missing.json"],
+        vec![abs_str.as_str()],
+    ];
+    if cfg!(windows) {
+        bad_args.push(vec!["C:files.json"]);
+    }
+    for args in bad_args {
+        let out = Command::new(env!("CARGO_BIN_EXE_github-skills"))
+            .arg("pr-precheck")
+            .args(&args)
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(2), "{args:?}");
+        assert!(out.stdout.is_empty(), "{args:?}");
+        assert!(
+            String::from_utf8(out.stderr)
+                .unwrap()
+                .starts_with("pr_precheck:"),
+            "{args:?}"
+        );
+    }
+
+    // Verify large u64 counts sum in u128 without overflow.
+    let overflow_safe = pre::run_from_str(
+        &json!([
+            entry("a.rs", "modified", u64::MAX, 1, Some("+a")),
+            entry("b.rs", "modified", u64::MAX, 2, Some("+b")),
+        ])
+        .to_string(),
+    )
+    .unwrap();
+    let expected_additions = format!("  \"additions\": {},", u128::from(u64::MAX) * 2);
+    assert!(
+        overflow_safe.contains(&expected_additions),
+        "{overflow_safe}"
+    );
+    assert!(
+        overflow_safe.contains("  \"deletions\": 3,"),
+        "{overflow_safe}"
+    );
+}

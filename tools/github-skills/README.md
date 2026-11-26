@@ -1,7 +1,7 @@
 # Repository checks
 
-`github-skills` is this repository's skill validator, synchroniser and
-public-file checker. Run it from the repository root:
+`github-skills` is this repository's skill validator, synchroniser,
+public-file checker and pull request pre-check CLI. Run it from the repository root:
 
 ```shell
 cargo run --manifest-path tools/github-skills/Cargo.toml --locked -- validate-skills --strict
@@ -13,7 +13,7 @@ rustup, `rustup toolchain install` installs it. The executable needs Git for
 `check-public-files`; it needs no Python runtime. It replaced
 `scripts/validate_skills.py` and `scripts/check_public_files.py`, whose checks
 and failure messages it keeps, with the additions listed under Compatibility and
-limits.
+limits, and provides `pr-precheck` matching `skills/github-pr-review/scripts/pr_precheck.py`.
 
 ## Commands
 
@@ -52,15 +52,22 @@ order, and that the workflow permissions are read-only contents. It reports file
 names and rule names without printing matched content. It scans a symlink's
 stored target text without opening its target.
 
-Both commands accept `--root PATH`; the default is the current directory. Root
-selection does not resolve away a linked repository root. A root operand
-beginning with `-` needs an explicit relative or absolute path, such as
-`./--strict`, so a missing operand cannot consume a check option.
+`validate-skills` and `check-public-files` accept `--root PATH`; the default is
+the current directory. Root selection does not resolve away a linked repository
+root. A root operand beginning with `-` needs an explicit relative or absolute
+path, such as `./--strict`, so a missing operand cannot consume a check option.
 
-Success exits 0 and contract failures exit 1. Invalid arguments and input or
-processing errors exit 2, with a generic message that prints no file content or
-operating system path. Help and version output use stdout; check failures use
-stderr.
+`pr-precheck <files.json>` reads a single pull request files JSON document (or
+concatenated/slurped GitHub API pages, up to 256 MiB) from the current
+directory and prints ASCII-escaped JSON summary facts to stdout. It refuses
+paths outside the current directory, `.`, `..`, `/` or `\` separators, and any
+entry with missing or invalid fields.
+
+For `validate-skills` and `check-public-files`, success exits 0 and contract
+failures exit 1. For all commands, invalid arguments and input or processing
+errors exit 2 (with `pr_precheck:` prefixed diagnostics for `pr-precheck`, and
+generic messages printing no file content or OS paths for repository checks).
+Help and version output use stdout; check failures use stderr.
 
 ## Compatibility and limits
 
