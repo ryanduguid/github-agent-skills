@@ -1,5 +1,15 @@
 # Release notes
 
+## v0.4.0
+
+- Pull request feedback and review check the head again immediately before
+  posting. If the final check sees a different head, the draft stays local. Reviews name the
+  exact commit they cover. See the [worked example](README.md#when-a-pull-request-changes-during-review).
+- The native `github-skills pr-precheck` command reads a saved pull request
+  file list. The Python pre-check now handles a path with no parts.
+- The issue and pull request skills cover GitHub's GH007 push refusal and
+  reading sub-issues.
+
 ## v0.3.0
 
 Three new local preparation skills bring the package to 13, alongside
