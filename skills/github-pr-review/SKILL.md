@@ -201,7 +201,12 @@ Use this order:
     `gh pr review <number> --repo '<owner>/<repo>' --comment --body-file '<file>'`. Put each value
     taken from the pull request in single quotes, writing any `'` inside it
     as `'\''` in bash or zsh and as `''` in PowerShell, so pasting the
-    command cannot run part of it.
+    command cannot run part of it. Prefix each with
+    `test "$(gh pr view <number> --repo '<owner>/<repo>' --json headRefOid --jq .headRefOid)" = '<headRefOid>' &&`
+    in bash or zsh, or wrap it in
+    `if ((gh pr view <number> --repo '<owner>/<repo>' --json headRefOid --jq .headRefOid) -eq '<headRefOid>') { ... }`
+    in PowerShell, so nothing posts once the head has moved past the
+    reviewed commit.
 
 ## Review-only boundary
 

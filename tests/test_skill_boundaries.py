@@ -208,6 +208,20 @@ class UntrustedContentTests(unittest.TestCase):
                 with self.subTest(path=path.relative_to(ROOT).as_posix(), expected=expected):
                     self.assertIn(expected, flat(path))
 
+    def test_posting_skills_refuse_to_post_once_the_head_moved(self) -> None:
+        # A reply or review drafted against one head must not land on a later one.
+        guard = (
+            "`test \"$(gh pr view <number> --repo '<owner>/<repo>' --json headRefOid "
+            "--jq .headRefOid)\" = '<headRefOid>' &&`"
+        )
+        for skills in (SKILLS, ROOT / ".agents" / "skills"):
+            for name in ("github-pr-feedback", "github-pr-review"):
+                path = skills / name / "SKILL.md"
+                with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                    text = flat(path)
+                    self.assertIn(guard, text)
+                    self.assertIn("so nothing posts once the head has moved", text)
+
     def test_the_feedback_skill_quotes_names_and_holds_reviewer_code(self) -> None:
         # `-F repo=2048` reaches GraphQL as a number and the query fails; a file name
         # can hold `'` and `;`; a suggested change and a fork's checks are someone
