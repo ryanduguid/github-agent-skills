@@ -12,7 +12,7 @@ use std::{
     process::{Command, Output},
 };
 
-const WORKFLOW_PATCH: &str = "@@ -1,3 +1,4 @@\n on:\n-  pull_request:\n+  pull_request_target:\n+permissions: write-all\n \\ No newline at end of file\n@@ -10 +11,3 @@\n+  id-token: write\n+  token: ${{ secrets.GITHUB_TOKEN }}\n+  my-write: writer\n-  contents: write";
+const WORKFLOW_PATCH: &str = "@@ -1,3 +1,4 @@\n on:\n-  pull_request:\n+  pull_request_target:\n+permissions: write-all\n \\ No newline at end of file\n@@ -10 +11,3 @@\n+  grants id-token write\n+  run: echo ${{ secrets.GITHUB_TOKEN }}\n+  my-write: writer\n-  contents: write";
 
 /// Raw inputs: page layouts, separators and every refusal path.
 const RAW_CASES: [(&str, &[u8]); 22] = [
