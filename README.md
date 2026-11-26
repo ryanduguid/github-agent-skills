@@ -37,6 +37,15 @@ manifest; a generated copy in `.agents/skills/` serves Codex.
 
 The last 8 have no recorded runs and no activation eval results yet.
 
+## When a pull request changes during review
+
+Suppose a reviewer reads commit `d4e5f60` and drafts a comment on line 41.
+The author then pushes `f708c21`. The final head check returns `f708c21`,
+so the posting command stops and the draft stays local. Read the new diff and
+check whether the finding still applies. If line 41 was fixed, retire that
+comment. If it still applies, anchor the revised comment to the new commit
+and line, then check the head again before posting.
+
 ## Runtimes and installation
 
 `skills/` is the only canonical source, and Claude Code loads it through the
@@ -45,8 +54,8 @@ plugin manifest (`claude --plugin-dir .`). After changing a skill, run
 it regenerates a byte-identical copy in `.agents/skills/` for Codex, then
 validates the result. Do not edit the generated directory directly.
 
-The Claude Code and Codex plugin manifests read version `0.3.0`, the latest
-tagged release, and add no MCP server or credentials. Run the repository's
+The Claude Code and Codex plugin manifests read version `0.4.0`
+and add no MCP server or credentials. Run the repository's
 checks before using a changed checkout.
 
 For a project-local installation, copy the directory for the runtime you use
