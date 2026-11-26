@@ -3,18 +3,27 @@
 
 //! Deterministic pre-check facts for pull request file listings.
 
-use crate::public_files::python_regex;
+mod path;
+mod render;
+mod rules;
+
+pub use render::format_report;
+
 use fancy_regex::Regex;
+use path::PosixPath;
+use rules::{
+    GENERATED_DIRS, GENERATED_MARKER, GENERATED_NAME, HUNK, INSTRUCTION_DIRS, INSTRUCTION_NAMES,
+    LOCKFILES, MANIFEST_NAME, MANIFESTS, PERMISSION_FILES, STATUSES, VENDORED_DIRS,
+    WORKFLOW_MARKERS,
+};
 use serde_json::Value;
 use std::{
     cmp::Reverse,
     ffi::OsString,
-    fmt::Write as _,
     fs,
     io::Read,
     ops::ControlFlow,
     path::{Component, Path},
-    sync::LazyLock,
 };
 
 pub const FILE_LIMIT: usize = 3000;
@@ -25,125 +34,6 @@ const NOTE: &str =
     "Facts computed from the pull request's files list; every path is author-chosen data.";
 const USAGE: &str =
     "pr_precheck: usage: github-skills pr-precheck <files.json in the current folder>";
-
-const STATUSES: [&str; 7] = [
-    "added",
-    "removed",
-    "modified",
-    "renamed",
-    "copied",
-    "changed",
-    "unchanged",
-];
-
-const LOCKFILES: [&str; 20] = [
-    "Cargo.lock",
-    "package-lock.json",
-    "npm-shrinkwrap.json",
-    "yarn.lock",
-    "pnpm-lock.yaml",
-    "bun.lock",
-    "bun.lockb",
-    "poetry.lock",
-    "uv.lock",
-    "Pipfile.lock",
-    "pdm.lock",
-    "Gemfile.lock",
-    "go.sum",
-    "composer.lock",
-    "flake.lock",
-    "packages.lock.json",
-    "pubspec.lock",
-    "mix.lock",
-    "Package.resolved",
-    "gradle.lockfile",
-];
-
-const MANIFESTS: [&str; 16] = [
-    "Cargo.toml",
-    "package.json",
-    "pyproject.toml",
-    "setup.py",
-    "setup.cfg",
-    "Pipfile",
-    "go.mod",
-    "Gemfile",
-    "composer.json",
-    "pom.xml",
-    "build.gradle",
-    "build.gradle.kts",
-    "pubspec.yaml",
-    "mix.exs",
-    "Package.swift",
-    "Directory.Packages.props",
-];
-
-const VENDORED_DIRS: [&str; 4] = ["vendor", "third_party", "third-party", "node_modules"];
-const GENERATED_DIRS: [&str; 2] = ["generated", "__generated__"];
-const INSTRUCTION_NAMES: [&str; 5] = [
-    "AGENTS.md",
-    "CLAUDE.md",
-    "SKILL.md",
-    ".mcp.json",
-    "mcp.json",
-];
-const INSTRUCTION_DIRS: [&str; 2] = [".claude", "skills"];
-const PERMISSION_FILES: [&str; 2] = ["CODEOWNERS", ".github/settings.yml"];
-const WORKFLOW_MARKER_NAMES: [&str; 9] = [
-    "pull_request_target",
-    "pull_request",
-    "workflow_run",
-    "permissions",
-    "id-token",
-    "write-all",
-    "write",
-    "secrets",
-    "GITHUB_TOKEN",
-];
-
-static MANIFEST_NAME: LazyLock<Regex> = LazyLock::new(|| {
-    python_regex(
-        r"^requirements[\w.-]*\.(?:txt|in)$|\.(?:gemspec|csproj|fsproj)$",
-        false,
-        false,
-    )
-});
-
-static GENERATED_NAME: LazyLock<Regex> = LazyLock::new(|| {
-    python_regex(
-        r"\.min\.(?:js|css)$|\.map$|_pb2(?:_grpc)?\.pyi?$|\.pb\.go$|\.g\.dart$|\.generated\.\w+$",
-        false,
-        false,
-    )
-});
-
-static GENERATED_MARKER: LazyLock<Regex> = LazyLock::new(|| {
-    python_regex(
-        r"@generated|DO NOT EDIT|Code generated .* DO NOT EDIT",
-        true,
-        false,
-    )
-});
-
-static WORKFLOW_MARKERS: LazyLock<Vec<(&'static str, Regex)>> = LazyLock::new(|| {
-    WORKFLOW_MARKER_NAMES
-        .into_iter()
-        .map(|name| {
-            (
-                name,
-                python_regex(&format!(r"(?<![\w-]){name}(?![\w])"), false, false),
-            )
-        })
-        .collect()
-});
-
-static HUNK: LazyLock<Regex> = LazyLock::new(|| {
-    python_regex(
-        r"^@@ -([0-9]+)(?:,[0-9]+)? \+([0-9]+)(?:,[0-9]+)? @@",
-        false,
-        false,
-    )
-});
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileEntry {
@@ -193,88 +83,6 @@ pub struct PrecheckReport {
     pub permission_files: Vec<String>,
     pub workflow_lines: Vec<WorkflowLine>,
     pub instruction_files: Vec<String>,
-}
-
-struct PosixPath<'a> {
-    root: &'static str,
-    parts: Vec<&'a str>,
-}
-
-impl<'a> PosixPath<'a> {
-    fn parse(path: &'a str) -> Self {
-        let root = if path.starts_with("//") && !path.starts_with("///") {
-            "//"
-        } else if path.starts_with('/') {
-            "/"
-        } else {
-            ""
-        };
-        let mut parts = Vec::new();
-        if !root.is_empty() {
-            parts.push(root);
-        }
-        for seg in path.trim_start_matches('/').split('/') {
-            if !seg.is_empty() && seg != "." {
-                parts.push(seg);
-            }
-        }
-        Self { root, parts }
-    }
-
-    fn name(&self) -> &'a str {
-        if !self.root.is_empty() && self.parts.len() == 1 {
-            ""
-        } else {
-            self.parts.last().copied().unwrap_or("")
-        }
-    }
-
-    fn dir_parts(&self) -> &[&'a str] {
-        self.parts
-            .len()
-            .checked_sub(1)
-            .map_or(&[], |n| &self.parts[..n])
-    }
-
-    fn last_part(&self) -> Option<&'a str> {
-        self.parts.last().copied()
-    }
-
-    fn as_posix(&self) -> String {
-        if !self.root.is_empty() {
-            format!("{}{}", self.root, self.parts[1..].join("/"))
-        } else if self.parts.is_empty() {
-            ".".to_owned()
-        } else {
-            self.parts.join("/")
-        }
-    }
-
-    fn parent_as_posix(&self) -> String {
-        if !self.root.is_empty() {
-            if self.parts.len() <= 2 {
-                self.root.to_owned()
-            } else {
-                format!(
-                    "{}{}",
-                    self.root,
-                    self.parts[1..self.parts.len() - 1].join("/")
-                )
-            }
-        } else if self.parts.len() <= 1 {
-            ".".to_owned()
-        } else {
-            self.parts[..self.parts.len() - 1].join("/")
-        }
-    }
-
-    fn has_yaml_suffix(&self) -> bool {
-        let name = self.name();
-        let stem = name
-            .strip_suffix(".yml")
-            .or_else(|| name.strip_suffix(".yaml"));
-        stem.is_some_and(|prefix| prefix.bytes().any(|b| b != b'.'))
-    }
 }
 
 fn regex_is_match(pattern: &Regex, text: &str) -> Result<bool, String> {
@@ -617,142 +425,6 @@ pub fn precheck(files: &[FileEntry]) -> Result<PrecheckReport, String> {
     Ok(report)
 }
 
-fn push_json_str_ascii(out: &mut String, value: &str) {
-    out.push('"');
-    for ch in value.chars() {
-        match ch {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\u{08}' => out.push_str("\\b"),
-            '\u{0c}' => out.push_str("\\f"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (' '..='~').contains(&c) => out.push(c),
-            c => {
-                let mut buf = [0u16; 2];
-                for unit in c.encode_utf16(&mut buf) {
-                    let _ = write!(out, "\\u{unit:04x}");
-                }
-            }
-        }
-    }
-    out.push('"');
-}
-
-fn push_str_list(out: &mut String, indent: usize, items: &[&str]) {
-    if items.is_empty() {
-        out.push_str("[]");
-        return;
-    }
-    out.push_str("[\n");
-    let pad = " ".repeat(indent + 2);
-    for (idx, item) in items.iter().enumerate() {
-        out.push_str(&pad);
-        push_json_str_ascii(out, item);
-        if idx + 1 < items.len() {
-            out.push(',');
-        }
-        out.push('\n');
-    }
-    let _ = write!(out, "{}]", " ".repeat(indent));
-}
-
-fn push_string_field(out: &mut String, name: &str, items: &[String]) {
-    let refs: Vec<&str> = items.iter().map(String::as_str).collect();
-    let _ = write!(out, "  \"{name}\": ");
-    push_str_list(out, 2, &refs);
-}
-
-fn push_obj_list<T, F>(out: &mut String, name: &str, items: &[T], mut render: F)
-where
-    F: FnMut(&mut String, &T),
-{
-    let _ = write!(out, "  \"{name}\": ");
-    if items.is_empty() {
-        out.push_str("[]");
-        return;
-    }
-    out.push_str("[\n");
-    for (idx, item) in items.iter().enumerate() {
-        out.push_str("    {\n");
-        render(out, item);
-        out.push_str("    }");
-        if idx + 1 < items.len() {
-            out.push(',');
-        }
-        out.push('\n');
-    }
-    out.push_str("  ]");
-}
-
-fn push_kv_str(out: &mut String, indent: usize, key: &str, val: &str, comma: bool) {
-    let _ = write!(out, "{}\"{key}\": ", " ".repeat(indent));
-    push_json_str_ascii(out, val);
-    if comma {
-        out.push(',');
-    }
-    out.push('\n');
-}
-
-pub fn format_report(report: &PrecheckReport) -> String {
-    let mut out = String::from("{\n");
-    push_kv_str(&mut out, 2, "note", NOTE, true);
-    let _ = writeln!(out, "  \"files\": {},", report.files);
-    let _ = writeln!(out, "  \"additions\": {},", report.additions);
-    let _ = writeln!(out, "  \"deletions\": {},", report.deletions);
-    let _ = writeln!(out, "  \"at_file_limit\": {},", report.at_file_limit);
-
-    push_obj_list(&mut out, "largest", &report.largest, |buf, item| {
-        push_kv_str(buf, 6, "path", &item.path, true);
-        push_kv_str(buf, 6, "status", &item.status, true);
-        let _ = writeln!(buf, "      \"additions\": {},", item.additions);
-        let _ = writeln!(buf, "      \"deletions\": {}", item.deletions);
-    });
-    out.push_str(",\n");
-
-    for (name, items) in [
-        ("no_patch", &report.no_patch),
-        ("generated", &report.generated),
-    ] {
-        push_obj_list(&mut out, name, items, |buf, item| {
-            push_kv_str(buf, 6, "path", &item.path, true);
-            push_kv_str(buf, 6, "reason", &item.reason, false);
-        });
-        out.push_str(",\n");
-    }
-
-    for (name, items) in [
-        ("vendored", &report.vendored),
-        ("lockfiles", &report.lockfiles),
-        ("manifests", &report.manifests),
-        ("workflows", &report.workflows),
-        ("permission_files", &report.permission_files),
-    ] {
-        push_string_field(&mut out, name, items);
-        out.push_str(",\n");
-    }
-
-    push_obj_list(
-        &mut out,
-        "workflow_lines",
-        &report.workflow_lines,
-        |buf, item| {
-            push_kv_str(buf, 6, "path", &item.path, true);
-            push_kv_str(buf, 6, "side", item.side, true);
-            let _ = writeln!(buf, "      \"line\": {},", item.line);
-            buf.push_str("      \"markers\": ");
-            push_str_list(buf, 6, &item.markers);
-            buf.push('\n');
-        },
-    );
-    out.push_str(",\n");
-
-    push_string_field(&mut out, "instruction_files", &report.instruction_files);
-    out.push_str("\n}");
-    out
-}
-
 pub fn run_from_str(text: &str) -> Result<String, String> {
     let files = read_pages(text)?;
     let report = precheck(&files)?;
@@ -801,36 +473,6 @@ mod tests {
             let raw = OsString::from_vec(vec![0xff]);
             assert!(confine_filename(&raw).is_err());
         }
-    }
-
-    #[test]
-    fn posix_path_matches_pure_posix_path_edge_cases() {
-        let dot = PosixPath::parse(".");
-        assert_eq!(dot.name(), "");
-        assert_eq!(dot.as_posix(), ".");
-        assert_eq!(dot.parent_as_posix(), ".");
-        assert_eq!(dot.last_part(), None);
-        assert!(dot.dir_parts().is_empty());
-
-        let root = PosixPath::parse("///");
-        assert_eq!(root.name(), "");
-        assert_eq!(root.as_posix(), "/");
-        assert_eq!(root.parent_as_posix(), "/");
-
-        let root_child = PosixPath::parse("/a");
-        assert_eq!(root_child.name(), "a");
-        assert_eq!(root_child.as_posix(), "/a");
-        assert_eq!(root_child.parent_as_posix(), "/");
-
-        let unc = PosixPath::parse("//srv/a/b");
-        assert_eq!(unc.as_posix(), "//srv/a/b");
-        assert_eq!(unc.parent_as_posix(), "//srv/a");
-        assert_eq!(unc.name(), "b");
-
-        let dot_yml = PosixPath::parse("..yml");
-        assert!(!dot_yml.has_yaml_suffix());
-        let hidden_yml = PosixPath::parse(".a.yml");
-        assert!(hidden_yml.has_yaml_suffix());
     }
 
     #[test]
