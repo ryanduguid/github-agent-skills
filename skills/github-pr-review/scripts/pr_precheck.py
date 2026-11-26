@@ -159,7 +159,7 @@ def no_patch_reason(item: dict) -> str:
 
 def generated_reason(path: str, patch: str) -> str | None:
     parts = PurePosixPath(path).parts
-    if GENERATED_NAME.search(parts[-1]) or GENERATED_DIRS.intersection(parts[:-1]):
+    if parts and GENERATED_NAME.search(parts[-1]) or GENERATED_DIRS.intersection(parts[:-1]):
         return "generated file name"
     for side, line, text in diff_lines(patch):
         if side == "head" and line <= MARKER_LINES and GENERATED_MARKER.search(text):
@@ -175,7 +175,7 @@ def is_workflow(path: str) -> bool:
 
 def is_instruction(path: str) -> bool:
     parts = PurePosixPath(path).parts
-    return parts[-1] in INSTRUCTION_NAMES or bool(INSTRUCTION_DIRS.intersection(parts[:-1]))
+    return bool(parts) and parts[-1] in INSTRUCTION_NAMES or bool(INSTRUCTION_DIRS.intersection(parts[:-1]))
 
 
 def workflow_lines(path: str, patch: str) -> list[dict]:

@@ -156,6 +156,13 @@ class PrecheckTests(unittest.TestCase):
             ["AGENTS.md", "pkg/CLAUDE.md", ".mcp.json", ".claude/settings.json", "skills/x/SKILL.md", "AGENTS.md"],
         )
 
+    def test_a_path_with_no_parts_gets_no_classification(self):
+        for path in (".", "./"):
+            out = facts([entry(path)])
+            self.assertEqual(out["files"], 1, path)
+            self.assertEqual(out["generated"], [], path)
+            self.assertEqual(out["instruction_files"], [], path)
+
     def test_hostile_paths_stay_escaped_data(self):
         name = "a\u202eb\n$(touch pwned).yml"
         result = run(json.dumps([entry(".github/workflows/" + name)]))
