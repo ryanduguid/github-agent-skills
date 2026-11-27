@@ -49,9 +49,9 @@ change it unseen; a file over 64 KiB; and a skill whose files total over
 256 KiB. In Markdown they refuse text that tells an agent to skip, bypass,
 weaken, disable, ignore, silence, suppress or override a review, check, test,
 guard, hook, lint, approval or protection, to force-push, or to use
-`--no-verify` or `--admin`, unless a negation or 'whether' comes earlier in the
-same sentence, table cell or list item: 'Do not skip the review' passes and
-'Skip the review' fails. `tests/test_skill_boundaries.py` pins each skill's
+`--no-verify` or `--admin`, unless a negation, 'whether' or 'would' comes
+earlier in the same sentence, table cell or list item, or that sentence is a
+question: 'Do not skip the review' passes and 'Skip the review' fails. `tests/test_skill_boundaries.py` pins each skill's
 guard sentences, so removing one fails there.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error

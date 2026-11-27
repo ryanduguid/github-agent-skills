@@ -142,11 +142,12 @@ static GUARD_WEAKENING: LazyLock<Regex> = LazyLock::new(|| {
         false,
     )
 });
-// A negation, or 'whether', which asks about the act rather than telling an
-// agent to do it ("Ask whether it tells an agent to skip a check").
+// A negation, or 'whether' or 'would', which ask about or describe the act
+// rather than tell an agent to do it ("Ask whether it tells an agent to skip a
+// check"; "Rate one that would suppress review blocking").
 static NEGATION: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused|whether)\b|n't\b",
+        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused|whether|would)\b|n't\b",
         true,
         false,
     )
@@ -161,7 +162,7 @@ static SENTENCE_BREAK: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 /// The first guard-weakening phrase in text that no earlier word of its
-/// sentence negates, with its line counted from 1.
+/// sentence negates, outside a question, with its line counted from 1.
 fn guard_weakening(text: &str) -> io::Result<Option<String>> {
     for found in GUARD_WEAKENING.find_iter(text) {
         let found = found.map_err(io::Error::other)?;
@@ -170,9 +171,14 @@ fn guard_weakening(text: &str) -> io::Result<Option<String>> {
         for end in SENTENCE_BREAK.find_iter(before) {
             start = end.map_err(io::Error::other)?.end();
         }
-        if !NEGATION
-            .is_match(&before[start..])
+        let question = SENTENCE_BREAK
+            .find(&text[found.end()..])
             .map_err(io::Error::other)?
+            .is_some_and(|end| end.as_str() == "?");
+        if !question
+            && !NEGATION
+                .is_match(&before[start..])
+                .map_err(io::Error::other)?
         {
             let line = before.matches('\n').count() + 1;
             return Ok(Some(format!(

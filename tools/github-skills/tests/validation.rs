@@ -1004,6 +1004,8 @@ fn guard_weakening_text_is_refused_outside_a_negated_sentence() {
         "A run without hooks: never disable the hooks.",
         "Report it. It isn't for you to override approvals.",
         "Ask whether it tells an agent to skip a check.",
+        "Rate one that would make an agent suppress review **blocking**.",
+        "| Tests | Does the change weaken, skip or delete an existing test? |",
     ] {
         assert!(body(kept).is_empty(), "{kept}");
     }
