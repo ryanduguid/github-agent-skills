@@ -76,24 +76,42 @@ project and records it in `skills-lock.json`. The copied folder includes
 authority.
 Review the copy before you use it.
 
-To install all 13 skills for one agent without prompts, name the agent with
-`-a`. Tested with skills 1.8.1 on 15 November 2026 for `cursor` and `windsurf`:
-
-```shell
-npx skills add ryanduguid/github-agent-skills --skill '*' -a cursor -y
-```
-
-For Cursor it copies the skills into `.agents/skills/`; for Windsurf, into
-`.windsurf/skills/`. The CLI's
-[supported agents](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)
-page lists the other agent names.
-
 The GitHub CLI's `gh skill` command installs from the latest tagged release
 instead:
 
 ```shell
 gh skill install ryanduguid/github-agent-skills github-readme-polish
 ```
+
+These skills inspect and
+prepare local work; they are not automated pull request reviewers.
+`github-branch-review` reviews your own branch before you push it, and
+`github-pr-review` drafts a review of an open pull request for you to post;
+neither posts anything to GitHub. For a review posted on the pull request
+itself, use a hosted review service.
+
+### GitHub Copilot
+
+To install all 13 skills as a Copilot CLI plugin from this repository's
+marketplace (tested with Copilot CLI 1.0.112 on 16 November 2026):
+
+```shell
+copilot plugin marketplace add ryanduguid/github-agent-skills
+copilot plugin install github-agent-skills@ryanduguid-github-skills
+```
+
+Copilot CLI reads the same `.claude-plugin/marketplace.json` as Claude Code and
+installs the files on `main` into `~/.copilot/installed-plugins/`, reporting
+the version in the plugin manifests. Installing needs no sign-in, and
+`copilot plugin list` shows the result.
+
+`gh skill install` also installs one skill for Copilot:
+
+```shell
+gh skill install ryanduguid/github-agent-skills github-readme-polish --agent github-copilot
+```
+
+In a project it places the skill in `.agents/skills/`.
 
 ### Claude Code plugin
 
@@ -123,6 +141,19 @@ codex plugin add github-agent-skills@ryanduguid-github-skills
 Codex reads `.agents/plugins/marketplace.json` and installs `skills/` from
 `main` in the same way; the version comes from `.codex-plugin/plugin.json`.
 
+### Antigravity
+
+To install all 13 skills into the current workspace:
+
+```shell
+npx skills add ryanduguid/github-agent-skills --skill '*' -a antigravity -y
+```
+
+The [skills CLI](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)
+copies them into Antigravity's [workspace skill directory](https://antigravity.google/docs/skills),
+`.agents/skills/`. For Windsurf, use `-a windsurf` to install into `.windsurf/skills/`
+(tested with skills 1.8.1 on 15 November 2026).
+
 ### Gemini CLI
 
 To install all 13 skills for Gemini CLI from `main` (tested with Gemini CLI
@@ -136,34 +167,6 @@ It lists the skills and asks you to confirm, then copies them into
 `~/.gemini/skills/`. Add `--scope workspace` to install them into the current
 project's `.gemini/skills/` instead. Installing needs no sign-in, and
 `gemini skills list` shows the result.
-
-### GitHub Copilot
-
-To install all 13 skills as a Copilot CLI plugin from this repository's
-marketplace (tested with Copilot CLI 1.0.112 on 16 November 2026):
-
-```shell
-copilot plugin marketplace add ryanduguid/github-agent-skills
-copilot plugin install github-agent-skills@ryanduguid-github-skills
-```
-
-Copilot CLI reads the same `.claude-plugin/marketplace.json` as Claude Code and
-installs the files on `main` into `~/.copilot/installed-plugins/`, reporting
-the version in the plugin manifests. Installing needs no sign-in, and
-`copilot plugin list` shows the result.
-
-`gh skill install` also installs one skill for Copilot:
-
-```shell
-gh skill install ryanduguid/github-agent-skills github-readme-polish --agent github-copilot
-```
-
-In a project it places the skill in `.agents/skills/`. These skills inspect and
-prepare local work; they are not automated pull request reviewers.
-`github-branch-review` reviews your own branch before you push it, and
-`github-pr-review` drafts a review of an open pull request for you to post;
-neither posts anything to GitHub. For a review posted on the pull request
-itself, use a hosted review service.
 
 ## Requirements
 
