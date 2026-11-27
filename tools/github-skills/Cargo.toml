@@ -14,7 +14,7 @@ sha2 = "=0.11.1"
 
 # Hard links are counted through the Win32 API; the standard library's count is unstable there.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
+winapi-util = "=0.1.11"
 
 [dev-dependencies]
 tempfile = "=3.27.0"

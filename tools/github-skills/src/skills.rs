@@ -201,18 +201,7 @@ fn link_count(path: &Path) -> io::Result<u64> {
 /// standard library's count is unstable on Windows.
 #[cfg(windows)]
 fn link_count(path: &Path) -> io::Result<u64> {
-    use std::os::windows::io::AsRawHandle;
-    use windows_sys::Win32::Storage::FileSystem::{
-        BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
-    };
-    let file = fs::File::open(path)?;
-    let mut information = BY_HANDLE_FILE_INFORMATION::default();
-    // SAFETY: the handle stays open for the call, which writes only to the
-    // structure it is given.
-    let ok = unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut information) };
-    (ok != 0)
-        .then_some(u64::from(information.nNumberOfLinks))
-        .ok_or_else(io::Error::last_os_error)
+    Ok(winapi_util::file::information(fs::File::open(path)?)?.number_of_links())
 }
 
 /// Failures for the files of a skill whose `SKILL.md` passed: a hard link,
