@@ -139,8 +139,8 @@ const GUARD_VERBS: &str = concat!(
     r"|overrid(?:e|es|den|ing)|overrode|disregard(?:s|ed|ing)?|circumvent(?:s|ed|ing)?",
 );
 const GUARDS: &str = concat!(
-    r"review(?:s|ing|ers?)?|check(?:s|ing)?|test(?:s|ing)?|guard(?:s|rails?)?|hooks?",
-    r"|validation|verification|lint(?:s|ing|er)?|approvals?|protections?|safeguards?|ci",
+    r"review(?:s|ing|ers?)?|check(?:s|ing|ers?)?|test(?:s|ing)?|guard(?:s|rails?)?|hooks?",
+    r"|validations?|verifications?|lint(?:s|ing|ers?)?|approvals?|protections?|safeguards?|ci",
 );
 // Other verbs a negated list can hold, as in "Do not merge, bypass or ignore
 // checks".
@@ -152,7 +152,9 @@ const LISTED_VERBS: &str = concat!(
 // `skip_review` hold one.
 const START: &str = r"(?<![^\W_])";
 const END: &str = r"(?![^\W_])";
-const FORCE_PUSH: &str = r"force[\-\u{2010}-\u{2015}\u{2212}\s]?push(?:es|ed|ing)?";
+// Spaces, dashes, emphasis, quotes and character references may separate the
+// 2 words.
+const FORCE_PUSH: &str = r#"force(?:[\-\u{2010}-\u{2015}\u{2212}\s*_~`'"\u{2018}\u{2019}\u{201c}\u{201d}]|&#?[^\W_]+;)*push(?:es|ed|ing)?"#;
 const FLAG: &str =
     r"(?:--|[\u{2013}\u{2014}\u{2212}])(?:no[\-\u{2010}-\u{2015}\u{2212}]verify|admin)(?![^\W_])";
 // What may separate the words of a phrase: anything but a letter, digit or a
@@ -255,11 +257,13 @@ static NEGATED_FLAG: LazyLock<Regex> = LazyLock::new(|| {
 // skip".
 static CHOICE: LazyLock<Regex> = LazyLock::new(|| guard_regex(r"(?<![^\W_])or[\s*_]*\Z"));
 // Text the phrase patterns cannot read, refused in Markdown: markup inside a
-// word ("S**ki**p", "Sk<b></b>ip", "Sk&#105;p"), and Greek, Cyrillic,
-// fullwidth or mathematical letters, which can pass for Latin ones.
+// word ("S**ki**p", "Sk<b></b>ip"); a character reference other than `&amp;`,
+// `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;` ("Ski&#112;", which can spell
+// a whole word), or one of those inside a word; and Greek, Cyrillic, fullwidth
+// or mathematical letters, which can pass for Latin ones.
 static OBSCURED: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
+        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|&(?!(?:amp|lt|gt|quot|apos|nbsp);)#?[^\W_]+;|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
         false,
         false,
     )
@@ -369,7 +373,12 @@ fn skill_file_failures(directory: &Path, root: &Path) -> io::Result<Vec<String>>
         let text = text.replace("\r\n", "\n").replace('\r', "\n");
         if let Some(hidden) = hidden_character(&text) {
             failures.push(format!("{name}: {hidden}"));
-        } else if path.extension().is_some_and(|extension| extension == "md")
+        } else if path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
+            })
             && let Some(found) = guard_weakening(&text)?
         {
             failures.push(format!("{name}: {found}"));

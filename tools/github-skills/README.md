@@ -46,16 +46,18 @@ skill. They refuse the hidden characters above in any UTF-8 file, scripts
 included, and skip files that are not UTF-8, such as images. They refuse a hard
 link (a file with more than one name), which lets a file outside the skill
 change it unseen; a file over 64 KiB; and a skill whose files total over
-256 KiB. In Markdown they refuse text that tells an agent to skip, bypass,
-weaken, disable, ignore, disregard, silence, suppress, override or circumvent
-a review, check, test, guard, hook, lint, approval or protection, with the
+256 KiB. In Markdown (`.md` or `.markdown`, in any case) they refuse text
+that tells an agent to skip, bypass, weaken, disable, ignore, disregard,
+silence, suppress, override or circumvent a review, check, test, guard, hook,
+lint, approval or protection, with the
 guard up to 6 words after the verb or up to 3 before it ('checks can be
 skipped'), to force-push, or to use `--no-verify` or `--admin`. Spaces of any
 kind, line ends, quotes, emphasis and character references such as `&nbsp;`
 between the words do not hide them. They also refuse Markdown that splits a
-word with markup ('S\*\*ki\*\*p') or uses Greek, Cyrillic, fullwidth or
-mathematical letters, which can spell these words so the check cannot read
-them.
+word with markup ('S\*\*ki\*\*p'), uses a character reference other than
+`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;` ('Ski&amp;#112;'), or
+uses Greek, Cyrillic, fullwidth or mathematical letters, which can spell these
+words so the check cannot read them.
 
 This check fails closed. Such text passes only when a negation such as 'do
 not', 'never', 'must not' or 'cannot' comes directly before the verb on the
@@ -66,9 +68,13 @@ negation offered as a choice ('whether or not to', 'may or may not') counts
 as none. Nothing else in
 the sentence exempts it, so 'Do not skip the review' passes, and 'Why not skip
 the review?', 'Check whether CI passes, then skip the review' and 'No time to
-wait, skip the review' fail. It matches these words, not their meaning: a
-paraphrase in other words passes, so `tests/test_skill_boundaries.py` also
-pins each skill's guard sentences, and removing one fails there.
+wait, skip the review' fail. It matches these words, not their meaning, and
+one sentence at a time, so 3 kinds of text pass: a paraphrase in other words;
+a guard named in an earlier sentence, with only a pronoun after the verb ('The
+review is optional. Skip it.'); and a sentence that says a true guard no
+longer applies ('The rule that you must not skip the review is retired'). So
+`tests/test_skill_boundaries.py` also pins each skill's guard sentences, and
+removing one fails there.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is
