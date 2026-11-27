@@ -7,6 +7,11 @@
 # Lizard and Prospector measure function and file size and complexity. Tests
 # are long by design, one case per assertion block, and Cargo.lock files are
 # generated, so neither is measured; production code still is.
+#
+# Lizard's Rust reader takes a lifetime such as 'a or 'static for the start of
+# a character literal and loses track of braces until the next quote mark, so
+# it reports wrong function spans for Rust. Rust is left to Clippy, which CI
+# runs with warnings denied.
 engines:
   opengrep:
     exclude_paths:
@@ -19,6 +24,7 @@ engines:
       - "**/tests/**"
       - "**/fuzz/**"
       - "**/Cargo.lock"
+      - "**/*.rs"
   prospector:
     exclude_paths:
       - "tests/**"
