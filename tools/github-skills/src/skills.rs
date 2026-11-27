@@ -127,72 +127,164 @@ fn hidden_character(text: &str) -> Option<String> {
 pub const MAX_FILE_BYTES: u64 = 64 * 1024;
 pub const MAX_SKILL_BYTES: u64 = 256 * 1024;
 // Text that tells an agent to skip or weaken a review, check or guard, or to
-// go round one. It is allowed only after a negation in the same sentence, as
-// in "Do not skip the review".
-static GUARD_WEAKENING: LazyLock<Regex> = LazyLock::new(|| {
-    crate::public_files::python_regex(
+// go round one: a listed verb with a listed guard up to 6 words after it, or
+// up to 3 words before it ("checks can be skipped"), with no sentence, clause
+// or table cell break between them; force-pushing; `--no-verify`; `--admin`.
+// The lint fails closed: only a negation directly before the verb allows the
+// text, so nothing elsewhere in the sentence (a question, 'if', 'whether',
+// 'would', a quote or a list marker) can.
+const GUARD_VERBS: &str = concat!(
+    r"skip(?:s|ped|ping)?|bypass(?:es|ed|ing)?|weaken(?:s|ed|ing)?|disabl(?:e|es|ed|ing)",
+    r"|ignor(?:e|es|ed|ing)|silenc(?:e|es|ed|ing)|suppress(?:es|ed|ing)?",
+    r"|overrid(?:e|es|den|ing)|overrode|disregard(?:s|ed|ing)?|circumvent(?:s|ed|ing)?",
+);
+const GUARDS: &str = concat!(
+    r"review(?:s|ing|ers?)?|check(?:s|ing)?|test(?:s|ing)?|guard(?:s|rails?)?|hooks?",
+    r"|validation|verification|lint(?:s|ing|er)?|approvals?|protections?|safeguards?|ci",
+);
+// Other verbs a negated list can hold, as in "Do not merge, bypass or ignore
+// checks".
+const LISTED_VERBS: &str = concat!(
+    r"(?:delet|remov|merg|approv|rewrit|chang|renam)(?:e|es|ed|ing)",
+    r"|(?:edit|loosen|revert)(?:s|ed|ing)?|drop(?:s|ped|ping)?",
+);
+// A word starts and ends where no letter or digit adjoins it, so `_Skip_` and
+// `skip_review` hold one.
+const START: &str = r"(?<![^\W_])";
+const END: &str = r"(?![^\W_])";
+const FORCE_PUSH: &str = r"force[\-\u{2010}-\u{2015}\u{2212}\s]?push(?:es|ed|ing)?";
+const FLAG: &str =
+    r"(?:--|[\u{2013}\u{2014}\u{2212}])(?:no[\-\u{2010}-\u{2015}\u{2212}]verify|admin)(?![^\W_])";
+// What may separate the words of a phrase: anything but a letter, digit or a
+// break, so quotes, emphasis, hyphens and any space, line ends included.
+const BETWEEN: &str = r"(?:[^\w.;:!?|]|_)+";
+// What may separate a negation from its verb: spaces on one line, and emphasis.
+const SPACE: &str = r"[^\S\n]+";
+const GAP: &str = r"[*_]*[^\S\n]+[*_]*";
+const UNQUOTED: &str = r#"(?<!['"\u{2018}\u{2019}\u{201c}\u{201d}`])"#;
+
+fn guard_regex(pattern: &str) -> Regex {
+    crate::public_files::python_regex(pattern, true, false)
+}
+
+/// A negation that governs the verb after it, not a quoted one: 'do not',
+/// 'don't', 'must not', 'cannot', 'never' and the like, with 'be' or 'get'
+/// for the passive.
+fn negation() -> String {
+    format!(
         concat!(
-            r"\b(?:skip(?:s|ped|ping)?|bypass(?:es|ed|ing)?|weaken(?:s|ed|ing)?|disabl(?:e|es|ed|ing)",
-            r"|ignor(?:e|es|ed|ing)|silenc(?:e|es|ed|ing)|suppress(?:es|ed|ing)?|overrid(?:e|es|den|ing)|overrode)\b",
-            r"(?:[\s,]+[\w'-]+){0,6}?[\s,]+",
-            r"(?:reviews?|checks?|tests?|guards?|hooks?|validation|lint(?:s|ing)?|approvals?|protections?|safeguards?)\b",
-            r"|\bforce[- ]?push(?:es|ed|ing)?\b|--no-verify\b|--admin\b",
+            r"{UNQUOTED}{START}(?:(?:do|does|did|must|should|shall|will|would|can|could|may|might|need){SPACE}not",
+            r"|(?:do|does|did|must|should|sha|wo|would|ca|could|might|need)n['\u{{2019}}]t",
+            r"|cannot|never){END}{GAP}(?:(?:be|been|get|got){GAP})?",
         ),
-        true,
-        false,
+        UNQUOTED = UNQUOTED,
+        START = START,
+        SPACE = SPACE,
+        END = END,
+        GAP = GAP,
     )
+}
+
+/// A verb in a negated list, as in "weaken, skip or delete".
+fn listed() -> String {
+    format!("{START}(?:{GUARD_VERBS}|{FORCE_PUSH}|{LISTED_VERBS}){END}")
+}
+
+static GUARD_VERB: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        "{START}(?:{GUARD_VERBS}|{FORCE_PUSH}){END}|{FLAG}"
+    ))
 });
-// A negation, or 'whether' or 'would', which ask about or describe the act
-// rather than tell an agent to do it ("Ask whether it tells an agent to skip a
-// check"; "Rate one that would suppress review blocking").
-static NEGATION: LazyLock<Regex> = LazyLock::new(|| {
-    crate::public_files::python_regex(
-        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused|whether|would)\b|n't\b",
-        true,
-        false,
-    )
+// The phrase that starts at a verb, or the guard that ends just before one.
+static GUARD_AFTER: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"\A(?:(?:{GUARD_VERBS}){END}(?:{BETWEEN}[^\W_]+){{0,6}}?{BETWEEN}(?:{GUARDS}){END}|{FORCE_PUSH}{END}|{FLAG})"
+    ))
 });
-// Words that leave the instruction after them standing: a rhetorical 'why not'
-// ("Why not skip the review?"), or a leading condition whose comma ends just
-// before the phrase ("If you would like, skip the review").
-static UNNEGATED: LazyLock<Regex> = LazyLock::new(|| {
-    crate::public_files::python_regex(
-        r"\bwhy\s+(?:not\b|\w+n't\b)|^\s*(?:if|when|whenever|unless|once|whether|although|though|since|because)\b[^,]*,\s*$",
-        true,
-        false,
-    )
+static GUARD_BEFORE: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"{START}(?:{GUARDS}){END}(?:{BETWEEN}[^\W_]+){{0,3}}?{BETWEEN}\Z"
+    ))
 });
-// A sentence, clause before a colon, table cell or list item ends here.
-static SENTENCE_BREAK: LazyLock<Regex> = LazyLock::new(|| {
-    crate::public_files::python_regex(
-        r"[.!?;:](?=\s)|\n[ \t]*\n|\n[ \t]*(?:[-*+]|[0-9]+\.)[ \t]|\|",
-        false,
-        false,
-    )
+// Text before a verb that negates it: a negation directly before it, or one
+// that heads a list of verbs ending in 'or' or 'nor' that holds it ("Do not
+// weaken, skip or delete"). 'No', 'without' and 'not to' negate only a verb
+// directly after them ("No skipping"; "without skipping").
+static NEGATED: LazyLock<Regex> = LazyLock::new(|| {
+    let negation = negation();
+    let listed = listed();
+    guard_regex(&format!(
+        concat!(
+            r"(?:{negation}|{UNQUOTED}{START}(?:no|without|not{SPACE}to){END}{GAP}",
+            r"|{negation}{listed}(?:,{SPACE}{listed})*,?{SPACE}(?:or|nor){SPACE})\Z",
+        ),
+        negation = negation,
+        listed = listed,
+        UNQUOTED = UNQUOTED,
+        START = START,
+        SPACE = SPACE,
+        END = END,
+        GAP = GAP,
+    ))
+});
+// A verb inside a negated list: the list before it ends in a comma, and the
+// list after it goes on to 'or' or 'nor' and one more verb.
+static NEGATED_LIST_BEFORE: LazyLock<Regex> = LazyLock::new(|| {
+    let listed = listed();
+    guard_regex(&format!(
+        r"{}{listed}(?:,{SPACE}{listed})*,{SPACE}\Z",
+        negation()
+    ))
+});
+static NEGATED_LIST_AFTER: LazyLock<Regex> = LazyLock::new(|| {
+    let listed = listed();
+    guard_regex(&format!(
+        r"\A(?:,{SPACE}{listed})*,?{SPACE}(?:or|nor){SPACE}{listed}"
+    ))
+});
+// A negated flag, alone or in the command an agent must not use or run
+// ("never run `git commit --no-verify`").
+static NEGATED_FLAG: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"{}(?:(?:use[sd]?|using|run(?:s|ning)?|pass(?:es|ed|ing)?|add(?:s|ed|ing)?){SPACE})?(?:`[^`\n]*)?\Z",
+        negation()
+    ))
 });
 
-/// The first guard-weakening phrase in text that no earlier word of its
-/// sentence negates, outside a question, with its line counted from 1.
+/// The first guard-weakening phrase whose verb no negation directly governs,
+/// with its line counted from 1.
 fn guard_weakening(text: &str) -> io::Result<Option<String>> {
-    for found in GUARD_WEAKENING.find_iter(text) {
-        let found = found.map_err(io::Error::other)?;
-        let before = &text[..found.start()];
-        let mut start = 0;
-        for end in SENTENCE_BREAK.find_iter(before) {
-            start = end.map_err(io::Error::other)?.end();
-        }
-        let question = SENTENCE_BREAK
-            .find(&text[found.end()..])
+    for verb in GUARD_VERB.find_iter(text) {
+        let verb = verb.map_err(io::Error::other)?;
+        let (before, after) = (&text[..verb.start()], &text[verb.end()..]);
+        let phrase = if let Some(phrase) = GUARD_AFTER
+            .find(&text[verb.start()..])
             .map_err(io::Error::other)?
-            .is_some_and(|end| end.as_str() == "?");
-        let sentence = &before[start..];
-        let exempt = (question || NEGATION.is_match(sentence).map_err(io::Error::other)?)
-            && !UNNEGATED.is_match(sentence).map_err(io::Error::other)?;
-        if !exempt {
+        {
+            phrase.as_str()
+        } else if let Some(guard) = GUARD_BEFORE.find(before).map_err(io::Error::other)? {
+            &text[guard.start()..verb.end()]
+        } else {
+            continue;
+        };
+        let negated = if verb
+            .as_str()
+            .starts_with(['-', '\u{2013}', '\u{2014}', '\u{2212}'])
+        {
+            NEGATED_FLAG.is_match(before).map_err(io::Error::other)?
+        } else {
+            NEGATED.is_match(before).map_err(io::Error::other)?
+                || (NEGATED_LIST_BEFORE
+                    .is_match(before)
+                    .map_err(io::Error::other)?
+                    && NEGATED_LIST_AFTER
+                        .is_match(after)
+                        .map_err(io::Error::other)?)
+        };
+        if !negated {
             let line = before.matches('\n').count() + 1;
             return Ok(Some(format!(
-                "guard-weakening text '{}' at line {line} outside a negated sentence",
-                found.as_str()
+                "guard-weakening text '{phrase}' at line {line} with no negation directly before its verb"
             )));
         }
     }

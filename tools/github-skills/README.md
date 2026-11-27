@@ -47,16 +47,22 @@ included, and skip files that are not UTF-8, such as images. They refuse a hard
 link (a file with more than one name), which lets a file outside the skill
 change it unseen; a file over 64 KiB; and a skill whose files total over
 256 KiB. In Markdown they refuse text that tells an agent to skip, bypass,
-weaken, disable, ignore, silence, suppress or override a review, check, test,
-guard, hook, lint, approval or protection, to force-push, or to use
-`--no-verify` or `--admin`, unless a negation, 'whether' or 'would' comes
-earlier in the same sentence, table cell, list item or clause before a colon,
-or that sentence is a question: 'Do not skip the review' passes and 'Skip the
-review' fails. A 'why not' question, or a leading 'if', 'when' or 'whether'
-clause whose comma comes just before the text, does not exempt it, so 'Why not
-skip the review?' and 'If you would like, skip the review' fail.
-`tests/test_skill_boundaries.py` pins each skill's guard sentences, so removing
-one fails there.
+weaken, disable, ignore, disregard, silence, suppress, override or circumvent
+a review, check, test, guard, hook, lint, approval or protection, with the
+guard up to 6 words after the verb or up to 3 before it ('checks can be
+skipped'), to force-push, or to use `--no-verify` or `--admin`. Spaces of any
+kind, line ends, quotes and emphasis between the words do not hide them.
+
+This check fails closed. Such text passes only when a negation such as 'do
+not', 'never', 'must not' or 'cannot' comes directly before the verb on the
+same line, or heads a list of verbs that holds it and ends in 'or' or 'nor'
+('Do not weaken, skip or delete a test'); 'no', 'without' and 'not to' count
+only directly before the verb ('without skipping the review'). Nothing else in
+the sentence exempts it, so 'Do not skip the review' passes, and 'Why not skip
+the review?', 'Check whether CI passes, then skip the review' and 'No time to
+wait, skip the review' fail. It matches these words, not their meaning: a
+paraphrase in other words passes, so `tests/test_skill_boundaries.py` also
+pins each skill's guard sentences, and removing one fails there.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is

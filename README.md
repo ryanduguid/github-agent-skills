@@ -221,7 +221,8 @@ zero-width space or Unicode tag, which can show a reviewer different text from
 what an agent reads, and names the file, line, column and code point. It
 refuses a hard-linked skill file, a file over 64 KiB, a skill over 256 KiB, and
 Markdown that tells an agent to skip or weaken a review, check or guard,
-force-push or use `--no-verify`, outside a negated sentence.
+force-push or use `--no-verify`, unless a negation such as 'do not' or
+'never' comes directly before the verb.
 
 Strict validation also requires one scenario in `tests/scenarios/` for each
 skill. CI also lints the Python tests with a hash-pinned Ruff;
