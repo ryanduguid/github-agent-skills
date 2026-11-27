@@ -62,14 +62,18 @@ pub(super) const MANIFESTS: [&str; 16] = [
 pub(super) const VENDORED_DIRS: [&str; 4] =
     ["vendor", "third_party", "third-party", "node_modules"];
 pub(super) const GENERATED_DIRS: [&str; 2] = ["generated", "__generated__"];
-pub(super) const INSTRUCTION_NAMES: [&str; 5] = [
+pub(super) const INSTRUCTION_NAMES: [&str; 8] = [
     "AGENTS.md",
+    "AGENTS.override.md",
     "CLAUDE.md",
+    "GEMINI.md",
+    "copilot-instructions.md",
     "SKILL.md",
     ".mcp.json",
     "mcp.json",
 ];
-pub(super) const INSTRUCTION_DIRS: [&str; 2] = [".claude", "skills"];
+pub(super) const INSTRUCTION_DIRS: [&str; 5] =
+    [".agents", ".claude", ".codex", ".gemini", "skills"];
 pub(super) const PERMISSION_FILES: [&str; 2] = ["CODEOWNERS", ".github/settings.yml"];
 const WORKFLOW_MARKER_NAMES: [&str; 9] = [
     "pull_request_target",

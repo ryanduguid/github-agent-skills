@@ -60,7 +60,7 @@ const PLUS: Option<&str> = Some("@@ -1 +1 @@\n+x");
 /// Path, status, (additions, deletions) and patch.
 type Case = (&'static str, &'static str, (u64, u64), Option<&'static str>);
 
-const CLASSIFIED: [Case; 32] = [
+const CLASSIFIED: [Case; 35] = [
     (
         ".github/workflows/ci.yml",
         "modified",
@@ -97,6 +97,9 @@ const CLASSIFIED: [Case; 32] = [
     ("skills/x/README.md", "modified", (1, 1), PLUS),
     (".claude/settings.json", "added", (1, 0), PLUS),
     ("deep/AGENTS.md", "modified", (1, 0), PLUS),
+    ("pkg/GEMINI.md", "modified", (1, 0), PLUS),
+    (".github/copilot-instructions.md", "added", (1, 0), PLUS),
+    (".codex/config.toml", "modified", (1, 0), PLUS),
     ("web/app.min.js", "added", (9, 0), PLUS),
     ("src/__generated__/x.ts", "added", (1, 0), PLUS),
     ("proto/a_pb2_grpc.pyi", "added", (1, 0), PLUS),
