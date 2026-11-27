@@ -52,12 +52,13 @@ silence, suppress, override or circumvent a review, check, test, guard, hook,
 lint, approval or protection, with the
 guard up to 6 words after the verb or up to 3 before it ('checks can be
 skipped'), to force-push, or to use `--no-verify` or `--admin`. Spaces of any
-kind, line ends, quotes, emphasis and character references such as `&nbsp;`
-between the words do not hide them. They also refuse Markdown that splits a
-word with markup ('S\*\*ki\*\*p'), uses a character reference other than
-`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;` ('Ski&amp;#112;'), or
-uses Greek, Cyrillic, fullwidth or mathematical letters, which can spell these
-words so the check cannot read them.
+kind, line ends, quotes, emphasis, inline HTML tags and character references
+such as `&nbsp;` between the words do not hide them. They also refuse Markdown
+that splits a word with markup ('S\*\*ki\*\*p'), contains an HTML comment, uses
+a numeric character reference (with or without a trailing semicolon) or a named
+character reference other than `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and
+`&nbsp;` ('Ski&amp;#112;'), or uses Greek, Cyrillic, fullwidth or mathematical
+letters, which can spell these words so the check cannot read them.
 
 This check fails closed. Such text passes only when a negation such as 'do
 not', 'never', 'must not' or 'cannot' comes directly before the verb on the

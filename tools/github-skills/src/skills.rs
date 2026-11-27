@@ -152,15 +152,14 @@ const LISTED_VERBS: &str = concat!(
 // `skip_review` hold one.
 const START: &str = r"(?<![^\W_])";
 const END: &str = r"(?![^\W_])";
-// Spaces, dashes, emphasis, quotes and character references may separate the
-// 2 words.
-const FORCE_PUSH: &str = r#"force(?:[\-\u{2010}-\u{2015}\u{2212}\s*_~`'"\u{2018}\u{2019}\u{201c}\u{201d}]|&#?[^\W_]+;)*push(?:es|ed|ing)?"#;
-const FLAG: &str =
-    r"(?:--|[\u{2013}\u{2014}\u{2212}])(?:no[\-\u{2010}-\u{2015}\u{2212}]verify|admin)(?![^\W_])";
+// Spaces, dashes, emphasis, quotes, character references and inline HTML tags
+// may separate the 2 words.
+const FORCE_PUSH: &str = r#"force(?:[\-\u{2010}-\u{2015}\u{2212}\s*_~`'"\u{2018}\u{2019}\u{201c}\u{201d}]|&#?[^\W_]+;|</?[A-Za-z][^>]*>)*push(?:es|ed|ing)?"#;
+const FLAG: &str = r"(?:--|[\u{2013}\u{2014}\u{2212}])(?:</?[A-Za-z][^>]*>|[*_~])*(?:no(?:[\-\u{2010}-\u{2015}\u{2212}*_~]|</?[A-Za-z][^>]*>)+verify|admin)(?![^\W_])";
 // What may separate the words of a phrase: anything but a letter, digit or a
-// break, so quotes, emphasis, hyphens, character references such as `&nbsp;`
-// and any space, line ends included.
-const BETWEEN: &str = r"(?:[^\w.;:!?|]|_|&#?[^\W_]+;)+";
+// break, so quotes, emphasis, hyphens, character references such as `&nbsp;`,
+// inline HTML tags and any space, line ends included.
+const BETWEEN: &str = r"(?:</?[A-Za-z][^>]*>|&#?[^\W_]+;|[^\w.;:!?|]|_)+";
 // What may separate a negation from its verb: spaces on one line, and emphasis.
 const SPACE: &str = r"[^\S\n]+";
 const GAP: &str = r"[*_]*[^\S\n]+[*_]*";
@@ -257,13 +256,15 @@ static NEGATED_FLAG: LazyLock<Regex> = LazyLock::new(|| {
 // skip".
 static CHOICE: LazyLock<Regex> = LazyLock::new(|| guard_regex(r"(?<![^\W_])or[\s*_]*\Z"));
 // Text the phrase patterns cannot read, refused in Markdown: markup inside a
-// word ("S**ki**p", "Sk<b></b>ip"); a character reference other than `&amp;`,
-// `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;` ("Ski&#112;", which can spell
-// a whole word), or one of those inside a word; and Greek, Cyrillic, fullwidth
-// or mathematical letters, which can pass for Latin ones.
+// word ("S**ki**p", "Sk<b></b>ip"); HTML comments; any numeric character
+// reference (with or without a trailing semicolon, as HTML5 accepts in raw
+// HTML: "<p>Sk&#105p</p>"); any named character reference other than `&amp;`,
+// `&lt;`, `&gt;`, `&quot;`, `&apos;` and `&nbsp;`, or one of those inside a
+// word; and Greek, Cyrillic, fullwidth or mathematical letters, which can pass
+// for Latin ones.
 static OBSCURED: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|&(?!(?:amp|lt|gt|quot|apos|nbsp);)(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#[xX][0-9A-Fa-f]+);|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
+        r"[^\W_](?:[*~]+|<[^>\n]*>|</?[A-Za-z][^>]*>|&#?[^\W_]+;)+[^\W_]|<!--[\s\S]*?-->|&#(?:[0-9]+|[xX][0-9A-Fa-f]+);?|&(?!(?:amp|lt|gt|quot|apos|nbsp);)[A-Za-z][A-Za-z0-9]*;|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
         false,
         false,
     )
