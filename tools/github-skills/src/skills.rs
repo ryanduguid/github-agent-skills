@@ -156,8 +156,9 @@ const FORCE_PUSH: &str = r"force[\-\u{2010}-\u{2015}\u{2212}\s]?push(?:es|ed|ing
 const FLAG: &str =
     r"(?:--|[\u{2013}\u{2014}\u{2212}])(?:no[\-\u{2010}-\u{2015}\u{2212}]verify|admin)(?![^\W_])";
 // What may separate the words of a phrase: anything but a letter, digit or a
-// break, so quotes, emphasis, hyphens and any space, line ends included.
-const BETWEEN: &str = r"(?:[^\w.;:!?|]|_)+";
+// break, so quotes, emphasis, hyphens, character references such as `&nbsp;`
+// and any space, line ends included.
+const BETWEEN: &str = r"(?:[^\w.;:!?|]|_|&#?[^\W_]+;)+";
 // What may separate a negation from its verb: spaces on one line, and emphasis.
 const SPACE: &str = r"[^\S\n]+";
 const GAP: &str = r"[*_]*[^\S\n]+[*_]*";
@@ -250,10 +251,30 @@ static NEGATED_FLAG: LazyLock<Regex> = LazyLock::new(|| {
         negation()
     ))
 });
+// A negation offered as a choice: "whether or not to skip", "may or may not
+// skip".
+static CHOICE: LazyLock<Regex> = LazyLock::new(|| guard_regex(r"(?<![^\W_])or[\s*_]*\Z"));
+// Text the phrase patterns cannot read, refused in Markdown: markup inside a
+// word ("S**ki**p", "Sk<b></b>ip", "Sk&#105;p"), and Greek, Cyrillic,
+// fullwidth or mathematical letters, which can pass for Latin ones.
+static OBSCURED: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
+        false,
+        false,
+    )
+});
 
 /// The first guard-weakening phrase whose verb no negation directly governs,
-/// with its line counted from 1.
+/// or the first text that could hide one, with its line counted from 1.
 fn guard_weakening(text: &str) -> io::Result<Option<String>> {
+    if let Some(found) = OBSCURED.find(text).map_err(io::Error::other)? {
+        let line = text[..found.start()].matches('\n').count() + 1;
+        return Ok(Some(format!(
+            "'{}' at line {line} splits a word with markup or uses Greek, Cyrillic, fullwidth or mathematical letters, which can hide guard-weakening text",
+            found.as_str()
+        )));
+    }
     for verb in GUARD_VERB.find_iter(text) {
         let verb = verb.map_err(io::Error::other)?;
         let (before, after) = (&text[..verb.start()], &text[verb.end()..]);
@@ -267,19 +288,26 @@ fn guard_weakening(text: &str) -> io::Result<Option<String>> {
         } else {
             continue;
         };
-        let negated = if verb
+        let negation = if verb
             .as_str()
             .starts_with(['-', '\u{2013}', '\u{2014}', '\u{2212}'])
         {
-            NEGATED_FLAG.is_match(before).map_err(io::Error::other)?
+            NEGATED_FLAG.find(before).map_err(io::Error::other)?
+        } else if let Some(found) = NEGATED.find(before).map_err(io::Error::other)? {
+            Some(found)
+        } else if NEGATED_LIST_AFTER
+            .is_match(after)
+            .map_err(io::Error::other)?
+        {
+            NEGATED_LIST_BEFORE.find(before).map_err(io::Error::other)?
         } else {
-            NEGATED.is_match(before).map_err(io::Error::other)?
-                || (NEGATED_LIST_BEFORE
-                    .is_match(before)
-                    .map_err(io::Error::other)?
-                    && NEGATED_LIST_AFTER
-                        .is_match(after)
-                        .map_err(io::Error::other)?)
+            None
+        };
+        let negated = match negation {
+            Some(found) => !CHOICE
+                .is_match(&before[..found.start()])
+                .map_err(io::Error::other)?,
+            None => false,
         };
         if !negated {
             let line = before.matches('\n').count() + 1;

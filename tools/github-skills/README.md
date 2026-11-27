@@ -51,13 +51,19 @@ weaken, disable, ignore, disregard, silence, suppress, override or circumvent
 a review, check, test, guard, hook, lint, approval or protection, with the
 guard up to 6 words after the verb or up to 3 before it ('checks can be
 skipped'), to force-push, or to use `--no-verify` or `--admin`. Spaces of any
-kind, line ends, quotes and emphasis between the words do not hide them.
+kind, line ends, quotes, emphasis and character references such as `&nbsp;`
+between the words do not hide them. They also refuse Markdown that splits a
+word with markup ('S\*\*ki\*\*p') or uses Greek, Cyrillic, fullwidth or
+mathematical letters, which can spell these words so the check cannot read
+them.
 
 This check fails closed. Such text passes only when a negation such as 'do
 not', 'never', 'must not' or 'cannot' comes directly before the verb on the
 same line, or heads a list of verbs that holds it and ends in 'or' or 'nor'
 ('Do not weaken, skip or delete a test'); 'no', 'without' and 'not to' count
-only directly before the verb ('without skipping the review'). Nothing else in
+only directly before the verb ('without skipping the review'), and a
+negation offered as a choice ('whether or not to', 'may or may not') counts
+as none. Nothing else in
 the sentence exempts it, so 'Do not skip the review' passes, and 'Why not skip
 the review?', 'Check whether CI passes, then skip the review' and 'No time to
 wait, skip the review' fail. It matches these words, not their meaning: a
