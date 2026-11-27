@@ -152,10 +152,20 @@ static NEGATION: LazyLock<Regex> = LazyLock::new(|| {
         false,
     )
 });
-// A sentence, table cell or list item ends here.
+// Words that leave the instruction after them standing: a rhetorical 'why not'
+// ("Why not skip the review?"), or a leading condition whose comma ends just
+// before the phrase ("If you would like, skip the review").
+static UNNEGATED: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"\bwhy\s+(?:not\b|\w+n't\b)|^\s*(?:if|when|whenever|unless|once|whether|although|though|since|because)\b[^,]*,\s*$",
+        true,
+        false,
+    )
+});
+// A sentence, clause before a colon, table cell or list item ends here.
 static SENTENCE_BREAK: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"[.!?;](?=\s)|\n[ \t]*\n|\n[ \t]*(?:[-*+]|[0-9]+\.)[ \t]|\|",
+        r"[.!?;:](?=\s)|\n[ \t]*\n|\n[ \t]*(?:[-*+]|[0-9]+\.)[ \t]|\|",
         false,
         false,
     )
@@ -175,11 +185,10 @@ fn guard_weakening(text: &str) -> io::Result<Option<String>> {
             .find(&text[found.end()..])
             .map_err(io::Error::other)?
             .is_some_and(|end| end.as_str() == "?");
-        if !question
-            && !NEGATION
-                .is_match(&before[start..])
-                .map_err(io::Error::other)?
-        {
+        let sentence = &before[start..];
+        let exempt = (question || NEGATION.is_match(sentence).map_err(io::Error::other)?)
+            && !UNNEGATED.is_match(sentence).map_err(io::Error::other)?;
+        if !exempt {
             let line = before.matches('\n').count() + 1;
             return Ok(Some(format!(
                 "guard-weakening text '{}' at line {line} outside a negated sentence",

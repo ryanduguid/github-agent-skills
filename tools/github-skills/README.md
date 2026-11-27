@@ -50,9 +50,13 @@ change it unseen; a file over 64 KiB; and a skill whose files total over
 weaken, disable, ignore, silence, suppress or override a review, check, test,
 guard, hook, lint, approval or protection, to force-push, or to use
 `--no-verify` or `--admin`, unless a negation, 'whether' or 'would' comes
-earlier in the same sentence, table cell or list item, or that sentence is a
-question: 'Do not skip the review' passes and 'Skip the review' fails. `tests/test_skill_boundaries.py` pins each skill's
-guard sentences, so removing one fails there.
+earlier in the same sentence, table cell, list item or clause before a colon,
+or that sentence is a question: 'Do not skip the review' passes and 'Skip the
+review' fails. A 'why not' question, or a leading 'if', 'when' or 'whether'
+clause whose comma comes just before the text, does not exempt it, so 'Why not
+skip the review?' and 'If you would like, skip the review' fail.
+`tests/test_skill_boundaries.py` pins each skill's guard sentences, so removing
+one fails there.
 
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is
