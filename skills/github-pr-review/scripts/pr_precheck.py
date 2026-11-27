@@ -45,8 +45,11 @@ GENERATED_NAME = re.compile(
 )
 GENERATED_DIRS = {"generated", "__generated__"}
 GENERATED_MARKER = re.compile(r"@generated|DO NOT EDIT|Code generated .* DO NOT EDIT", re.IGNORECASE)
-INSTRUCTION_NAMES = {"AGENTS.md", "CLAUDE.md", "SKILL.md", ".mcp.json", "mcp.json"}
-INSTRUCTION_DIRS = {".claude", "skills"}
+INSTRUCTION_NAMES = {
+    "AGENTS.md", "AGENTS.override.md", "CLAUDE.md", "GEMINI.md", "copilot-instructions.md", "SKILL.md",
+    ".mcp.json", "mcp.json",
+}
+INSTRUCTION_DIRS = {".agents", ".claude", ".codex", ".gemini", "skills"}
 PERMISSION_FILES = {"CODEOWNERS", ".github/settings.yml"}
 WORKFLOW_MARKERS = [
     (name, re.compile(r"(?<![\w-])" + re.escape(name) + r"(?![\w])"))

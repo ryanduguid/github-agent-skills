@@ -270,6 +270,22 @@ fn names_instruction_files_including_renamed_previous_filenames() {
 }
 
 #[test]
+fn names_other_agents_instruction_files() {
+    let paths = [
+        "AGENTS.override.md",
+        "pkg/GEMINI.md",
+        ".github/copilot-instructions.md",
+        ".agents/plugins/marketplace.json",
+        ".codex/config.toml",
+        ".gemini/settings.json",
+    ];
+    let mut files: Vec<_> = paths.iter().map(|path| mod_entry(path)).collect();
+    files.extend([mod_entry("docs/codex.md"), mod_entry("gemini/notes.md")]);
+    let out = facts(json!(files));
+    assert_eq!(out["instruction_files"], json!(paths));
+}
+
+#[test]
 fn hostile_paths_stay_ascii_escaped_and_exact_format() {
     let name =
         "a\u{202e}b\n\r\t\u{0008}\u{000c}\u{0001}\x7f\"\\\u{00e9}\u{1f600}$(touch pwned).yml";
