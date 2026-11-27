@@ -156,6 +156,18 @@ class PrecheckTests(unittest.TestCase):
             ["AGENTS.md", "pkg/CLAUDE.md", ".mcp.json", ".claude/settings.json", "skills/x/SKILL.md", "AGENTS.md"],
         )
 
+    def test_names_other_agents_instruction_files(self):
+        paths = [
+            "AGENTS.override.md",
+            "pkg/GEMINI.md",
+            ".github/copilot-instructions.md",
+            ".agents/plugins/marketplace.json",
+            ".codex/config.toml",
+            ".gemini/settings.json",
+        ]
+        out = facts([entry(path) for path in paths] + [entry("docs/codex.md"), entry("gemini/notes.md")])
+        self.assertEqual(out["instruction_files"], paths)
+
     def test_a_path_with_no_parts_gets_no_classification(self):
         for path in (".", "./"):
             out = facts([entry(path)])

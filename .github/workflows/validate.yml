@@ -91,6 +91,23 @@ jobs:
           done < "$lock_list"
           exit "$status"
 
+  # The skill's pr_precheck.py promises Python 3.8 or later; its tests run on 3.8.
+  pr-precheck-oldest-python:
+    name: pr-precheck (Python 3.8)
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.8"
+      - name: Unit tests for the precheck script
+        run: python -m unittest tests.test_pr_precheck -v
+
   validate:
     # The 3.14 leg reports as bare "validate". Branch protection requires validate-gates instead.
     name: validate${{ matrix.python != '3.14' && format(' ({0})', matrix.python) || '' }}
@@ -301,7 +318,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, dependency-audit, validate, native, coverage]
+    needs: [lint, dependency-audit, pr-precheck-oldest-python, validate, native, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
