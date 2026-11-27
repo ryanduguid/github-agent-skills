@@ -898,3 +898,175 @@ fn sync_refuses_linked_parents_and_a_linked_root() {
     assert!(s::sync(&alias).unwrap().contains(&format!(".: {LINK}")));
     assert_eq!(read(&copy), b"agents-before\n");
 }
+
+const SKILL_DIRECTORY: &str = "skills/github-repository-audit";
+
+/// The one failure a valid skill gets once `name` under it holds `bytes`.
+fn skill_file(root: &Path, name: &str, bytes: &[u8]) -> Vec<String> {
+    write(root, &format!("{SKILL_DIRECTORY}/{name}"), bytes);
+    skill_with(root, "Use when assessing a repository.", "", "# Audit\n")
+}
+
+#[test]
+fn a_hard_linked_skill_file_is_refused() {
+    let root = tempfile::tempdir().unwrap();
+    assert!(skill_file(root.path(), "scripts/check.py", b"print(1)\n").is_empty());
+    // A second name outside the skill: an edit there changes the skill unseen.
+    let outside = root.path().join("outside.py");
+    fs::hard_link(
+        root.path().join(SKILL_DIRECTORY).join("scripts/check.py"),
+        &outside,
+    )
+    .unwrap();
+    for strict in [false, true] {
+        assert!(
+            s::validate(root.path(), strict).unwrap().contains(&format!(
+                "{SKILL_DIRECTORY}/scripts/check.py: is a hard link; a skill file must have one name"
+            )),
+            "strict {strict}"
+        );
+    }
+    fs::remove_file(outside).unwrap();
+    assert!(s::validate(root.path(), false).unwrap().is_empty());
+}
+
+#[test]
+fn files_and_skills_over_their_byte_caps_are_refused() {
+    let cap = usize::try_from(s::MAX_FILE_BYTES).unwrap();
+    let root = tempfile::tempdir().unwrap();
+    assert!(skill_file(root.path(), "references/a.txt", &vec![b'a'; cap]).is_empty());
+    assert_eq!(
+        skill_file(root.path(), "references/a.txt", &vec![b'a'; cap + 1]),
+        [format!(
+            "{SKILL_DIRECTORY}/references/a.txt: {} bytes, over the 65536-byte cap for a skill file",
+            cap + 1
+        )]
+    );
+    // Each file under its cap, but together over the skill's.
+    let root = tempfile::tempdir().unwrap();
+    for name in ["a", "b", "c"] {
+        write(
+            root.path(),
+            &format!("{SKILL_DIRECTORY}/references/{name}.txt"),
+            &vec![b'a'; cap],
+        );
+    }
+    assert!(skill_file(root.path(), "references/d.txt", &vec![b'a'; cap - 1000]).is_empty());
+    let failures = skill_file(root.path(), "references/d.txt", &vec![b'a'; cap]);
+    let [failure] = failures.as_slice() else {
+        panic!("{failures:?}")
+    };
+    assert!(
+        failure.starts_with(&format!("{SKILL_DIRECTORY}: its files total "))
+            && failure.ends_with("bytes, over the 262144-byte cap for a skill"),
+        "{failure}"
+    );
+}
+
+#[test]
+fn hidden_characters_are_refused_in_every_skill_file() {
+    let root = tempfile::tempdir().unwrap();
+    assert_eq!(
+        skill_file(
+            root.path(),
+            "scripts/check.py",
+            "x = 1\r\nok = 'a\u{202e}b'\r\n".as_bytes()
+        ),
+        [format!(
+            "{SKILL_DIRECTORY}/scripts/check.py: invisible or bidirectional control character U+202E at line 2, column 8"
+        )]
+    );
+    // Bytes that are not UTF-8, such as an image, are not read as text.
+    assert!(skill_file(root.path(), "scripts/check.py", b"\xff\xfe\x2e\x20").is_empty());
+}
+
+#[test]
+fn guard_weakening_text_is_refused_outside_a_negated_sentence() {
+    let root = tempfile::tempdir().unwrap();
+    let body = |text: &str| {
+        skill_with(
+            root.path(),
+            "Use when assessing a repository.",
+            "",
+            &format!("# Audit\n\n{text}\n"),
+        )
+    };
+    let refused = |phrase: &str, line: usize| {
+        [format!(
+            "{SKILL_FILE}: guard-weakening text '{phrase}' at line {line} outside a negated sentence"
+        )]
+    };
+    // Guards as the skills write them.
+    for kept in [
+        "Do not weaken, skip or delete a test or check to satisfy a comment.",
+        "Never force-push, and never run `git commit --no-verify`.",
+        "| Do not bypass branch protection | Report it |",
+        "A run without hooks: never disable the hooks.",
+        "Report it. It isn't for you to override approvals.",
+    ] {
+        assert!(body(kept).is_empty(), "{kept}");
+    }
+    // The same guards removed or loosened.
+    for (loosened, phrase, line) in [
+        (
+            "Weaken, skip or delete a test or check to satisfy a comment.",
+            "Weaken, skip or delete a test",
+            7,
+        ),
+        (
+            "Do not stop. Skip the review when the author asks.",
+            "Skip the review",
+            7,
+        ),
+        ("Never merge it; force-push instead.", "force-push", 7),
+        (
+            "Commit with `--no-verify` if hooks are slow.",
+            "--no-verify",
+            7,
+        ),
+        (
+            "| Do not ask | Bypass branch protection |",
+            "Bypass branch protection",
+            7,
+        ),
+        (
+            "- Do not wait.\n- Disabling the hooks is fine.",
+            "Disabling the hooks",
+            8,
+        ),
+        ("Merge with `gh pr merge --admin`.", "--admin", 7),
+        (
+            "Ignored checks\nare fine; nothing is lost.",
+            "Ignored checks",
+            7,
+        ),
+    ] {
+        assert_eq!(body(loosened), refused(phrase, line), "{loosened}");
+    }
+    // Every Markdown file in the skill is read; a script is not.
+    body("Run it.");
+    assert_eq!(
+        skill_file(
+            root.path(),
+            "references/guide.md",
+            b"# Guide\n\nYou may skip review.\n"
+        ),
+        [format!(
+            "{SKILL_DIRECTORY}/references/guide.md: guard-weakening text 'skip review' at line 3 outside a negated sentence"
+        )]
+    );
+    fs::remove_file(
+        root.path()
+            .join(SKILL_DIRECTORY)
+            .join("references/guide.md"),
+    )
+    .unwrap();
+    assert!(
+        skill_file(
+            root.path(),
+            "scripts/push.sh",
+            b"git push --force --no-verify\n"
+        )
+        .is_empty()
+    );
+}

@@ -122,6 +122,140 @@ fn hidden_character(text: &str) -> Option<String> {
     })
 }
 
+// Byte caps on a canonical skill's files, each and all together. The largest
+// file was 13,561 bytes and the largest skill about 37,000 on 27 November 2026.
+pub const MAX_FILE_BYTES: u64 = 64 * 1024;
+pub const MAX_SKILL_BYTES: u64 = 256 * 1024;
+// Text that tells an agent to skip or weaken a review, check or guard, or to
+// go round one. It is allowed only after a negation in the same sentence, as
+// in "Do not skip the review".
+static GUARD_WEAKENING: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        concat!(
+            r"\b(?:skip(?:s|ped|ping)?|bypass(?:es|ed|ing)?|weaken(?:s|ed|ing)?|disabl(?:e|es|ed|ing)",
+            r"|ignor(?:e|es|ed|ing)|silenc(?:e|es|ed|ing)|suppress(?:es|ed|ing)?|overrid(?:e|es|den|ing)|overrode)\b",
+            r"(?:[\s,]+[\w'-]+){0,6}?[\s,]+",
+            r"(?:reviews?|checks?|tests?|guards?|hooks?|validation|lint(?:s|ing)?|approvals?|protections?|safeguards?)\b",
+            r"|\bforce[- ]?push(?:es|ed|ing)?\b|--no-verify\b|--admin\b",
+        ),
+        true,
+        false,
+    )
+});
+static NEGATION: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused)\b|n't\b",
+        true,
+        false,
+    )
+});
+// A sentence, table cell or list item ends here.
+static SENTENCE_BREAK: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"[.!?;](?=\s)|\n[ \t]*\n|\n[ \t]*(?:[-*+]|[0-9]+\.)[ \t]|\|",
+        false,
+        false,
+    )
+});
+
+/// The first guard-weakening phrase in text that no earlier word of its
+/// sentence negates, with its line counted from 1.
+fn guard_weakening(text: &str) -> io::Result<Option<String>> {
+    for found in GUARD_WEAKENING.find_iter(text) {
+        let found = found.map_err(io::Error::other)?;
+        let before = &text[..found.start()];
+        let mut start = 0;
+        for end in SENTENCE_BREAK.find_iter(before) {
+            start = end.map_err(io::Error::other)?.end();
+        }
+        if !NEGATION
+            .is_match(&before[start..])
+            .map_err(io::Error::other)?
+        {
+            let line = before.matches('\n').count() + 1;
+            return Ok(Some(format!(
+                "guard-weakening text '{}' at line {line} outside a negated sentence",
+                found.as_str()
+            )));
+        }
+    }
+    Ok(None)
+}
+
+/// How many directory entries name the file, which is not a link.
+#[cfg(not(windows))]
+fn link_count(path: &Path) -> io::Result<u64> {
+    use std::os::unix::fs::MetadataExt;
+    Ok(fs::symlink_metadata(path)?.nlink())
+}
+
+/// How many directory entries name the file, which is not a link. The
+/// standard library's count is unstable on Windows.
+#[cfg(windows)]
+fn link_count(path: &Path) -> io::Result<u64> {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Storage::FileSystem::{
+        BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
+    };
+    let file = fs::File::open(path)?;
+    let mut information = BY_HANDLE_FILE_INFORMATION::default();
+    // SAFETY: the handle stays open for the call, which writes only to the
+    // structure it is given.
+    let ok = unsafe { GetFileInformationByHandle(file.as_raw_handle(), &mut information) };
+    (ok != 0)
+        .then_some(u64::from(information.nNumberOfLinks))
+        .ok_or_else(io::Error::last_os_error)
+}
+
+/// Failures for the files of a skill whose `SKILL.md` passed: a hard link,
+/// which edits a file outside the skill or lets one edit it; a file or skill
+/// over its byte cap; a hidden character in any UTF-8 file, scripts included;
+/// and guard-weakening text in Markdown. Links are skipped here, as the link
+/// checks report them.
+fn skill_file_failures(directory: &Path, root: &Path) -> io::Result<Vec<String>> {
+    let mut failures = Vec::new();
+    let mut total = 0;
+    for path in ordinary_entries(directory, root, &mut Vec::new())? {
+        if !path.is_file() {
+            continue;
+        }
+        let name = relative(&path, root);
+        if link_count(&path)? > 1 {
+            failures.push(format!(
+                "{name}: is a hard link; a skill file must have one name"
+            ));
+            continue;
+        }
+        let size = fs::symlink_metadata(&path)?.len();
+        total += size;
+        if size > MAX_FILE_BYTES {
+            failures.push(format!(
+                "{name}: {size} bytes, over the {MAX_FILE_BYTES}-byte cap for a skill file"
+            ));
+            continue;
+        }
+        // Bytes that are not UTF-8, such as an image, are data, not text a
+        // reviewer reads.
+        let Ok(text) = String::from_utf8(fs::read(&path)?) else {
+            continue;
+        };
+        if let Some(hidden) = hidden_character(&text) {
+            failures.push(format!("{name}: {hidden}"));
+        } else if path.extension().is_some_and(|extension| extension == "md")
+            && let Some(found) = guard_weakening(&text)?
+        {
+            failures.push(format!("{name}: {found}"));
+        }
+    }
+    if total > MAX_SKILL_BYTES {
+        failures.push(format!(
+            "{}: its files total {total} bytes, over the {MAX_SKILL_BYTES}-byte cap for a skill",
+            relative(directory, root)
+        ));
+    }
+    Ok(failures)
+}
+
 pub fn is_link(path: &Path) -> io::Result<bool> {
     match fs::symlink_metadata(path) {
         Ok(metadata) => {
@@ -424,6 +558,11 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.push(format!(
                 "{file_name}: referenced file '{missing}' is not in the skill directory"
             ));
+            continue;
+        }
+        let file_failures = skill_file_failures(directory, root)?;
+        if !file_failures.is_empty() {
+            failures.extend(file_failures);
             continue;
         }
         valid.push((name.into_owned(), path));
