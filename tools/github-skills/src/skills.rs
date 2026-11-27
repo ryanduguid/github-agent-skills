@@ -263,7 +263,7 @@ static CHOICE: LazyLock<Regex> = LazyLock::new(|| guard_regex(r"(?<![^\W_])or[\s
 // or mathematical letters, which can pass for Latin ones.
 static OBSCURED: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|&(?!(?:amp|lt|gt|quot|apos|nbsp);)#?[^\W_]+;|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
+        r"[^\W_](?:[*~]+|<[^>\n]*>|&#?[^\W_]+;)+[^\W_]|&(?!(?:amp|lt|gt|quot|apos|nbsp);)(?:[A-Za-z][A-Za-z0-9]*|#[0-9]+|#[xX][0-9A-Fa-f]+);|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
         false,
         false,
     )

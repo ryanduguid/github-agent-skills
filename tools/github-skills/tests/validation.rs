@@ -1153,7 +1153,7 @@ const GUARD_PREFIXES: [&str; 14] = [
 ];
 
 // Guards as the skills write them: the verb itself is negated.
-const GUARD_ALLOWED: [&str; 27] = [
+const GUARD_ALLOWED: [&str; 29] = [
     "Do not skip the review.",
     "Do not weaken, skip or delete a test or check to satisfy a comment.",
     "Edit the working tree one item at a time with the smallest change that meets\nthe request. Do not weaken, skip or delete a test or check to satisfy a\ncomment.",
@@ -1182,6 +1182,9 @@ const GUARD_ALLOWED: [&str; 27] = [
     // A listed verb with no listed guard after it is not a phrase.
     "Skip nothing silently.",
     "Skip a profile whose file is absent.",
+    // Shell text is not a character reference; the escapes are allowed.
+    "Run `make 2>&1; echo done` first.",
+    "Use &amp;, &lt;, &gt;, &quot;, &apos; and &nbsp; freely.",
 ];
 
 /// The failures for a valid skill once `references/` holds each text as its
