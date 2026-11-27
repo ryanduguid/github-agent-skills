@@ -95,7 +95,8 @@ jobs:
   pr-precheck-oldest-python:
     name: pr-precheck (Python 3.8)
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    # ubuntu-latest (26.04) has no Python 3.8 build; 24.04 does.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
