@@ -57,6 +57,40 @@ jobs:
           tar -xzf "actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" actionlint
           ./actionlint -shellcheck "./shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
 
+  # RustSec advisories for every tracked Cargo.lock, the fuzz workspace's included.
+  dependency-audit:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the pinned RustSec audit tool
+        uses: taiki-e/install-action@ab49d3c64680143e184118bed66a46419fc15519 # v2.90.5
+        with:
+          tool: cargo-audit@0.22.2
+          fallback: none
+      # A vulnerability, an unsound or a yanked crate fails the run.
+      - name: Audit every native dependency lock
+        shell: bash
+        run: |
+          lock_list="$RUNNER_TEMP/native-audit-locks"
+          git ls-files -z -- Cargo.lock '**/Cargo.lock' > "$lock_list"
+          if [[ ! -s "$lock_list" ]]; then
+            echo "No tracked Cargo.lock files found" >&2
+            exit 1
+          fi
+          status=0
+          while IFS= read -r -d '' lock; do
+            echo "Auditing $lock"
+            if ! cargo audit --file "$lock" --deny unsound --deny yanked; then
+              status=1
+            fi
+          done < "$lock_list"
+          exit "$status"
+
   validate:
     # The 3.14 leg reports as bare "validate". Branch protection requires validate-gates instead.
     name: validate${{ matrix.python != '3.14' && format(' ({0})', matrix.python) || '' }}
@@ -267,7 +301,7 @@ jobs:
     # unless every job it needs succeeded, when a job in this file is missing
     # from needs, or when a pull request removes a job without adding a
     # "# removed-jobs: <job>" comment to this file.
-    needs: [lint, validate, native, coverage]
+    needs: [lint, dependency-audit, validate, native, coverage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5

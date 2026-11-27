@@ -6,6 +6,7 @@
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,13 @@ SPEC = importlib.util.spec_from_file_location("check_gates", ROOT / ".github/ci/
 CHECK_GATES = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECK_GATES)
 NEEDS = "    needs: [lint, validate, native, coverage]\n"
+# The CLI fixtures start from the real workflow, whatever jobs it holds.
+REAL_NEEDS = re.compile(r"^    needs: \[[^\]\n]*\]\n", re.MULTILINE)
+REAL_JOBS = ", ".join(sorted(re.findall(
+    r"^  ([A-Za-z_][\w-]*):\n",
+    (ROOT / ".github/workflows/validate.yml").read_text(encoding="utf-8").split("\njobs:\n", 1)[1],
+    re.MULTILINE,
+)))
 BASE = (
     "name: Validate\n\non: pull_request\n\njobs:\n  validate-gates:\n" + NEEDS
     + "    runs-on: ubuntu-latest\n    steps: [{run: 'true'}]\n"
@@ -284,8 +292,9 @@ class GateCliTests(unittest.TestCase):
         self.git_command("checkout", "--quiet", "-b", "change")
         (self.workflows / base_name).unlink()
         aggregate = base.split("\n  validate-gates:\n", 1)[1]
-        self.assertIn(NEEDS, aggregate)
-        aggregate = aggregate.replace(NEEDS, "", 1).replace(
+        needs = REAL_NEEDS.search(aggregate)
+        self.assertIsNotNone(needs)
+        aggregate = aggregate.replace(needs.group(0), "", 1).replace(
             f"{source_argument} validate-gates", f".github/workflows/{filename} replacement")
         head = ("name: Validate\n\non: pull_request\n\njobs:\n  replacement:\n"
                 f"    name: {context}\n" + aggregate)
@@ -337,7 +346,7 @@ class GateCliTests(unittest.TestCase):
 
     def test_cli_accepts_declared_removals_from_a_git_quoted_path(self):
         result = self.run_cli_fixture(quoted_path=True,
-            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates")
+            declaration=REAL_JOBS)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_cli_accepts_an_unrelated_new_context(self):
@@ -346,7 +355,7 @@ class GateCliTests(unittest.TestCase):
 
     def test_cli_deduplicates_an_existing_path(self):
         result = self.run_cli_fixture(filename="validate.yml",
-            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates")
+            declaration=REAL_JOBS)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
@@ -358,7 +367,7 @@ class GateCliTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
     def test_distinct_cr_lf_paths_accept_declared_removals(self):
         result = self.run_cli_fixture(control_paths=True,
-            declaration="codecov, coverage, fuzzing, lint, native, validate, validate-gates")
+            declaration=REAL_JOBS)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     @unittest.skipIf(os.name == "nt", "CR/LF filenames require a POSIX working tree")
