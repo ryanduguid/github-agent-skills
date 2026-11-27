@@ -41,6 +41,19 @@ instructions are plain text, so an emoji built with U+200D ZERO WIDTH JOINER,
 U+FE0F VARIATION SELECTOR-16 or tag characters, such as a family emoji or
 Scotland's flag, fails too; an emoji without them passes.
 
+Once a skill's `SKILL.md` passes, both modes check every ordinary file in the
+skill. They refuse the hidden characters above in any UTF-8 file, scripts
+included, and skip files that are not UTF-8, such as images. They refuse a hard
+link (a file with more than one name), which lets a file outside the skill
+change it unseen; a file over 64 KiB; and a skill whose files total over
+256 KiB. In Markdown they refuse text that tells an agent to skip, bypass,
+weaken, disable, ignore, silence, suppress or override a review, check, test,
+guard, hook, lint, approval or protection, to force-push, or to use
+`--no-verify` or `--admin`, unless a negation or 'whether' comes earlier in the
+same sentence, table cell or list item: 'Do not skip the review' passes and
+'Skip the review' fails. `tests/test_skill_boundaries.py` pins each skill's
+guard sentences, so removing one fails there.
+
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is
 present.
@@ -71,8 +84,8 @@ Help and version output use stdout; check failures use stderr.
 
 ## Compatibility and limits
 
-The checks keep the Python originals' semantics, with 3 additions: the
-hidden-character refusal under Commands, the metadata reader's refusal of an
+The checks keep the Python originals' semantics, with 4 additions: the
+hidden-character refusal and the skill file checks under Commands, the metadata reader's refusal of an
 indented line and a line with no key, which the original ignored, and `--strict`
 failing when a recorded run directory is missing.
 Otherwise the reader keeps the original line parser, including duplicate-key

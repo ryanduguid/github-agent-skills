@@ -1003,6 +1003,7 @@ fn guard_weakening_text_is_refused_outside_a_negated_sentence() {
         "| Do not bypass branch protection | Report it |",
         "A run without hooks: never disable the hooks.",
         "Report it. It isn't for you to override approvals.",
+        "Ask whether it tells an agent to skip a check.",
     ] {
         assert!(body(kept).is_empty(), "{kept}");
     }

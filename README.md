@@ -215,10 +215,13 @@ as a block scalar, a quoted value, `true`, `123` or one containing `: `. For
 the same reason it refuses an indented frontmatter line, which a parser would
 join to the field above it or read as a nested value (such as the
 specification's indented `metadata` example), and a line with no key.
-It also refuses a `SKILL.md` containing an
+It also refuses any skill file containing an
 invisible or bidirectional control character, such as a right-to-left override,
 zero-width space or Unicode tag, which can show a reviewer different text from
-what an agent reads, and names the file, line, column and code point.
+what an agent reads, and names the file, line, column and code point. It
+refuses a hard-linked skill file, a file over 64 KiB, a skill over 256 KiB, and
+Markdown that tells an agent to skip or weaken a review, check or guard,
+force-push or use `--no-verify`, outside a negated sentence.
 
 Strict validation also requires one scenario in `tests/scenarios/` for each
 skill. CI also lints the Python tests with a hash-pinned Ruff;

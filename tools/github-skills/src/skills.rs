@@ -142,9 +142,11 @@ static GUARD_WEAKENING: LazyLock<Regex> = LazyLock::new(|| {
         false,
     )
 });
+// A negation, or 'whether', which asks about the act rather than telling an
+// agent to do it ("Ask whether it tells an agent to skip a check").
 static NEGATION: LazyLock<Regex> = LazyLock::new(|| {
     crate::public_files::python_regex(
-        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused)\b|n't\b",
+        r"\b(?:not|never|no|nor|without|cannot|refuses?|refused|whether)\b|n't\b",
         true,
         false,
     )
@@ -239,6 +241,8 @@ fn skill_file_failures(directory: &Path, root: &Path) -> io::Result<Vec<String>>
         let Ok(text) = String::from_utf8(fs::read(&path)?) else {
             continue;
         };
+        // Lines end at LF, CR or CRLF, as in `SKILL.md`.
+        let text = text.replace("\r\n", "\n").replace('\r', "\n");
         if let Some(hidden) = hidden_character(&text) {
             failures.push(format!("{name}: {hidden}"));
         } else if path.extension().is_some_and(|extension| extension == "md")
