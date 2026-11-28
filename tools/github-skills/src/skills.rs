@@ -122,6 +122,473 @@ fn hidden_character(text: &str) -> Option<String> {
     })
 }
 
+// Byte caps on a canonical skill's files, each and all together. The largest
+// file was 13,561 bytes and the largest skill about 37,000 on 27 November 2026.
+pub const MAX_FILE_BYTES: u64 = 64 * 1024;
+pub const MAX_SKILL_BYTES: u64 = 256 * 1024;
+// Text that tells an agent to skip or weaken a review, check or guard, or to
+// go round one: a listed verb with a listed guard up to 6 words after it, or
+// up to 3 words before it ("checks can be skipped"), with no sentence, clause
+// or table cell break between them; force-pushing; `--no-verify`; `--admin`.
+// The lint fails closed: only a negation directly before the verb allows the
+// text, so nothing elsewhere in the sentence (a question, 'if', 'whether',
+// 'would', a quote or a list marker) can.
+const GUARD_VERBS: &str = concat!(
+    r"skip(?:s|ped|ping)?|bypass(?:es|ed|ing)?|weaken(?:s|ed|ing)?|disabl(?:e|es|ed|ing)",
+    r"|ignor(?:e|es|ed|ing)|silenc(?:e|es|ed|ing)|suppress(?:es|ed|ing)?",
+    r"|overrid(?:e|es|den|ing)|overrode|disregard(?:s|ed|ing)?|circumvent(?:s|ed|ing)?",
+);
+const GUARDS: &str = concat!(
+    r"review(?:s|ing|ers?)?|check(?:s|ing|ers?)?|test(?:s|ing)?|guard(?:s|rails?)?|hooks?",
+    r"|validations?|verifications?|lint(?:s|ing|ers?)?|approvals?|protections?|safeguards?|ci",
+);
+// Other verbs a negated list can hold, as in "Do not merge, bypass or ignore
+// checks".
+const LISTED_VERBS: &str = concat!(
+    r"(?:delet|remov|merg|approv|rewrit|chang|renam)(?:e|es|ed|ing)",
+    r"|(?:edit|loosen|revert)(?:s|ed|ing)?|drop(?:s|ped|ping)?",
+);
+// A word starts and ends where no letter or digit adjoins it, so `_Skip_` and
+// `skip_review` hold one.
+const START: &str = r"(?<![^\W_])";
+const END: &str = r"(?![^\W_])";
+// Sentinel emitted in place of quote-aware HTML tags and closed non-rendered
+// HTML elements during guard matching, so tags cannot break a guard phrase or
+// bridge a negation to its verb.
+const TAG_SENTINEL: char = '\x1f';
+// The 106 WHATWG HTML5 legacy named character references that HTML text nodes
+// decode even without a trailing semicolon (such as `&nbspthe` or `&shyip`).
+const LEGACY_HTML_ENTITIES: [&str; 106] = [
+    "AElig", "AMP", "Aacute", "Acirc", "Agrave", "Aring", "Atilde", "Auml", "COPY", "Ccedil",
+    "ETH", "Eacute", "Ecirc", "Egrave", "Euml", "GT", "Iacute", "Icirc", "Igrave", "Iuml", "LT",
+    "Ntilde", "Oacute", "Ocirc", "Ograve", "Oslash", "Otilde", "Ouml", "QUOT", "REG", "THORN",
+    "Uacute", "Ucirc", "Ugrave", "Uuml", "Yacute", "aacute", "acirc", "acute", "aelig", "agrave",
+    "amp", "aring", "atilde", "auml", "brvbar", "ccedil", "cedil", "cent", "copy", "curren", "deg",
+    "divide", "eacute", "ecirc", "egrave", "eth", "euml", "frac12", "frac14", "frac34", "gt",
+    "iacute", "icirc", "iexcl", "igrave", "iquest", "iuml", "laquo", "lt", "macr", "micro",
+    "middot", "nbsp", "not", "ntilde", "oacute", "ocirc", "ograve", "ordf", "ordm", "oslash",
+    "otilde", "ouml", "para", "plusmn", "pound", "quot", "raquo", "reg", "sect", "shy", "sup1",
+    "sup2", "sup3", "szlig", "thorn", "times", "uacute", "ucirc", "ugrave", "uml", "uuml",
+    "yacute", "yen", "yuml",
+];
+const NON_RENDERED_HTML_TAGS: [&str; 10] = [
+    "iframe", "noembed", "noframes", "noscript", "script", "style", "template", "textarea",
+    "title", "xmp",
+];
+// Spaces, dashes, emphasis, quotes, safe character references and normalised
+// HTML tags may separate the 2 words.
+const FORCE_PUSH: &str = r#"force(?:[\-\u{2010}-\u{2015}\u{2212}\s*_~`'"\u{2018}\u{2019}\u{201c}\u{201d}\x1f]|&[A-Za-z]+;)*push(?:es|ed|ing)?"#;
+const FLAG: &str = r"(?:--|[\u{2013}\u{2014}\u{2212}])[*_~\x1f]*(?:no[\-\u{2010}-\u{2015}\u{2212}*_~\x1f]+verify|admin)(?![^\W_])";
+// What may separate the words of a phrase: anything but a letter, digit or a
+// break, so quotes, emphasis, hyphens, safe character references such as
+// `&nbsp;`, normalised HTML tags (`\x1f`) and any space, line ends included.
+const BETWEEN: &str = r"(?:&[A-Za-z]+;|[^\w.;:!?|]|_)+";
+// What may separate a negation from its verb: spaces on one line, and emphasis.
+const SPACE: &str = r"[^\S\n]+";
+const GAP: &str = r"[*_]*[^\S\n]+[*_]*";
+const UNQUOTED: &str = r#"(?<!['"\u{2018}\u{2019}\u{201c}\u{201d}`])"#;
+
+fn guard_regex(pattern: &str) -> Regex {
+    crate::public_files::python_regex(pattern, true, false)
+}
+
+/// A negation that governs the verb after it, not a quoted one: 'do not',
+/// 'don't', 'must not', 'cannot', 'never' and the like, with 'be' or 'get'
+/// for the passive.
+fn negation() -> String {
+    format!(
+        concat!(
+            r"{UNQUOTED}{START}(?:(?:do|does|did|must|should|shall|will|would|can|could|may|might|need){SPACE}not",
+            r"|(?:do|does|did|must|should|sha|wo|would|ca|could|might|need)n['\u{{2019}}]t",
+            r"|cannot|never){END}{GAP}(?:(?:be|been|get|got){GAP})?",
+        ),
+        UNQUOTED = UNQUOTED,
+        START = START,
+        SPACE = SPACE,
+        END = END,
+        GAP = GAP,
+    )
+}
+
+/// A verb in a negated list, as in "weaken, skip or delete".
+fn listed() -> String {
+    format!("{START}(?:{GUARD_VERBS}|{FORCE_PUSH}|{LISTED_VERBS}){END}")
+}
+
+static GUARD_VERB: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        "{START}(?:{GUARD_VERBS}|{FORCE_PUSH}){END}|{FLAG}"
+    ))
+});
+// The phrase that starts at a verb, or the guard that ends just before one.
+static GUARD_AFTER: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"\A(?:(?:{GUARD_VERBS}){END}(?:{BETWEEN}[^\W_]+){{0,6}}?{BETWEEN}(?:{GUARDS}){END}|{FORCE_PUSH}{END}|{FLAG})"
+    ))
+});
+static GUARD_BEFORE: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"{START}(?:{GUARDS}){END}(?:{BETWEEN}[^\W_]+){{0,3}}?{BETWEEN}\Z"
+    ))
+});
+// Text before a verb that negates it: a negation directly before it, or one
+// that heads a list of verbs ending in 'or' or 'nor' that holds it ("Do not
+// weaken, skip or delete"). 'No', 'without' and 'not to' negate only a verb
+// directly after them ("No skipping"; "without skipping").
+static NEGATED: LazyLock<Regex> = LazyLock::new(|| {
+    let negation = negation();
+    let listed = listed();
+    guard_regex(&format!(
+        concat!(
+            r"(?:{negation}|{UNQUOTED}{START}(?:no|without|not{SPACE}to){END}{GAP}",
+            r"|{negation}{listed}(?:,{SPACE}{listed})*,?{SPACE}(?:or|nor){SPACE})\Z",
+        ),
+        negation = negation,
+        listed = listed,
+        UNQUOTED = UNQUOTED,
+        START = START,
+        SPACE = SPACE,
+        END = END,
+        GAP = GAP,
+    ))
+});
+// A verb inside a negated list: the list before it ends in a comma, and the
+// list after it goes on to 'or' or 'nor' and one more verb.
+static NEGATED_LIST_BEFORE: LazyLock<Regex> = LazyLock::new(|| {
+    let listed = listed();
+    guard_regex(&format!(
+        r"{}{listed}(?:,{SPACE}{listed})*,{SPACE}\Z",
+        negation()
+    ))
+});
+static NEGATED_LIST_AFTER: LazyLock<Regex> = LazyLock::new(|| {
+    let listed = listed();
+    guard_regex(&format!(
+        r"\A(?:,{SPACE}{listed})*,?{SPACE}(?:or|nor){SPACE}{listed}"
+    ))
+});
+// A negated flag, alone or in the command an agent must not use or run
+// ("never run `git commit --no-verify`").
+static NEGATED_FLAG: LazyLock<Regex> = LazyLock::new(|| {
+    guard_regex(&format!(
+        r"{}(?:(?:use[sd]?|using|run(?:s|ning)?|pass(?:es|ed|ing)?|add(?:s|ed|ing)?){SPACE})?(?:`[^`\n]*)?\Z",
+        negation()
+    ))
+});
+// A negation offered as a choice: "whether or not to skip", "may or may not
+// skip".
+static CHOICE: LazyLock<Regex> = LazyLock::new(|| guard_regex(r"(?<![^\W_])or[\s*_]*\Z"));
+// Text the phrase patterns cannot read, refused in Markdown: markup or safe
+// character references inside a word ("S**ki**p", "Sk<b></b>ip", "Skip&nbsp;the"),
+// and Greek, Cyrillic, fullwidth or mathematical letters, which can pass for
+// Latin ones. Comments and disallowed character references are refused first by
+// `obscured_html_or_entity`, and HTML tags are normalised to `TAG_SENTINEL`.
+static OBSCURED: LazyLock<Regex> = LazyLock::new(|| {
+    crate::public_files::python_regex(
+        r"[^\W_](?:[*~]+|<[^>\n]*>|\x1f|&[A-Za-z]+;)+[^\W_]|[\p{Greek}\p{Cyrillic}\u{ff01}-\u{ff5e}\u{1d400}-\u{1d7ff}]",
+        false,
+        false,
+    )
+});
+
+fn obscured_message(found: &str, line: usize) -> String {
+    format!(
+        "'{found}' at line {line} splits a word with markup or uses Greek, Cyrillic, fullwidth or mathematical letters, which can hide guard-weakening text"
+    )
+}
+
+/// Byte index after a disallowed character reference starting at `start` (`&`):
+/// any numeric reference (with or without `;`), any semicolon-terminated named
+/// reference outside the 6 safe escapes, and any semicolonless WHATWG HTML5
+/// legacy named reference.
+fn disallowed_entity_end(bytes: &[u8], start: usize) -> Option<usize> {
+    let rest = &bytes[start + 1..];
+    if rest.first() == Some(&b'#') {
+        let hex = matches!(rest.get(1), Some(b'x' | b'X'));
+        let digits = if hex { 2 } else { 1 };
+        let mut end = digits;
+        while end < rest.len()
+            && if hex {
+                rest[end].is_ascii_hexdigit()
+            } else {
+                rest[end].is_ascii_digit()
+            }
+        {
+            end += 1;
+        }
+        return (end > digits).then(|| {
+            let semi = usize::from(rest.get(end) == Some(&b';'));
+            start + 1 + end + semi
+        });
+    }
+    if rest.first().is_some_and(u8::is_ascii_alphabetic) {
+        let mut end = 1;
+        while end < rest.len() && rest[end].is_ascii_alphanumeric() {
+            end += 1;
+        }
+        let name = std::str::from_utf8(&rest[..end]).expect("ASCII alphanumerics");
+        if rest.get(end) == Some(&b';') {
+            let safe = matches!(name, "amp" | "lt" | "gt" | "quot" | "apos" | "nbsp");
+            return (!safe).then_some(start + 1 + end + 1);
+        }
+        if let Some(legacy) = LEGACY_HTML_ENTITIES
+            .iter()
+            .find(|entity| name.starts_with(**entity))
+        {
+            return Some(start + 1 + legacy.len());
+        }
+    }
+    None
+}
+
+/// The first HTML comment/declaration/PI opening (`<!` or `<?`, regardless of
+/// closing delimiter) or disallowed character reference in `text`.
+fn obscured_html_or_entity(text: &str) -> Option<(usize, &str)> {
+    let bytes = text.as_bytes();
+    for (i, &byte) in bytes.iter().enumerate() {
+        if byte == b'<' && matches!(bytes.get(i + 1), Some(b'!' | b'?')) {
+            return Some((i, &text[i..i + 2]));
+        }
+        if byte == b'&'
+            && let Some(end) = disallowed_entity_end(bytes, i)
+        {
+            return Some((i, &text[i..end]));
+        }
+    }
+    None
+}
+
+/// Byte index after a quote-aware HTML tag starting at `start` (`<`), with
+/// whether it is a closing tag and the tag name's byte range. Attribute quotes
+/// begin only after `=`, matching HTML5 attribute tokenisation.
+fn html_tag_end(bytes: &[u8], start: usize) -> Option<(usize, bool, std::ops::Range<usize>)> {
+    let mut i = start + 1;
+    let closing = bytes.get(i) == Some(&b'/');
+    if closing {
+        i += 1;
+    }
+    let name_start = i;
+    if !bytes.get(i).is_some_and(u8::is_ascii_alphabetic) {
+        return None;
+    }
+    while bytes
+        .get(i)
+        .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'-')
+    {
+        i += 1;
+    }
+    let name_end = i;
+    if !matches!(
+        bytes.get(i),
+        Some(b'>' | b'/' | b' ' | b'\t' | b'\n' | b'\r' | 0x0c)
+    ) {
+        return None;
+    }
+    let mut quote = None;
+    let mut expect_val = false;
+    while i < bytes.len() {
+        let b = bytes[i];
+        i += 1;
+        match quote {
+            Some(q) if b == q => quote = None,
+            Some(_) => {}
+            None if b == b'>' => return Some((i, closing, name_start..name_end)),
+            None if b == b'=' => expect_val = true,
+            None if expect_val && (b == b'"' || b == b'\'') => {
+                quote = Some(b);
+                expect_val = false;
+            }
+            None if !b.is_ascii_whitespace() => expect_val = false,
+            None => {}
+        }
+    }
+    None
+}
+
+/// Byte index after the matching closing tag of a non-rendered HTML element
+/// (such as `<script>` or `<style>`), if closed.
+fn non_rendered_end(bytes: &[u8], name: &[u8], after_open: usize) -> Option<usize> {
+    if !NON_RENDERED_HTML_TAGS
+        .iter()
+        .any(|tag| name.eq_ignore_ascii_case(tag.as_bytes()))
+    {
+        return None;
+    }
+    let mut i = after_open;
+    while i + 2 + name.len() < bytes.len() {
+        if bytes[i] == b'<'
+            && bytes[i + 1] == b'/'
+            && bytes[i + 2..i + 2 + name.len()].eq_ignore_ascii_case(name)
+            && let Some((end, true, _)) = html_tag_end(bytes, i)
+        {
+            return Some(end);
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Replace quote-aware HTML tags and closed non-rendered HTML elements with
+/// `TAG_SENTINEL`, returning the normalised text and a byte-offset map back to
+/// `text`.
+fn normalise_html(text: &str) -> (String, Vec<usize>) {
+    let bytes = text.as_bytes();
+    let mut out = String::with_capacity(text.len());
+    let mut map = Vec::with_capacity(text.len() + 1);
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'<'
+            && let Some((after_tag, closing, name_range)) = html_tag_end(bytes, i)
+        {
+            let end = if closing {
+                after_tag
+            } else {
+                non_rendered_end(bytes, &bytes[name_range], after_tag).unwrap_or(after_tag)
+            };
+            out.push(TAG_SENTINEL);
+            map.push(i);
+            i = end;
+            continue;
+        }
+        let c = text[i..].chars().next().expect("i is a char boundary");
+        out.push(c);
+        for offset in 0..c.len_utf8() {
+            map.push(i + offset);
+        }
+        i += c.len_utf8();
+    }
+    map.push(text.len());
+    (out, map)
+}
+
+fn verb_is_negated(verb: &str, before: &str, after: &str) -> io::Result<bool> {
+    let negation = if verb.starts_with(['-', '\u{2013}', '\u{2014}', '\u{2212}']) {
+        NEGATED_FLAG.find(before).map_err(io::Error::other)?
+    } else if let Some(found) = NEGATED.find(before).map_err(io::Error::other)? {
+        Some(found)
+    } else if NEGATED_LIST_AFTER
+        .is_match(after)
+        .map_err(io::Error::other)?
+    {
+        NEGATED_LIST_BEFORE.find(before).map_err(io::Error::other)?
+    } else {
+        None
+    };
+    match negation {
+        Some(found) => Ok(!CHOICE
+            .is_match(&before[..found.start()])
+            .map_err(io::Error::other)?),
+        None => Ok(false),
+    }
+}
+
+/// The first guard-weakening phrase whose verb no negation directly governs,
+/// or the first text that could hide one, with its line counted from 1.
+fn guard_weakening(text: &str) -> io::Result<Option<String>> {
+    if let Some((start, found)) = obscured_html_or_entity(text) {
+        let line = text[..start].matches('\n').count() + 1;
+        return Ok(Some(obscured_message(found, line)));
+    }
+    let (normalised, map) = normalise_html(text);
+    if let Some(found) = OBSCURED.find(&normalised).map_err(io::Error::other)? {
+        let (start, end) = (map[found.start()], map[found.end()]);
+        let line = text[..start].matches('\n').count() + 1;
+        return Ok(Some(obscured_message(&text[start..end], line)));
+    }
+    for verb in GUARD_VERB.find_iter(&normalised) {
+        let verb = verb.map_err(io::Error::other)?;
+        let (before, after) = (&normalised[..verb.start()], &normalised[verb.end()..]);
+        let range = if let Some(phrase) = GUARD_AFTER
+            .find(&normalised[verb.start()..])
+            .map_err(io::Error::other)?
+        {
+            verb.start() + phrase.start()..verb.start() + phrase.end()
+        } else if let Some(guard) = GUARD_BEFORE.find(before).map_err(io::Error::other)? {
+            guard.start()..verb.end()
+        } else {
+            continue;
+        };
+        if !verb_is_negated(verb.as_str(), before, after)? {
+            let line = text[..map[verb.start()]].matches('\n').count() + 1;
+            let phrase = &text[map[range.start]..map[range.end]];
+            return Ok(Some(format!(
+                "guard-weakening text '{phrase}' at line {line} with no negation directly before its verb"
+            )));
+        }
+    }
+    Ok(None)
+}
+
+/// How many directory entries name the file, which is not a link.
+#[cfg(not(windows))]
+fn link_count(path: &Path) -> io::Result<u64> {
+    use std::os::unix::fs::MetadataExt;
+    Ok(fs::symlink_metadata(path)?.nlink())
+}
+
+/// How many directory entries name the file, which is not a link. The
+/// standard library's count is unstable on Windows.
+#[cfg(windows)]
+fn link_count(path: &Path) -> io::Result<u64> {
+    Ok(winapi_util::file::information(fs::File::open(path)?)?.number_of_links())
+}
+
+/// Failures for the files of a skill whose `SKILL.md` passed: a hard link,
+/// which edits a file outside the skill or lets one edit it; a file or skill
+/// over its byte cap; a hidden character in any UTF-8 file, scripts included;
+/// and guard-weakening text in Markdown. Links are skipped here, as the link
+/// checks report them.
+fn skill_file_failures(directory: &Path, root: &Path) -> io::Result<Vec<String>> {
+    let mut failures = Vec::new();
+    let mut total = 0;
+    for path in ordinary_entries(directory, root, &mut Vec::new())? {
+        if !path.is_file() {
+            continue;
+        }
+        let name = relative(&path, root);
+        if link_count(&path)? > 1 {
+            failures.push(format!(
+                "{name}: is a hard link; a skill file must have one name"
+            ));
+            continue;
+        }
+        let size = fs::symlink_metadata(&path)?.len();
+        total += size;
+        if size > MAX_FILE_BYTES {
+            failures.push(format!(
+                "{name}: {size} bytes, over the {MAX_FILE_BYTES}-byte cap for a skill file"
+            ));
+            continue;
+        }
+        // Bytes that are not UTF-8, such as an image, are data, not text a
+        // reviewer reads.
+        let Ok(text) = String::from_utf8(fs::read(&path)?) else {
+            continue;
+        };
+        // Lines end at LF, CR or CRLF, as in `SKILL.md`.
+        let text = text.replace("\r\n", "\n").replace('\r', "\n");
+        if let Some(hidden) = hidden_character(&text) {
+            failures.push(format!("{name}: {hidden}"));
+        } else if path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("md") || extension.eq_ignore_ascii_case("markdown")
+            })
+            && let Some(found) = guard_weakening(&text)?
+        {
+            failures.push(format!("{name}: {found}"));
+        }
+    }
+    if total > MAX_SKILL_BYTES {
+        failures.push(format!(
+            "{}: its files total {total} bytes, over the {MAX_SKILL_BYTES}-byte cap for a skill",
+            relative(directory, root)
+        ));
+    }
+    Ok(failures)
+}
+
 pub fn is_link(path: &Path) -> io::Result<bool> {
     match fs::symlink_metadata(path) {
         Ok(metadata) => {
@@ -424,6 +891,11 @@ pub fn validate(root: &Path, strict: bool) -> io::Result<Vec<String>> {
             failures.push(format!(
                 "{file_name}: referenced file '{missing}' is not in the skill directory"
             ));
+            continue;
+        }
+        let file_failures = skill_file_failures(directory, root)?;
+        if !file_failures.is_empty() {
+            failures.extend(file_failures);
             continue;
         }
         valid.push((name.into_owned(), path));

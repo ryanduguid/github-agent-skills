@@ -41,6 +41,45 @@ instructions are plain text, so an emoji built with U+200D ZERO WIDTH JOINER,
 U+FE0F VARIATION SELECTOR-16 or tag characters, such as a family emoji or
 Scotland's flag, fails too; an emoji without them passes.
 
+Once a skill's `SKILL.md` passes, both modes check every ordinary file in the
+skill. They refuse the hidden characters above in any UTF-8 file, scripts
+included, and skip files that are not UTF-8, such as images. They refuse a hard
+link (a file with more than one name), which lets a file outside the skill
+change it unseen; a file over 64 KiB; and a skill whose files total over
+256 KiB. In Markdown (`.md` or `.markdown`, in any case) they refuse text
+that tells an agent to skip, bypass, weaken, disable, ignore, disregard,
+silence, suppress, override or circumvent a review, check, test, guard, hook,
+lint, approval or protection, with the
+guard up to 6 words after the verb or up to 3 before it ('checks can be
+skipped'), to force-push, or to use `--no-verify` or `--admin`. Spaces of any
+kind, line ends, quotes, emphasis, quote-aware HTML tags, closed non-rendered
+HTML elements (such as `<script>` and `<style>`) and safe character references
+such as `&nbsp;` between the words do not hide them. They also refuse Markdown
+that splits a word with markup ('S\*\*ki\*\*p'), contains an HTML comment,
+declaration or processing instruction opening (`<!` or `<?`), uses a numeric
+character reference (with or without a trailing semicolon), a semicolonless
+HTML5 legacy named character reference (such as `&nbsp` or `&shy`) or a named
+character reference other than `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and
+`&nbsp;` ('Ski&amp;#112;'), or uses Greek, Cyrillic, fullwidth or mathematical
+letters, which can spell these words so the check cannot read them.
+
+This check fails closed. Such text passes only when a negation such as 'do
+not', 'never', 'must not' or 'cannot' comes directly before the verb on the
+same line, or heads a list of verbs that holds it and ends in 'or' or 'nor'
+('Do not weaken, skip or delete a test'); 'no', 'without' and 'not to' count
+only directly before the verb ('without skipping the review'), and a
+negation offered as a choice ('whether or not to', 'may or may not') counts
+as none. Nothing else in
+the sentence exempts it, so 'Do not skip the review' passes, and 'Why not skip
+the review?', 'Check whether CI passes, then skip the review' and 'No time to
+wait, skip the review' fail. It matches these words, not their meaning, and
+one sentence at a time, so 3 kinds of text pass: a paraphrase in other words;
+a guard named in an earlier sentence, with only a pronoun after the verb ('The
+review is optional. Skip it.'); and a sentence that says a true guard no
+longer applies ('The rule that you must not skip the review is retired'). So
+`tests/test_skill_boundaries.py` also pins each skill's guard sentences, and
+removing one fails there.
+
 Special approved source entries, such as a POSIX FIFO, return a processing error
 before mutation, so generated files are preserved when this unsupported input is
 present.
@@ -71,8 +110,8 @@ Help and version output use stdout; check failures use stderr.
 
 ## Compatibility and limits
 
-The checks keep the Python originals' semantics, with 3 additions: the
-hidden-character refusal under Commands, the metadata reader's refusal of an
+The checks keep the Python originals' semantics, with 4 additions: the
+hidden-character refusal and the skill file checks under Commands, the metadata reader's refusal of an
 indented line and a line with no key, which the original ignored, and `--strict`
 failing when a recorded run directory is missing.
 Otherwise the reader keeps the original line parser, including duplicate-key

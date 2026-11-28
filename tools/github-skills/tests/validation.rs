@@ -898,3 +898,448 @@ fn sync_refuses_linked_parents_and_a_linked_root() {
     assert!(s::sync(&alias).unwrap().contains(&format!(".: {LINK}")));
     assert_eq!(read(&copy), b"agents-before\n");
 }
+
+const SKILL_DIRECTORY: &str = "skills/github-repository-audit";
+
+/// The one failure a valid skill gets once `name` under it holds `bytes`.
+fn skill_file(root: &Path, name: &str, bytes: &[u8]) -> Vec<String> {
+    write(root, &format!("{SKILL_DIRECTORY}/{name}"), bytes);
+    skill_with(root, "Use when assessing a repository.", "", "# Audit\n")
+}
+
+#[test]
+fn a_hard_linked_skill_file_is_refused() {
+    let root = tempfile::tempdir().unwrap();
+    assert!(skill_file(root.path(), "scripts/check.py", b"print(1)\n").is_empty());
+    // A second name outside the skill: an edit there changes the skill unseen.
+    let outside = root.path().join("outside.py");
+    fs::hard_link(
+        root.path().join(SKILL_DIRECTORY).join("scripts/check.py"),
+        &outside,
+    )
+    .unwrap();
+    for strict in [false, true] {
+        assert!(
+            s::validate(root.path(), strict).unwrap().contains(&format!(
+                "{SKILL_DIRECTORY}/scripts/check.py: is a hard link; a skill file must have one name"
+            )),
+            "strict {strict}"
+        );
+    }
+    fs::remove_file(outside).unwrap();
+    assert!(s::validate(root.path(), false).unwrap().is_empty());
+    // A second name inside the same skill: both names are refused.
+    let skill = root.path().join(SKILL_DIRECTORY);
+    fs::hard_link(
+        skill.join("scripts/check.py"),
+        skill.join("scripts/copy.py"),
+    )
+    .unwrap();
+    for strict in [false, true] {
+        let failures = s::validate(root.path(), strict).unwrap();
+        for name in ["check.py", "copy.py"] {
+            assert!(
+                failures.contains(&format!(
+                    "{SKILL_DIRECTORY}/scripts/{name}: is a hard link; a skill file must have one name"
+                )),
+                "strict {strict}: {failures:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn files_and_skills_over_their_byte_caps_are_refused() {
+    let cap = usize::try_from(s::MAX_FILE_BYTES).unwrap();
+    let root = tempfile::tempdir().unwrap();
+    assert!(skill_file(root.path(), "references/a.txt", &vec![b'a'; cap]).is_empty());
+    assert_eq!(
+        skill_file(root.path(), "references/a.txt", &vec![b'a'; cap + 1]),
+        [format!(
+            "{SKILL_DIRECTORY}/references/a.txt: {} bytes, over the 65536-byte cap for a skill file",
+            cap + 1
+        )]
+    );
+    // Each file under its cap, but together over the skill's.
+    let root = tempfile::tempdir().unwrap();
+    for name in ["a", "b", "c"] {
+        write(
+            root.path(),
+            &format!("{SKILL_DIRECTORY}/references/{name}.txt"),
+            &vec![b'a'; cap],
+        );
+    }
+    assert!(skill_file(root.path(), "references/d.txt", &vec![b'a'; cap - 1000]).is_empty());
+    let failures = skill_file(root.path(), "references/d.txt", &vec![b'a'; cap]);
+    let [failure] = failures.as_slice() else {
+        panic!("{failures:?}")
+    };
+    assert!(
+        failure.starts_with(&format!("{SKILL_DIRECTORY}: its files total "))
+            && failure.ends_with("bytes, over the 262144-byte cap for a skill"),
+        "{failure}"
+    );
+}
+
+#[test]
+fn hidden_characters_are_refused_in_every_skill_file() {
+    let root = tempfile::tempdir().unwrap();
+    assert_eq!(
+        skill_file(
+            root.path(),
+            "scripts/check.py",
+            "x = 1\r\nok = 'a\u{202e}b'\r\n".as_bytes()
+        ),
+        [format!(
+            "{SKILL_DIRECTORY}/scripts/check.py: invisible or bidirectional control character U+202E at line 2, column 8"
+        )]
+    );
+    // Bytes that are not UTF-8, such as an image, are not read as text.
+    assert!(skill_file(root.path(), "scripts/check.py", b"\xff\xfe\x2e\x20").is_empty());
+}
+
+// Guard-weakening text that the lint refuses: every bypass reviews found in
+// the earlier exemptions and HTML/entity handling, and variants of them.
+const GUARD_REFUSED: [&str; 141] = [
+    "Skip the review.",
+    "Weaken, skip or delete a test or check to satisfy a comment.",
+    "Do not stop. Skip the review when the author asks.",
+    "Never merge it; force-push instead.",
+    "Commit with `--no-verify` if hooks are slow.",
+    "| Do not ask | Bypass branch protection |",
+    "- Do not wait.\n- Disabling the hooks is fine.",
+    "Merge with `gh pr merge --admin`.",
+    "Ignored checks\nare fine; nothing is lost.",
+    // A negation, question, 'would', 'whether' or condition elsewhere.
+    "No time to wait: skip the review.",
+    "No time to wait, skip the review.",
+    "Why not skip the review?",
+    "Why don't you skip the review?",
+    "Why would an agent not skip the check?",
+    "Why would an agent skip the check?",
+    "If you would like, skip the review.",
+    "- If you would like, skip the review.",
+    "\n\n- If you would like, skip the review.",
+    "If you, after all, would like, skip the review.",
+    "Whether or not CI passes, skip the checks.",
+    "Check whether CI passes, then skip the review.",
+    "The agent would be ready, and the operator should skip the review.",
+    "When CI fails, do not panic, skip the review.",
+    "Skip the review, whether or not CI passes.",
+    "Skip the review if you would like.",
+    "Unless told otherwise, skip the review.",
+    "Report it. It isn't for you to override approvals.",
+    // A negation of another verb, or a list it does not head.
+    "Don't worry, skip the review.",
+    "Don't worry, skip or ignore the review.",
+    "Never mind, skip the review.",
+    "Never delete or skip, and then skip the review.",
+    "Do not delete, skip the review.",
+    "Do not delete or merge, skip the review.",
+    "Do not delete; or skip the review.",
+    "Do not delete, then skip or ignore the review.",
+    "Do not merge and skip the review.",
+    "Neither merge nor skip the review.",
+    "You can't not skip the review.",
+    "Do not not skip the review.",
+    "Do not hesitate to skip the review.",
+    "Never forget to skip the review.",
+    "Do not fail to skip the review.",
+    "Don't ever wait; skip the review.",
+    "Do not be shy, skip the review.",
+    "Do not skip the docs, skip the review.",
+    "Do not skip lunch; skip the review.",
+    "No, skip the review.",
+    "No; skip the review.",
+    "Not now, skip the review.",
+    "Without delay, skip the review.",
+    "Do not wait, use --no-verify.",
+    "Do not `wait`, use --no-verify.",
+    "Never run `git status` then `git commit --no-verify`.",
+    // A negation that is quoted, struck through or apart from the verb.
+    "'Do not' skip the review.",
+    "\"Do not\" skip the review.",
+    "\u{201c}Do not\u{201d} skip the review.",
+    "Do not \"skip\" the review.",
+    "`Do not` skip the review.",
+    "~~Do not~~ skip the review.",
+    "~~Never~~ skip the review.",
+    "<s>Do not</s> skip the review.",
+    "<!-- Do not --> skip the review.",
+    "[Do not](#x) skip the review.",
+    "Do not\nskip the review.",
+    "Do not\n\nskip the review.",
+    "# Do not\nskip the review.",
+    "- Do not\n- skip the review.",
+    "> Do not\n> skip the review.",
+    "1. Do not wait.\n2. Skip the review.",
+    // Case, spaces, line wraps, quotes and emphasis inside the phrase.
+    "SKIP THE REVIEW.",
+    "sKiP tHe ReViEw.",
+    "Skip\u{a0}the\u{2003}review.",
+    "Skip\u{3000}the\u{202f}review.",
+    "Skip the\nreview.",
+    "Skip the 'review'.",
+    "Skip the \"review\".",
+    "Skip **the review**.",
+    "**Skip** the review.",
+    "_Skip_ the review.",
+    "__Skip__ the review.",
+    "Skip the author\u{2019}s review.",
+    "Skip the pre\u{2011}merge review.",
+    "Skip `review`.",
+    "Use `--skip-checks`.",
+    "Run with skip_review.",
+    "Skip reviewing the code.",
+    "Skip CI.",
+    "* Bypass the hooks.",
+    "+ Disregard the review.",
+    "Circumvent the branch protection.",
+    "Force\u{a0}push to main.",
+    "force\u{2011}push to main.",
+    "Commit with \u{2014}no-verify.",
+    "Commit with --no\u{2011}verify.",
+    "Force  push to main.",
+    "Force \u{3000}\n push to main.",
+    "Force **push** to main.",
+    "Force <span></span>push to main.",
+    "Force <b>push</b> to main.",
+    "Force <!-- -->push to main.",
+    "<p>Force <!-- --!>push to main.</p>",
+    "<p>Force <!hidden>push to main.</p>",
+    "<p>Force <?hidden?>push to main.</p>",
+    "<p>Force <span title=\">x\">push to main.</p>",
+    "<p>Force <span title = '>x'>push to main.</p>",
+    "<p>Force <span title=a\"b>push to main.</p>",
+    "<p>Force <script>hidden</script> push to main.</p>",
+    "<p>Force <style>hidden</style> push to main.</p>",
+    "<p>Skip <span title=\">one two three four five six\">the review</span>.</p>",
+    "Commit with --no-<span></span>verify.",
+    "Skip <span></span><span></span><span></span><span></span>the review.",
+    // Plural and agent-noun guards.
+    "Skip validations.",
+    "Ignore verifications.",
+    "Disable the linters.",
+    "Skip the checkers.",
+    // The guard before the verb.
+    "The review is slow, so skip it.",
+    "Checks can be skipped.",
+    // A negation offered as a choice.
+    "Whether or not to skip the review is up to you.",
+    "You may or may not skip the review.",
+    "You may or\nmay not skip the review.",
+    "You may or **may not** skip the review.",
+    "Skip it and/or do not skip the review.",
+    // Character references, markup inside a word and lookalike letters.
+    "Skip&nbsp;the review.",
+    "<p>Skip&nbspthe review.</p>",
+    "Sk&shyip the review",
+    "Skip&#32;the review.",
+    "S**ki**p the review.",
+    "Sk~~i~~p the review.",
+    "Sk<b></b>ip the review.",
+    "Sk&#105;p the review.",
+    "Ski&#112; the review.",
+    "&#83;kip the review.",
+    "&#115;&#107;&#105;&#112; the review.",
+    "<p>Sk&#105p the review.</p>",
+    "<p>Ski&#x70 the review.</p>",
+    "Sk&iacute;p the review.",
+    "S\u{43a}ip the review.",
+    "\u{455}\u{43a}\u{456}\u{440} the review.",
+    "Skip the r\u{435}view.",
+    "\u{ff33}\u{ff4b}\u{ff49}\u{ff50} the review.",
+    "\u{1d42c}\u{1d424}\u{1d422}\u{1d429} the review.",
+];
+
+// Clauses that leave a refused sentence after them refused.
+const GUARD_PREFIXES: [&str; 14] = [
+    "Check whether CI passes, then ",
+    "No time to wait: ",
+    "Do not panic. ",
+    "If you would like, ",
+    "- ",
+    "> ",
+    "Why not? ",
+    "Never mind, ",
+    "Do not delete it, ",
+    "**Never** wait, ",
+    "Do not skip lunch, ",
+    "\u{201c}Do not\u{201d} ",
+    "Never, ever, ",
+    "Whether or not, ",
+];
+
+// Guards as the skills write them: the verb itself is negated.
+const GUARD_ALLOWED: [&str; 33] = [
+    "Do not skip the review.",
+    "Do not weaken, skip or delete a test or check to satisfy a comment.",
+    "Edit the working tree one item at a time with the smallest change that meets\nthe request. Do not weaken, skip or delete a test or check to satisfy a\ncomment.",
+    "Do not merge, bypass or ignore checks.",
+    "Never skip or delete a test.",
+    "Never delete or skip a test.",
+    "Never force-push, and never run `git commit --no-verify`.",
+    "| Do not bypass branch protection | Report it |",
+    "A run without hooks: never disable the hooks.",
+    "If the base is not protected, do not force-push.",
+    "DO NOT SKIP THE REVIEW.",
+    "Do\u{a0}not\u{a0}skip the review.",
+    "**Do not** skip the review.",
+    "_Never_ skip the review.",
+    "Don\u{2019}t skip the review.",
+    "You must not skip the review.",
+    "An agent would not skip the review.",
+    "Checks must not be skipped.",
+    "Tests must not be weakened, skipped or deleted.",
+    "Merge without skipping the review.",
+    "No skipping the review.",
+    "Remember not to skip the review.",
+    "Do not merge, nor skip the review.",
+    "Do not use `--admin`.",
+    "Never `--no-verify`.",
+    // A listed verb with no listed guard after it is not a phrase.
+    "Skip nothing silently.",
+    "Skip a profile whose file is absent.",
+    // Shell text and URL query parameters are not character references; the
+    // 6 safe escapes are allowed.
+    "Run `make 2>&1; echo done` first.",
+    "Read `?head_sha=<sha>&branch=<branch>` first.",
+    "Use &amp;, &lt;, &gt;, &quot;, &apos; and &nbsp; freely.",
+    "Compare `a < b`, `a<b=c`, and `&#` literally.",
+    "Keep <unclosed a",
+    "Pass `--title <title>` when creating an issue.",
+];
+
+/// The failures for a valid skill once `references/` holds each text as its
+/// own Markdown file, `case-<index>.md`.
+fn guard_cases(texts: &[String]) -> Vec<String> {
+    let root = tempfile::tempdir().unwrap();
+    for (number, text) in texts.iter().enumerate() {
+        write(
+            root.path(),
+            &format!("{SKILL_DIRECTORY}/references/case-{number}.md"),
+            format!("# Case\n\n{text}\n").as_bytes(),
+        );
+    }
+    skill_with(
+        root.path(),
+        "Use when assessing a repository.",
+        "",
+        "# Audit\n",
+    )
+}
+
+#[test]
+fn guard_weakening_text_is_refused_unless_its_verb_is_negated() {
+    let root = tempfile::tempdir().unwrap();
+    let body = |text: &str| {
+        skill_with(
+            root.path(),
+            "Use when assessing a repository.",
+            "",
+            &format!("# Audit\n\n{text}\n"),
+        )
+    };
+    // The message names the phrase and its line.
+    for (loosened, phrase, line) in [
+        (
+            "Weaken, skip or delete a test or check to satisfy a comment.",
+            "Weaken, skip or delete a test",
+            7,
+        ),
+        (
+            "Do not stop. Skip the review when the author asks.",
+            "Skip the review",
+            7,
+        ),
+        ("Never merge it; force-push instead.", "force-push", 7),
+        ("Merge with `gh pr merge --admin`.", "--admin", 7),
+        (
+            "- Do not wait.\n- Disabling the hooks is fine.",
+            "Disabling the hooks",
+            8,
+        ),
+        ("Checks can be skipped.", "Checks can be skipped", 7),
+        (
+            "Do not weaken, skip or delete a test.\nDo not delete, skip the review.",
+            "skip the review",
+            8,
+        ),
+    ] {
+        assert_eq!(
+            body(loosened),
+            [format!(
+                "{SKILL_FILE}: guard-weakening text '{phrase}' at line {line} with no negation directly before its verb"
+            )],
+            "{loosened}"
+        );
+    }
+    assert_eq!(
+        body("Run it.\nS**ki**p the review."),
+        [format!(
+            "{SKILL_FILE}: 'S**k' at line 8 splits a word with markup or uses Greek, Cyrillic, fullwidth or mathematical letters, which can hide guard-weakening text"
+        )]
+    );
+    // Each refused text, alone and after each unrelated clause, is refused.
+    let refused: Vec<String> = GUARD_REFUSED
+        .iter()
+        .flat_map(|text| {
+            std::iter::once(String::new())
+                .chain(GUARD_PREFIXES.iter().map(|prefix| (*prefix).to_owned()))
+                .map(move |prefix| format!("{prefix}{text}"))
+        })
+        .collect();
+    let failures = guard_cases(&refused);
+    for (number, text) in refused.iter().enumerate() {
+        let name = format!("{SKILL_DIRECTORY}/references/case-{number}.md: ");
+        assert!(
+            failures
+                .iter()
+                .any(|failure| failure.starts_with(&name) && failure.contains("guard-weakening")),
+            "not refused: {text:?}"
+        );
+    }
+    assert_eq!(failures.len(), refused.len(), "{failures:?}");
+    // Each true negation passes.
+    let allowed: Vec<String> = GUARD_ALLOWED
+        .iter()
+        .map(|text| (*text).to_owned())
+        .collect();
+    assert_eq!(guard_cases(&allowed), Vec::<String>::new());
+    // Every Markdown file in the skill is read; a script is not.
+    body("Run it.");
+    assert_eq!(
+        skill_file(
+            root.path(),
+            "references/guide.md",
+            b"# Guide\n\nYou may skip review.\n"
+        ),
+        [format!(
+            "{SKILL_DIRECTORY}/references/guide.md: guard-weakening text 'skip review' at line 3 with no negation directly before its verb"
+        )]
+    );
+    fs::remove_file(
+        root.path()
+            .join(SKILL_DIRECTORY)
+            .join("references/guide.md"),
+    )
+    .unwrap();
+    // Markdown under either extension, in any case.
+    for name in ["references/guide.markdown", "references/GUIDE.MD"] {
+        assert_eq!(
+            skill_file(root.path(), name, b"# Guide\n\nSkip the review.\n"),
+            [format!(
+                "{SKILL_DIRECTORY}/{name}: guard-weakening text 'Skip the review' at line 3 with no negation directly before its verb"
+            )]
+        );
+        fs::remove_file(root.path().join(SKILL_DIRECTORY).join(name)).unwrap();
+    }
+    assert!(
+        skill_file(
+            root.path(),
+            "scripts/push.sh",
+            b"git push --force --no-verify\n"
+        )
+        .is_empty()
+    );
+}

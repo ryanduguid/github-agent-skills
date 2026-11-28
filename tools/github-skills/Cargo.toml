@@ -12,6 +12,10 @@ fancy-regex = "=0.19.2"
 serde_json = "1"
 sha2 = "=0.11.1"
 
+# Hard links are counted through the Win32 API; the standard library's count is unstable there.
+[target.'cfg(windows)'.dependencies]
+winapi-util = "=0.1.11"
+
 [dev-dependencies]
 tempfile = "=3.27.0"
 
